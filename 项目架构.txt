@@ -1,7 +1,7 @@
-image_processing_tool/
+SnapForge/
 │
-├── main.py                  # 主程序
-├── batch_rename.py          # 批量重命名模块
-├── batch_convert.py         # 批量格式转换模块
-├── batch_compress.py        # 批量压缩模块
-└── requirements.txt         # 依赖包列表
+├── gui.py                  # 用户界面模块
+└── utils/                 # 工具函数模块
+    ├── __init__.py
+    ├── error_handler.py    # 错误处理模块
+    └── image_processor.py   # 图片处理函数模块

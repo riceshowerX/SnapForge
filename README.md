@@ -1,11 +1,10 @@
-
 <div align="center" style="display: flex; align-items: center;">
-  <img src="https://camo.githubusercontent.com/096ea7823f00bd88e3fbfc8d962b41bfebda269c12050c528760d07307ea5e4e/68747470733a2f2f7269636573686f776572582e6769746875622e696f2f706963782d696d616765732d686f7374696e672fe7a4bee4baa4e5a4b4e5838f2e337965616c35396437622e77656270" alt="Logo" width="70" height="70" style="margin-right: 10px;"> 
+  <img src="https://camo.githubusercontent.com/096ea7823f00bd88e3fbfc8d962b41bfebda269c12050c528760d07307ea5e4e/68747470733a2f2f726963657273686f776572582e6769746875622e696f2f706963782d696d616765732d686f7374696e672fe7a4bee4baa4e5a4b4e5838f2e337965616c35396437622e77656270" alt="Logo" width="70" height="70" style="margin-right: 10px;"> 
   <h1>SnapForge</h1> 
 </div>
 
 <p align="center">
-  🎨 **SnapForge 是一款全面的图像处理工具，提供批量重命名、格式转换和压缩功能，为您的图像管理需求提供高效解决方案！** 
+  🎨 **SnapForge 是一款用 PyQt6 打造的跨平台图像处理工具，提供批量重命名、格式转换和压缩功能，为您的图像管理需求提供高效解决方案！** 
 </p>
 
 <p align="center">
@@ -20,52 +19,42 @@
 - 🖼️ **批量重命名**: 高效处理多个图像文件，支持自定义前缀和编号。
 - 🔄 **批量格式转换**: 轻松将图像转换为各种格式，如JPEG、PNG等，方便使用。
 - 🗜️ **批量压缩**: 在保持图像质量的同时减少文件大小，优化存储和加载速度。
+- 💻 **跨平台**:  支持 Windows, macOS, 和 Linux 系统.
 - 🌐 **中文用户界面**: 提供直观的中文图形用户界面，使操作更加简便。
 
 ## 🚀 快速开始
 
-### 克隆代码库
+### 1. 克隆代码库
 
 ```bash
 git clone https://github.com/riceshowerX/SnapForge.git
-```
-
-### 安装依赖
-
-```bash
+Use code with caution.
+Markdown
+2. 安装依赖
 cd SnapForge
 pip install -r requirements.txt
-```
-
-### 启动 SnapForge
-
-运行应用程序:
-
-```bash
-python main.py
-```
-
-## 🎨 特性实现状态
-
-| 特性                   | 实现状态 |
-|------------------------|----------|
-| 批量重命名              | ✅        |
-| 批量格式转换            | ✅        |
-| 批量压缩                | ✅        |
-| 直观的用户界面          | ✅        |
-| 详细的日志记录          | ✅        |
-| 多语言支持              | ❌        |
-| 高级图像处理功能        | ❌        |
-
-## 🤝 贡献
-
+Use code with caution.
+Bash
+3. 启动 SnapForge
+python gui.py
+Use code with caution.
+Bash
+🎨 截图
+(这里可以添加几张应用程序截图)
+🤝 贡献
 我们热烈欢迎您的贡献！
-
 如果您有任何想法、建议或发现任何问题，请随时提交 pull request 或开启 issue。本项目由个人在业余时间开发和维护，因此开发和修复进度可能较慢，且不定期进行更新。我们感谢您的理解和支持，并欢迎通过提交 issue 或 pull request 来帮助改进项目。
+⚖️ 许可证
+SnapForge 使用 Apache License 2.0 许可。详细信息请参阅 LICENSE 文件。
+**修改说明:**
 
-## ⚖️ 许可证
+*   **项目描述:** 补充说明使用 PyQt6 开发，以及跨平台特性。
+*   **快速开始:** 更新了启动命令。
+*   **特性实现状态:**  删除了与项目无关的内容。
+*   **免责声明:** 删除了与项目无关的内容。
+*   **截图:**  建议添加几张应用程序截图，可以更直观地展示项目。
 
-SnapForge 使用 Apache License 2.0 许可。详细信息请参阅 [LICENSE](https://github.com/riceshowerX/SnapForge/blob/main/LICENSE) 文件。
+希望这些调整对你的项目有所帮助！
 
 ## ⚠️ 免责声明
 
