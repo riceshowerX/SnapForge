@@ -1,11 +1,11 @@
 # gui.py 
-import os
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QVBoxLayout, QPushButton, QLineEdit, QLabel, QWidget, QMessageBox, QProgressBar, QCheckBox
 from PyQt6.QtCore import Qt
 from utils import image_processor
 import sys
-from PyQt6.QtGui import QIcon  # 导入 QIcon 类
-from PIL import Image  # 导入 Image 类
+from PyQt6.QtGui import QIcon 
+from PIL import Image
+import os
 
 class ImageProcessingApp(QMainWindow):
     def __init__(self):
@@ -15,15 +15,15 @@ class ImageProcessingApp(QMainWindow):
         self.setWindowTitle("SnapForge") 
 
         # 设置窗口图标
-        app_icon = QIcon("snapforge.ico")  # 创建 QIcon 对象
-        self.setWindowIcon(app_icon)  # 设置窗口图标
+        app_icon = QIcon("snapforge.ico")
+        self.setWindowIcon(app_icon) 
 
-        self.resize(400, 380)  # 稍微增加窗口高度
+        self.resize(400, 380) 
 
         self.source_directory = None
         self.target_directory = None
         self.single_file_mode = False
-        self.source_file = None  # 用于存储单个文件路径
+        self.source_file = None 
 
         self.init_ui()
 
@@ -38,14 +38,13 @@ class ImageProcessingApp(QMainWindow):
         # 选择文件夹/文件
         self.source_label = QLabel("选择原始图片文件夹/文件:")
         self.source_button = QPushButton("选择")
-        self.source_button.clicked.connect(self.select_source)
+        # 注意: 这里不再设置按钮的连接
+        layout.addWidget(self.source_label)
+        layout.addWidget(self.source_button)
 
         self.target_label = QLabel("选择保存图片文件夹:")
         self.target_button = QPushButton("选择文件夹")
         self.target_button.clicked.connect(self.select_target_directory)
-
-        layout.addWidget(self.source_label)
-        layout.addWidget(self.source_button)
         layout.addWidget(self.target_label)
         layout.addWidget(self.target_button)
 
@@ -95,37 +94,48 @@ class ImageProcessingApp(QMainWindow):
 
     def select_source(self):
         if self.single_file_mode:
-            self.source_file, _ = QFileDialog.getOpenFileName(self, "选择图片文件", filter="Image Files (*.png *.jpg *.jpeg *.bmp *.tiff)")
-            if self.source_file:
-                self.source_label.setText(f"已选择文件: {self.source_file}")
+            self.source_button.clicked.disconnect()
+            self.source_button.clicked.connect(self.select_single_file)
         else:
-            self.source_directory = QFileDialog.getExistingDirectory(self, "选择原始图片文件夹")
+            self.source_button.clicked.disconnect()
+            self.source_button.clicked.connect(self.select_source_directory)
 
-    def select_target_directory(self):
+        self.source_button.click() 
+
+    def select_single_file(self):
+        self.source_file, _ = QFileDialog.getOpenFileName(self, "选择图片文件", filter="Image Files (*.png *.jpg *.jpeg *.bmp *.tiff)")
+        if self.source_file:
+            self.source_label.setText(f"已选择文件: {self.source_file}")
+
+    def select_source_directory(self):
+        self.source_directory = QFileDialog.getExistingDirectory(self, "选择原始图片文件夹")
+        if self.source_directory:
+            self.source_label.setText(f"已选择文件夹: {self.source_directory}")  # 添加此行
+
+    def select_target_directory(self):  
         self.target_directory = QFileDialog.getExistingDirectory(self, "选择保存图片文件夹")
 
     def rename_files(self):
         if self.single_file_mode:
             if not self.source_file or not self.target_directory:
                 QMessageBox.warning(self, "警告", "请先选择文件和目标文件夹！")
-            return
+                return
 
-        prefix = self.prefix_entry.text()
-        try:
-            start_number = int(self.start_number_entry.text())
-        except ValueError:
-            QMessageBox.warning(self, "警告", "起始编号必须是一个整数！")
-            return
+            prefix = self.prefix_entry.text()
+            try:
+                start_number = int(self.start_number_entry.text())
+            except ValueError:
+                QMessageBox.warning(self, "警告", "起始编号必须是一个整数！")
+                return
 
-        try:
-            file_name, file_ext = os.path.splitext(os.path.basename(self.source_file))
-            new_file_name = f"{prefix}{start_number}{file_ext}"
-            new_file_path = os.path.join(self.target_directory, new_file_name)
-            os.rename(self.source_file, new_file_path)
-            QMessageBox.information(self, "结果", f"重命名完成！")
-        except Exception as e:
-            QMessageBox.warning(self, "错误", f"发生错误: {e}")
-
+            try:
+                file_name, file_ext = os.path.splitext(os.path.basename(self.source_file))
+                new_file_name = f"{prefix}{start_number}{file_ext}"
+                new_file_path = os.path.join(self.target_directory, new_file_name)
+                os.rename(self.source_file, new_file_path)
+                QMessageBox.information(self, "结果", f"重命名完成！")
+            except Exception as e:
+                QMessageBox.warning(self, "错误", f"发生错误: {e}")
         else:  # 批量处理模式
             if not self.source_directory or not self.target_directory:
                 QMessageBox.warning(self, "警告", "请先选择原始和保存图片文件夹！")
@@ -171,7 +181,6 @@ class ImageProcessingApp(QMainWindow):
                 QMessageBox.information(self, "结果", f"转换完成！")
             except Exception as e:
                 QMessageBox.warning(self, "错误", f"发生错误: {e}")
-
         else:  # 批量处理模式
             if not self.source_directory or not self.target_directory:
                 QMessageBox.warning(self, "警告", "请先选择原始和保存图片文件夹！")
@@ -215,6 +224,7 @@ class ImageProcessingApp(QMainWindow):
                 QMessageBox.information(self, "结果", f"压缩完成！")
             except Exception as e:
                 QMessageBox.warning(self, "错误", f"发生错误: {e}")
+
         else:  # 批量处理模式
             if not self.source_directory or not self.target_directory:
                 QMessageBox.warning(self, "警告", "请先选择原始和保存图片文件夹！")
@@ -240,6 +250,7 @@ class ImageProcessingApp(QMainWindow):
                 # 处理其他潜在的异常
                 QMessageBox.warning(self, "错误", f"发生错误: {e}")
 
+
     def update_progress_bar(self, current, total):
         """更新进度条。
 
@@ -250,7 +261,7 @@ class ImageProcessingApp(QMainWindow):
         self.progress_bar.setValue(int(current / total * 100))
 
     def toggle_file_mode(self, state):
-        self.single_file_mode = state == Qt.CheckState.Checked  # 修改此处
+        self.single_file_mode = state == Qt.CheckState.Checked
         if self.single_file_mode:
             self.source_label.setText("选择原始图片文件:")
         else:
