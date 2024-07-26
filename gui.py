@@ -3,12 +3,19 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QVBoxLayout,
 from PyQt6.QtCore import Qt
 from utils import image_processor
 import sys
+from PyQt6.QtGui import QIcon  # 导入 QIcon 类
 
 class ImageProcessingApp(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("图片处理工具")
+        # 设置窗口标题
+        self.setWindowTitle("SnapForge") 
+
+        # 设置窗口图标
+        app_icon = QIcon("snapforge.ico")  # 创建 QIcon 对象
+        self.setWindowIcon(app_icon)  # 设置窗口图标
+
         self.resize(400, 350)
 
         self.source_directory = None
