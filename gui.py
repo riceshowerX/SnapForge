@@ -108,23 +108,23 @@ class ImageProcessingApp(QMainWindow):
         if self.single_file_mode:
             if not self.source_file or not self.target_directory:
                 QMessageBox.warning(self, "警告", "请先选择文件和目标文件夹！")
-                return
+            return
 
-            prefix = self.prefix_entry.text()
-            try:
-                start_number = int(self.start_number_entry.text())
-            except ValueError:
-                QMessageBox.warning(self, "警告", "起始编号必须是一个整数！")
-                return
+        prefix = self.prefix_entry.text()
+        try:
+            start_number = int(self.start_number_entry.text())
+        except ValueError:
+            QMessageBox.warning(self, "警告", "起始编号必须是一个整数！")
+            return
 
-            try:
-                file_name, file_ext = os.path.splitext(os.path.basename(self.source_file))
-                new_file_name = f"{prefix}{start_number}{file_ext}"
-                new_file_path = os.path.join(self.target_directory, new_file_name)
-                os.rename(self.source_file, new_file_path)
-                QMessageBox.information(self, "结果", f"重命名完成！")
-            except Exception as e:
-                QMessageBox.warning(self, "错误", f"发生错误: {e}")
+        try:
+            file_name, file_ext = os.path.splitext(os.path.basename(self.source_file))
+            new_file_name = f"{prefix}{start_number}{file_ext}"
+            new_file_path = os.path.join(self.target_directory, new_file_name)
+            os.rename(self.source_file, new_file_path)
+            QMessageBox.information(self, "结果", f"重命名完成！")
+        except Exception as e:
+            QMessageBox.warning(self, "错误", f"发生错误: {e}")
 
         else:  # 批量处理模式
             if not self.source_directory or not self.target_directory:
@@ -250,7 +250,7 @@ class ImageProcessingApp(QMainWindow):
         self.progress_bar.setValue(int(current / total * 100))
 
     def toggle_file_mode(self, state):
-        self.single_file_mode = state == Qt.Checked
+        self.single_file_mode = state == Qt.CheckState.Checked  # 修改此处
         if self.single_file_mode:
             self.source_label.setText("选择原始图片文件:")
         else:
