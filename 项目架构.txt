@@ -1,0 +1,7 @@
+image_processing_tool/
+│
+├── main.py                  # 主程序
+├── batch_rename.py          # 批量重命名模块
+├── batch_convert.py         # 批量格式转换模块
+├── batch_compress.py        # 批量压缩模块
+└── requirements.txt         # 依赖包列表
