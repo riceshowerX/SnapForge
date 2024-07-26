@@ -1,26 +1,21 @@
-
 <div align="center" style="display: flex; align-items: center;">
-  <img src="https://example.com/your-logo.png" alt="Logo" width="70" height="70" style="margin-right: 10px;"> 
+  <img src="https://camo.githubusercontent.com/096ea7823f00bd88e3fbfc8d962b41bfebda269c12050c528760d07307ea5e4e/68747470733a2f2f7269636573686f776572582e6769746875622e696f2f706963782d696d616765732d686f7374696e672fe7a4bee4baa4e5a4b4e5838f2e337965616c35396437622e77656270" alt="Logo" width="70" height="70" style="margin-right: 10px;"> 
   <h1>SnapForge</h1> 
 </div>
-
 <p align="center">
   🎨 **SnapForge 是一款全面的图像处理工具，提供批量重命名、格式转换和压缩功能，为您的图像管理需求提供高效解决方案！** 
 </p>
-
 <p align="center">
-  <a href="https://github.com/yourusername/SnapForge/blob/main/LICENSE" target="_blank"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0"></a>
-  <a href="https://github.com/yourusername/SnapForge/releases/latest" target="_blank"><img src="https://img.shields.io/github/v/release/yourusername/SnapForge" alt="Latest Release"></a>
-  <a href="https://github.com/yourusername/SnapForge/issues" target="_blank"><img src="https://img.shields.io/github/issues/yourusername/SnapForge" alt="Open Issues"></a>
-  <a href="https://github.com/yourusername/SnapForge/pulls" target="_blank"><img src="https://img.shields.io/github/issues-pr/yourusername/SnapForge" alt="Pull Requests"></a>
+  <a href="https://github.com/riceshowerX/SnapForge/blob/main/LICENSE" target="_blank"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0"></a>
+  <a href="https://github.com/riceshowerX/SnapForge/releases/latest" target="_blank"><img src="https://img.shields.io/github/v/release/riceshowerX/SnapForge" alt="Latest Release"></a>
+  <a href="https://github.com/riceshowerX/SnapForge/issues" target="_blank"><img src="https://img.shields.io/github/issues/riceshowerX/SnapForge" alt="Open Issues"></a>
+  <a href="https://github.com/riceshowerX/SnapForge/pulls" target="_blank"><img src="https://img.shields.io/github/issues-pr/riceshowerX/SnapForge" alt="Pull Requests"></a>
 </p>
-
-## ✨ 主要特性
-
-- 🖼️ **批量重命名**: 高效处理多个图像文件，支持自定义前缀和编号。
-- 🔄 **批量格式转换**: 轻松将图像转换为各种格式，如JPEG、PNG等，方便使用。
-- 🗜️ **批量压缩**: 在保持图像质量的同时减少文件大小，优化存储和加载速度。
-- 🌐 **中文用户界面**: 提供直观的中文图形用户界面，使操作更加简便。
+✨ 主要特性
+🖼️ 批量重命名: 高效处理多个图像文件，支持自定义前缀和编号。
+🔄 批量格式转换: 轻松将图像转换为各种格式，如JPEG、PNG等，方便使用。
+🗜️ 批量压缩: 在保持图像质量的同时减少文件大小，优化存储和加载速度。
+🌐 中文用户界面: 提供直观的中文图形用户界面，使操作更加简便。
 
 ## 🚀 快速开始
 
