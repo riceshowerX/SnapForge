@@ -1,6 +1,7 @@
 # utils/error_handler.py
 from PyQt6.QtWidgets import QMessageBox
 
+
 def handle_error(error_message):
     """显示错误信息弹窗。
 
