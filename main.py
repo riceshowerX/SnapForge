@@ -77,8 +77,8 @@ class SnapForgeApp(App):
             self.root.ids.target_button.text = '已选择: {}'.format(self.target_directory)
 
     def rename_files(self, instance):
-        if not self.source_directory or not self.target_directory:
-            self.show_error_message("请先选择原始和保存图片文件夹！")
+        if not self.source_file or not self.target_directory:
+            self.show_error_message("请先选择原始图片文件和保存图片文件夹！")
             return
 
         prefix = self.root.ids.prefix_input.text
@@ -90,7 +90,7 @@ class SnapForgeApp(App):
 
         self.progress_value = 0
         renamed_count = self.image_processor.batch_rename_files(
-            self.source_directory,
+            self.source_file,
             self.target_directory,
             prefix,
             start_number,
@@ -99,8 +99,8 @@ class SnapForgeApp(App):
         self.show_info_message(f"重命名完成！共重命名了 {renamed_count} 个文件。")
 
     def convert_files(self, instance):
-        if not self.source_directory or not self.target_directory:
-            self.show_error_message("请先选择原始和保存图片文件夹！")
+        if not self.source_file or not self.target_directory:
+            self.show_error_message("请先选择原始图片文件和保存图片文件夹！")
             return
 
         target_format = self.root.ids.format_input.text
@@ -110,7 +110,7 @@ class SnapForgeApp(App):
 
         self.progress_value = 0
         converted_count = self.image_processor.batch_convert_images(
-            self.source_directory,
+            self.source_file,
             self.target_directory,
             target_format,
             self.update_progress
@@ -118,8 +118,8 @@ class SnapForgeApp(App):
         self.show_info_message(f"转换完成！共转换了 {converted_count} 个文件。")
 
     def compress_files(self, instance):
-        if not self.source_directory or not self.target_directory:
-            self.show_error_message("请先选择原始和保存图片文件夹！")
+        if not self.source_file or not self.target_directory:
+            self.show_error_message("请先选择原始图片文件和保存图片文件夹！")
             return
 
         try:
@@ -130,7 +130,7 @@ class SnapForgeApp(App):
 
         self.progress_value = 0
         compressed_count = self.image_processor.batch_compress_images(
-            self.source_directory,
+            self.source_file,
             self.target_directory,
             quality,
             self.update_progress
