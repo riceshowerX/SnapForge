@@ -4,8 +4,7 @@ SnapForge/
 │   ├── image_processor.py
 │   ├── error_handler.py
 │   └── config.py
-├── gui/
+├── kivy_ui/
 │   ├── __init__.py
 │   └── main_window.py
-└── utils/
-    └── __init__.py
+└── main.py
