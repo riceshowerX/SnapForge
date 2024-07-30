@@ -1,10 +1,7 @@
 # utils/image_processor.py
 import os
-
 from PIL import Image
-
 from . import error_handler
-
 
 def batch_rename_files(source_dir, target_dir, prefix, start_number, progress_callback=None):
     count = 0
@@ -27,7 +24,6 @@ def batch_rename_files(source_dir, target_dir, prefix, start_number, progress_ca
                 error_handler.handle_error(f"重命名文件 {file} 时出错: {e}")
     return count
 
-
 def batch_convert_images(source_dir, target_dir, target_format, progress_callback=None):
     count = 0
     for root, _, files in os.walk(source_dir):
@@ -47,7 +43,6 @@ def batch_convert_images(source_dir, target_dir, target_format, progress_callbac
             except Exception as e:
                 error_handler.handle_error(f"转换文件 {file} 时出错: {e}")
     return count
-
 
 def batch_compress_images(source_dir, target_dir, quality, progress_callback=None):
     count = 0
