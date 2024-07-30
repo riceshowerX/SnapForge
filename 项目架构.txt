@@ -1,7 +1,11 @@
 SnapForge/
-│
-├── gui.py                  # 用户界面模块
-└── utils/                 # 工具函数模块
-    ├── __init__.py
-    ├── error_handler.py    # 错误处理模块
-    └── image_processor.py   # 图片处理函数模块
+├── core/
+│   ├── __init__.py
+│   ├── image_processor.py
+│   ├── error_handler.py
+│   └── config.py
+├── gui/
+│   ├── __init__.py
+│   └── main_window.py
+└── utils/
+    └── __init__.py
