@@ -1,12 +1,9 @@
 # SnapForge/core/image_processor.py
+from PIL import Image
+from .error_handler import handle_error
+from .config import Config
 import os
 from shutil import move
-
-from PIL import Image
-
-from .config import Config
-from .error_handler import handle_error
-
 
 class ImageProcessor:
     def __init__(self, config: Config):

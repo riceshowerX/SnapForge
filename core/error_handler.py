@@ -8,7 +8,6 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-
 def handle_error(error_message):
     """
     处理错误，记录错误信息到日志文件。
