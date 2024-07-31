@@ -1,4 +1,5 @@
-kivy
-pillow
-jnius
-cython
+Pillow
+opencv-python
+PyQt5
+pyyaml
+tqdm
