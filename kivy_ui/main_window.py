@@ -17,14 +17,18 @@ class MainWindow(Widget):
     image_processor = ImageProcessor(config)
 
     def select_source(self, instance):
-        # 其他平台文件选择
-        self.source_file = os.path.abspath(os.path.expanduser(os.path.join('~', "Documents")))
-        self.ids.source_button.text = '已选择: {}'.format(self.source_file)
+        self._select_path(instance, 'file')
 
     def select_target_directory(self, instance):
-        # 其他平台文件夹选择
-        self.target_directory = os.path.abspath(os.path.expanduser(os.path.join('~', "Documents")))
-        self.ids.target_button.text = '已选择: {}'.format(self.target_directory)
+        self._select_path(instance, 'directory')
+
+    def _select_path(self, instance, path_type):
+        if path_type == 'file':
+            self.source_file = os.path.abspath(os.path.expanduser(os.path.join('~', "Documents")))
+            self.ids.source_button.text = f'已选择: {self.source_file}'
+        elif path_type == 'directory':
+            self.target_directory = os.path.abspath(os.path.expanduser(os.path.join('~', "Documents")))
+            self.ids.target_button.text = f'已选择: {self.target_directory}'
 
     def rename_files(self, instance):
         if not self.source_file or not self.target_directory:
@@ -39,14 +43,17 @@ class MainWindow(Widget):
             return
 
         self.progress_value = 0
-        renamed_count = self.image_processor.batch_rename_files(
-            self.source_file,
-            self.target_directory,
-            prefix,
-            start_number,
-            self.update_progress
-        )
-        self.show_info_message(f"重命名完成！共重命名了 {renamed_count} 个文件。")
+        try:
+            renamed_count = self.image_processor.batch_rename_files(
+                self.source_file,
+                self.target_directory,
+                prefix,
+                start_number,
+                self.update_progress
+            )
+            self.show_info_message(f"重命名完成！共重命名了 {renamed_count} 个文件。")
+        except Exception as e:
+            self.show_error_message(f"重命名失败: {str(e)}")
 
     def convert_files(self, instance):
         if not self.source_file or not self.target_directory:
@@ -59,13 +66,16 @@ class MainWindow(Widget):
             return
 
         self.progress_value = 0
-        converted_count = self.image_processor.batch_convert_images(
-            self.source_file,
-            self.target_directory,
-            target_format,
-            self.update_progress
-        )
-        self.show_info_message(f"转换完成！共转换了 {converted_count} 个文件。")
+        try:
+            converted_count = self.image_processor.batch_convert_images(
+                self.source_file,
+                self.target_directory,
+                target_format,
+                self.update_progress
+            )
+            self.show_info_message(f"转换完成！共转换了 {converted_count} 个文件。")
+        except Exception as e:
+            self.show_error_message(f"转换失败: {str(e)}")
 
     def compress_files(self, instance):
         if not self.source_file or not self.target_directory:
@@ -79,16 +89,20 @@ class MainWindow(Widget):
             return
 
         self.progress_value = 0
-        compressed_count = self.image_processor.batch_compress_images(
-            self.source_file,
-            self.target_directory,
-            quality,
-            self.update_progress
-        )
-        self.show_info_message(f"压缩完成！共压缩了 {compressed_count} 个文件。")
+        try:
+            compressed_count = self.image_processor.batch_compress_images(
+                self.source_file,
+                self.target_directory,
+                quality,
+                self.update_progress
+            )
+            self.show_info_message(f"压缩完成！共压缩了 {compressed_count} 个文件。")
+        except Exception as e:
+            self.show_error_message(f"压缩失败: {str(e)}")
 
     def update_progress(self, current, total):
         self.progress_value = (current / total) * 100
+        self.ids.progress_bar.value = self.progress_value  # 假设有一个进度条
 
     def show_info_message(self, message):
         self.ids.status_label.text = message

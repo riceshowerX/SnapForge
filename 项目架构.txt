@@ -6,5 +6,6 @@ SnapForge/
 │   └── config.py
 ├── kivy_ui/
 │   ├── __init__.py
+    |--main_window.kv
 │   └── main_window.py
 └── main.py
