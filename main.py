@@ -1,38 +1,26 @@
 # main.py
 import os
 from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
 from kivy.lang import Builder
-from kivy.properties import StringProperty, NumericProperty
 from kivy.clock import Clock
 from kivy.uix.popup import Popup
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.label import Label
 from kivy.uix.button import Button
-from core import ImageProcessor, Config
+from kivy.uix.boxlayout import BoxLayout
 
-# 获取当前脚本的目录
-current_dir = os.path.dirname(os.path.abspath(__file__))
+from snapforge.core.image_processor import ImageProcessor
+from snapforge.core.config import Config
+from snapforge.ui.main_window import MainWindow
 
-# 使用正确的路径加载 .kv 文件
-kv_path = os.path.join(current_dir, "kivy_ui", "main_window.kv")
+# 加载 KV 文件
+kv_path = os.path.join(os.path.dirname(__file__), 'ui', 'kv', 'main_window.kv')
 Builder.load_file(kv_path)
-
-
-class MainWindow(BoxLayout):
-    source_directory = StringProperty(None)
-    target_directory = StringProperty(None)
-    source_file = StringProperty(None)
-    progress_value = NumericProperty(0)
-
-    def __init__(self, **kwargs):
-        super(MainWindow, self).__init__(**kwargs)
-        self.config = Config()
-        self.image_processor = ImageProcessor(self.config)
-
 
 class SnapForgeApp(App):
     def build(self):
+        self.config = Config()
+        self.image_processor = ImageProcessor(self.config)
         self.root = MainWindow()
         Clock.schedule_once(self.bind_buttons)
         return self.root
@@ -82,7 +70,7 @@ class SnapForgeApp(App):
 
         self.root.progress_value = 0
         try:
-            renamed_count = self.root.image_processor.batch_rename_files(
+            renamed_count = self.image_processor.batch_rename_files(
                 self.root.source_file,
                 self.root.target_directory,
                 prefix,
@@ -105,7 +93,7 @@ class SnapForgeApp(App):
 
         self.root.progress_value = 0
         try:
-            converted_count = self.root.image_processor.batch_convert_images(
+            converted_count = self.image_processor.batch_convert_images(
                 self.root.source_file,
                 self.root.target_directory,
                 target_format,
@@ -130,7 +118,7 @@ class SnapForgeApp(App):
 
         self.root.progress_value = 0
         try:
-            compressed_count = self.root.image_processor.batch_compress_images(
+            compressed_count = self.image_processor.batch_compress_images(
                 self.root.source_file,
                 self.root.target_directory,
                 quality,
@@ -155,7 +143,6 @@ class SnapForgeApp(App):
         popup = Popup(title="错误", content=content, size_hint=(0.7, 0.3))
         button.bind(on_press=popup.dismiss)
         popup.open()
-
 
 if __name__ == "__main__":
     SnapForgeApp().run()
