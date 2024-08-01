@@ -1,6 +1,8 @@
 # snapforge/ui/compress_dialog.py
 from PyQt5 import QtWidgets
+
 from .base_dialog import BaseDialog
+
 
 class CompressDialog(BaseDialog):
     """压缩对话框。"""
@@ -25,9 +27,11 @@ class CompressDialog(BaseDialog):
         layout.addWidget(self.quality_label)
         layout.addWidget(self.quality_spin)
 
+
 # 使用示例
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     dialog = CompressDialog()
     if dialog.exec_() == QtWidgets.QDialog.Accepted:

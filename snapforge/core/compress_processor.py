@@ -1,11 +1,17 @@
 # snapforge/core/compress_processor.py
+import logging
+
 from .base_processor import BaseProcessor
 from ..utils import image_utils
+
+# 设置日志配置
+logging.basicConfig(level=logging.INFO)
+
 
 class CompressProcessor(BaseProcessor):
     """压缩处理器。"""
 
-    def __init__(self, quality):
+    def __init__(self, quality: int):
         """初始化压缩处理器。
 
         Args:
@@ -13,7 +19,7 @@ class CompressProcessor(BaseProcessor):
         """
         self.quality = quality
 
-    def process(self, image_path, *args, **kwargs):
+    def process(self, image_path: str, *args, **kwargs) -> bool:
         """压缩图像。
 
         Args:
@@ -26,8 +32,14 @@ class CompressProcessor(BaseProcessor):
         """
         try:
             image_utils.compress_image(image_path, self.quality)
-            print(f"压缩图像：{image_path}")
+            logging.info(f"压缩图像：{image_path}")
             return True
+        except FileNotFoundError:
+            logging.error(f"图像文件未找到：{image_path}")
+            return False
+        except ValueError as ve:
+            logging.error(f"无效的压缩质量：{ve}")
+            return False
         except Exception as e:
-            print(f"压缩图像失败：{e}")
+            logging.error(f"压缩图像失败：{e}")
             return False

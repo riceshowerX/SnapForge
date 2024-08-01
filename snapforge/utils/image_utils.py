@@ -1,7 +1,10 @@
 # snapforge/utils/image_utils.py
-from PIL import Image
-import cv2
 import os
+
+import cv2
+from PIL import Image
+
+
 def resize_image(image_path, width, height):
     """调整图像尺寸。
 
@@ -16,6 +19,7 @@ def resize_image(image_path, width, height):
         image.save(image_path)
     except Exception as e:
         print(f"调整图像尺寸失败：{e}")
+
 
 def compress_image(image_path, quality):
     """压缩图像。
@@ -34,6 +38,7 @@ def compress_image(image_path, quality):
     except Exception as e:
         print(f"压缩图像失败：{e}")
 
+
 def convert_image(image_path, target_format):
     """转换图像格式。
 
@@ -46,6 +51,7 @@ def convert_image(image_path, target_format):
         image.save(image_path.replace(get_file_extension(image_path), f".{target_format}"), target_format)
     except Exception as e:
         print(f"转换图像格式失败：{e}")
+
 
 def get_file_extension(file_path):
     """获取文件扩展名。

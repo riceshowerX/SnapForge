@@ -1,6 +1,8 @@
 # snapforge/ui/rename_dialog.pyfrom .base_dialog import BaseDialog
-from .base_dialog import BaseDialog
 from PyQt5 import QtWidgets
+
+from .base_dialog import BaseDialog
+
 
 class RenameDialog(BaseDialog):
     """重命名对话框。"""

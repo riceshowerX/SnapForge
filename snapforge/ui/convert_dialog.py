@@ -1,6 +1,8 @@
 # snapforge/ui/convert_dialog.py
 from PyQt5 import QtWidgets
+
 from .base_dialog import BaseDialog
+
 
 class ConvertDialog(BaseDialog):
     """转换对话框。"""
@@ -24,9 +26,11 @@ class ConvertDialog(BaseDialog):
         layout.addWidget(self.format_label)
         layout.addWidget(self.format_combo)
 
+
 # 使用示例
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     dialog = ConvertDialog()
     if dialog.exec_() == QtWidgets.QDialog.Accepted:

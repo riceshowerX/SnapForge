@@ -1,13 +1,15 @@
 # snapforge/ui/main_window.py
-from PyQt5 import QtWidgets, QtCore
-from .base_dialog import BaseDialog
-from .rename_dialog import RenameDialog
-from .convert_dialog import ConvertDialog
+import os
+
+from PyQt5 import QtWidgets
+from tqdm import tqdm
+
 from .compress_dialog import CompressDialog
+from .convert_dialog import ConvertDialog
+from .rename_dialog import RenameDialog
 from ..core import rename_processor, convert_processor, compress_processor
 from ..utils import file_utils
-from tqdm import tqdm
-import os
+
 
 class MainWindow(QtWidgets.QWidget):
     def __init__(self):
@@ -167,8 +169,10 @@ class MainWindow(QtWidgets.QWidget):
         else:
             QtWidgets.QMessageBox.warning(self, "错误", "文件夹中没有找到图像文件！")
 
+
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
     window.show()

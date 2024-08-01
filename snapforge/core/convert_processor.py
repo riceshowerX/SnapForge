@@ -1,11 +1,17 @@
 # snapforge/core/convert_processor.py
+import logging
+
 from .base_processor import BaseProcessor
 from ..utils import image_utils
+
+# 设置日志配置
+logging.basicConfig(level=logging.INFO)
+
 
 class ConvertProcessor(BaseProcessor):
     """转换处理器。"""
 
-    def __init__(self, target_format):
+    def __init__(self, target_format: str):
         """初始化转换处理器。
 
         Args:
@@ -13,7 +19,7 @@ class ConvertProcessor(BaseProcessor):
         """
         self.target_format = target_format
 
-    def process(self, image_path, *args, **kwargs):
+    def process(self, image_path: str, *args, **kwargs) -> bool:
         """转换图像格式。
 
         Args:
@@ -26,8 +32,8 @@ class ConvertProcessor(BaseProcessor):
         """
         try:
             image_utils.convert_image(image_path, self.target_format)
-            print(f"转换图像格式：{image_path} -> {self.target_format}")
+            logging.info(f"转换图像格式：{image_path} -> {self.target_format}")
             return True
         except Exception as e:
-            print(f"转换图像格式失败：{e}")
+            logging.error(f"转换图像格式失败：{e}")
             return False

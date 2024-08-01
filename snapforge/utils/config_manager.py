@@ -1,6 +1,7 @@
 # snapforge/utils/config_manager.py
 import yaml
 
+
 class ConfigManager:
     """配置管理器。"""
 
@@ -20,7 +21,7 @@ class ConfigManager:
             dict: 配置字典。
         """
         try:
-            with open(self.config_path, "r", encoding="utf-8") as f: # 使用 UTF-8 编码
+            with open(self.config_path, "r", encoding="utf-8") as f:  # 使用 UTF-8 编码
                 config = yaml.safe_load(f)
             return config
         except FileNotFoundError:
@@ -33,7 +34,7 @@ class ConfigManager:
     def save_config(self):
         """保存配置。"""
         try:
-            with open(self.config_path, "w", encoding="utf-8") as f: # 使用 UTF-8 编码
+            with open(self.config_path, "w", encoding="utf-8") as f:  # 使用 UTF-8 编码
                 yaml.dump(self.config, f)
         except Exception as e:
             print(f"保存配置文件失败：{e}")
@@ -59,5 +60,6 @@ class ConfigManager:
         """
         self.config[key] = value
         self.save_config()
+
 
 config_manager = ConfigManager()

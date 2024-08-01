@@ -1,11 +1,12 @@
 # snapforge/core/base_processor.py
 from abc import ABC, abstractmethod
 
+
 class BaseProcessor(ABC):
     """图像处理器的基类。"""
 
     @abstractmethod
-    def process(self, image_path, *args, **kwargs):
+    def process(self, image_path: str, *args, **kwargs) -> bool:
         """处理图像。
 
         Args:
