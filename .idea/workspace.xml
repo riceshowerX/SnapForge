@@ -5,34 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="05d9796b-7637-480d-b868-9b775a36cb42" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/qodana.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/core/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/core/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/core/base_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/core/base_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/core/compress_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/core/compress_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/core/convert_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/core/convert_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/core/rename_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/core/rename_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/examples/custom_plugin_example.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/examples/custom_plugin_example.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/plugins/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/plugins/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/plugins/base_plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/plugins/base_plugin.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/plugins/custom_plugins/my_plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/plugins/custom_plugins/my_plugin.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/plugins/plugin_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/plugins/plugin_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/tests/test_compress.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/tests/test_compress.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/tests/test_convert.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/tests/test_convert.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/tests/test_plugins.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/tests/test_plugins.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/tests/test_rename.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/tests/test_rename.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/ui/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/ui/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/snapforge/ui/base_dialog.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/ui/base_dialog.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/ui/compress_dialog.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/ui/compress_dialog.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/ui/convert_dialog.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/ui/convert_dialog.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/ui/main_window.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/ui/main_window.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/ui/rename_dialog.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/ui/rename_dialog.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/utils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/utils/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/utils/config_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/utils/config_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/utils/file_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/utils/file_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/snapforge/utils/image_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/snapforge/utils/image_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/项目架构.txt" beforeDir="false" afterPath="$PROJECT_DIR$/项目架构.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -114,7 +88,7 @@
       <workItem from="1722413176175" duration="2116000" />
       <workItem from="1722415330424" duration="194000" />
       <workItem from="1722415959712" duration="444000" />
-      <workItem from="1722498306950" duration="1615000" />
+      <workItem from="1722498306950" duration="1847000" />
     </task>
     <servers />
   </component>
