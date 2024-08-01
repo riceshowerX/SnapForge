@@ -1,12 +1,11 @@
 # snapforge/ui/main_window.py
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore
 from .base_dialog import BaseDialog
 from .rename_dialog import RenameDialog
 from .convert_dialog import ConvertDialog
 from .compress_dialog import CompressDialog
 from ..core import rename_processor, convert_processor, compress_processor
-from ..utils import file_utils, config_manager, image_utils
-from ..plugins import plugin_manager
+from ..utils import file_utils
 from tqdm import tqdm
 import os
 
@@ -15,11 +14,29 @@ class MainWindow(QtWidgets.QWidget):
         super().__init__()
         self.setWindowTitle("SnapForge")
         self.resize(800, 600)
+        self.init_ui()
+        self.connect_signals()
 
-        # 创建布局
+    def init_ui(self):
+        """初始化用户界面。"""
+        # 创建主布局
         layout = QtWidgets.QVBoxLayout()
 
         # 文件选择区域
+        self.init_file_selection(layout)
+
+        # 操作按钮区域
+        self.init_operation_buttons(layout)
+
+        # 进度条
+        self.progress_bar = QtWidgets.QProgressBar()
+        layout.addWidget(self.progress_bar)
+
+        # 设置主布局
+        self.setLayout(layout)
+
+    def init_file_selection(self, layout):
+        """初始化文件选择区域。"""
         file_select_layout = QtWidgets.QHBoxLayout()
         self.file_path_label = QtWidgets.QLabel("文件路径：")
         self.file_path_edit = QtWidgets.QLineEdit()
@@ -29,7 +46,8 @@ class MainWindow(QtWidgets.QWidget):
         file_select_layout.addWidget(self.file_path_button)
         layout.addLayout(file_select_layout)
 
-        # 操作按钮区域
+    def init_operation_buttons(self, layout):
+        """初始化操作按钮区域。"""
         button_layout = QtWidgets.QHBoxLayout()
         self.rename_button = QtWidgets.QPushButton("重命名")
         self.convert_button = QtWidgets.QPushButton("转换格式")
@@ -39,21 +57,15 @@ class MainWindow(QtWidgets.QWidget):
         button_layout.addWidget(self.compress_button)
         layout.addLayout(button_layout)
 
-        # 进度条
-        self.progress_bar = QtWidgets.QProgressBar()
-        layout.addWidget(self.progress_bar)
-
-        # 设置布局
-        self.setLayout(layout)
-
-        # 连接信号与槽
+    def connect_signals(self):
+        """连接信号与槽。"""
         self.file_path_button.clicked.connect(self.select_file)
         self.rename_button.clicked.connect(self.rename_images)
         self.convert_button.clicked.connect(self.convert_images)
         self.compress_button.clicked.connect(self.compress_images)
 
     def select_file(self):
-        """选择文件."""
+        """选择文件。"""
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, "选择文件", "", "所有文件 (*);;图片文件 (*.jpg *.jpeg *.png *.bmp)"
         )
@@ -61,7 +73,7 @@ class MainWindow(QtWidgets.QWidget):
             self.file_path_edit.setText(file_path)
 
     def rename_images(self):
-        """重命名图像."""
+        """重命名图像。"""
         file_path = self.file_path_edit.text()
         if not file_path:
             QtWidgets.QMessageBox.warning(self, "错误", "请先选择文件！")
@@ -77,7 +89,7 @@ class MainWindow(QtWidgets.QWidget):
             )
 
     def convert_images(self):
-        """转换图像格式."""
+        """转换图像格式。"""
         file_path = self.file_path_edit.text()
         if not file_path:
             QtWidgets.QMessageBox.warning(self, "错误", "请先选择文件！")
@@ -92,7 +104,7 @@ class MainWindow(QtWidgets.QWidget):
             )
 
     def compress_images(self):
-        """压缩图像."""
+        """压缩图像。"""
         file_path = self.file_path_edit.text()
         if not file_path:
             QtWidgets.QMessageBox.warning(self, "错误", "请先选择文件！")
