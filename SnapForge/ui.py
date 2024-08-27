@@ -1,4 +1,3 @@
-# ui.py
 import os
 import sys
 
@@ -27,11 +26,20 @@ class WorkerThread(QThread):
 
     def run(self):
         try:
-            processed_count = batch_process(self.directory, self.prefix, self.start_number, self.extension,
-                                           self.convert_format, self.compress_quality, self.progress_updated)
+            processed_count = batch_process(
+                self.directory,
+                self.prefix,
+                self.start_number,
+                self.extension,
+                self.convert_format,
+                self.compress_quality,
+                self.progress_updated
+            )
             self.finished.emit(processed_count)
         except Exception as e:
             self.error_occurred.emit(str(e))
+        finally:
+            self.finished.emit(0)  # 确保在异常情况下也能发送完成信号
 
 
 class BatchRenameApp(QMainWindow):
@@ -143,14 +151,32 @@ class BatchRenameApp(QMainWindow):
 
     def start_processing(self):
         directory = self.directory_input.text()
-        prefix = self.prefix_input.text() if self.rename_checkbox.isChecked() else None
-        start_number = int(self.start_number_input.text()) if self.rename_checkbox.isChecked() else 1
-        extension = self.extension_input.text()
-        convert_format = self.convert_format_input.text() if self.convert_format_checkbox.isChecked() else None
-        compress_quality = int(self.compress_quality_input.text()) if self.compress_checkbox.isChecked() else None
-
         if not os.path.isdir(directory):
             QMessageBox.critical(self, "错误", "目录路径无效。")
+            return
+
+        prefix = self.prefix_input.text() if self.rename_checkbox.isChecked() else None
+
+        try:
+            start_number = int(self.start_number_input.text()) if self.rename_checkbox.isChecked() else 1
+        except ValueError:
+            QMessageBox.critical(self, "错误", "起始编号必须是一个正整数。")
+            return
+
+        extension = self.extension_input.text()
+        if not extension.startswith("."):
+            extension = f".{extension}"
+
+        convert_format = self.convert_format_input.text().strip().lower() if self.convert_format_checkbox.isChecked() else None
+        if convert_format and not convert_format.startswith("."):
+            convert_format = f".{convert_format}"
+
+        try:
+            compress_quality = int(self.compress_quality_input.text()) if self.compress_checkbox.isChecked() else None
+            if compress_quality is not None and (compress_quality < 0 or compress_quality > 100):
+                raise ValueError
+        except ValueError:
+            QMessageBox.critical(self, "错误", "压缩质量必须是0到100之间的整数。")
             return
 
         self.process_button.setEnabled(False)  # 禁用按钮
@@ -167,7 +193,10 @@ class BatchRenameApp(QMainWindow):
         self.progress_bar.setValue(progress)
 
     def processing_finished(self, processed_count):
-        self.result_label.setText(f"已成功处理 {processed_count} 个文件！")
+        if processed_count > 0:
+            self.result_label.setText(f"已成功处理 {processed_count} 个文件！")
+        else:
+            self.result_label.setText("处理失败或没有文件被处理。")
         self.process_button.setEnabled(True)  # 启用按钮
 
     def processing_error(self, error_message):
