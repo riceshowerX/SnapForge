@@ -1,0 +1,7 @@
+SnapForge/
+│
+├── main.py              # 启动脚本
+├── ui.py                # PyQt6 UI 定义
+├── logic.py             # 业务逻辑
+└── resources/
+    └── your_icon.ico    # 图标或其他资源
