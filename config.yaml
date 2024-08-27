@@ -1,3 +1,0 @@
-language: zh_CN  # 语言设置，可以是 "en" (英文) 或 "zh_CN" (中文)
-output_path: output # 输出文件保存路径
-compress_quality: 80 # 压缩质量 (0-100)，值越低压缩率越高
