@@ -7,7 +7,7 @@ from ui import BatchRenameApp  # 确保这里引用正确
 
 def main():
     app = QApplication(sys.argv)
-    window = BatchRenameApp()  # 实例化 BatchRenameApp
+    window = BatchRenameApp()
     window.show()
     sys.exit(app.exec())
 
