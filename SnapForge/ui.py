@@ -1,24 +1,16 @@
+import sys
 import os
-from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QFileDialog,
-                             QMessageBox, QCheckBox)
-from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QFileDialog, QMessageBox, QCheckBox)
+from PyQt6.QtGui import QIcon  # 导入 QIcon
+from logic import batch_rename
 
-
-class MainWindow(QMainWindow):
-    def __init__(self, processor):
+class BatchRenameApp(QMainWindow):
+    def __init__(self):
         super().__init__()
-        self.processor = processor
 
         self.setWindowTitle("图片批量重命名工具")
         self.setGeometry(300, 300, 400, 300)
-
-        # 设置窗口图标
-        icon_path = os.path.join(os.path.dirname(__file__), 'resources', 'SnapForge.ico')
-        if os.path.exists(icon_path):
-            self.setWindowIcon(QIcon(icon_path))
-        else:
-            print(f"图标文件未找到: {icon_path}")
+        self.setWindowIcon(QIcon("resources/icon.ico"))  # 设置窗口图标
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -102,6 +94,15 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "错误", "文件名前缀不能为空。")
             return
 
-        # 调用处理函数
-        renamed_count = self.processor.batch_rename(directory, prefix, start_number, extension, convert_format)
-        self.result_label.setText(f"已成功重命名并转换 {renamed_count} 个文件！")
+        try:
+            renamed_count = batch_rename(directory, prefix, start_number, extension, convert_format)
+            self.result_label.setText(f"已成功重命名并转换 {renamed_count} 个文件！")
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"处理过程中发生错误：{str(e)}")
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = BatchRenameApp()
+    window.show()
+    sys.exit(app.exec())
