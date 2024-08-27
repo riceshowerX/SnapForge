@@ -1,9 +1,9 @@
+import os
+
+from PIL import Image
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton,
                              QFileDialog, QMessageBox, QCheckBox)
-from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import Qt
-from PIL import Image
-import os
 
 
 def batch_rename(directory, prefix, start_number=1, extension=".jpg", convert_format=None, compress_quality=None):
