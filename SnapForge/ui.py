@@ -2,10 +2,10 @@
 import os
 import sys
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton,
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QLineEdit, QPushButton,
                              QFileDialog, QMessageBox, QCheckBox, QProgressBar, QGridLayout)
 from PyQt6.QtCore import QThread, pyqtSignal
-from logic import batch_process  # 从 logic.py 导入处理函数
+from logic import ImageProcessor  # 从 logic.py 导入 ImageProcessor 类
 
 class WorkerThread(QThread):
     progress_updated = pyqtSignal(int)
@@ -20,23 +20,27 @@ class WorkerThread(QThread):
         self.extension = extension
         self.convert_format = convert_format
         self.compress_quality = compress_quality
+        self.processor = ImageProcessor()  # 实例化 ImageProcessor
 
     def run(self):
         try:
-            processed_count = batch_process(
+            processed_count = self.processor.batch_process(
                 self.directory,
                 self.prefix,
                 self.start_number,
                 self.extension,
                 self.convert_format,
                 self.compress_quality,
-                self.progress_updated
+                self.update_progress
             )
             self.finished.emit(processed_count)
         except Exception as e:
             self.error_occurred.emit(str(e))
         finally:
             self.finished.emit(0)
+
+    def update_progress(self, progress):
+        self.progress_updated.emit(progress)
 
 class BatchRenameApp(QMainWindow):
     def __init__(self):
