@@ -1,12 +1,9 @@
 import os
 import sys
-
-from PIL import Image
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton,
                              QFileDialog, QMessageBox, QCheckBox, QProgressBar, QGridLayout)
 from PyQt6.QtCore import QThread, pyqtSignal
-
 from logic import batch_process  # 从 logic.py 导入处理函数
 
 
@@ -39,7 +36,8 @@ class WorkerThread(QThread):
         except Exception as e:
             self.error_occurred.emit(str(e))
         finally:
-            self.finished.emit(0)  # 确保在异常情况下也能发送完成信号
+            # 确保在异常情况下也能发送完成信号
+            self.finished.emit(0)
 
 
 class BatchRenameApp(QMainWindow):
@@ -47,20 +45,20 @@ class BatchRenameApp(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("图片批量处理工具")
-        self.setGeometry(300, 300, 500, 450)  # 调整窗口大小以容纳进度条
+        self.setGeometry(300, 300, 500, 450)
         self.setWindowIcon(QIcon("resources/icon.png"))  # 请确保图标文件存在
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
-        layout = QGridLayout(self.central_widget)  # 使用 QGridLayout 进行布局
+        layout = QGridLayout(self.central_widget)
 
         # 目录选择
         self.directory_label = QLabel("选择目录:")
         layout.addWidget(self.directory_label, 0, 0)
 
         self.directory_input = QLineEdit()
-        layout.addWidget(self.directory_input, 0, 1, 1, 3)  # 横跨3列
+        layout.addWidget(self.directory_input, 0, 1, 1, 3)
 
         self.directory_button = QPushButton("浏览")
         self.directory_button.clicked.connect(self.browse_directory)
@@ -68,14 +66,14 @@ class BatchRenameApp(QMainWindow):
 
         # 启用重命名
         self.rename_checkbox = QCheckBox("启用重命名")
-        layout.addWidget(self.rename_checkbox, 1, 0, 1, 2)  # 横跨2列
+        layout.addWidget(self.rename_checkbox, 1, 0, 1, 2)
 
         # 文件名前缀
         self.prefix_label = QLabel("文件名前缀:")
         layout.addWidget(self.prefix_label, 2, 0)
 
         self.prefix_input = QLineEdit()
-        layout.addWidget(self.prefix_input, 2, 1, 1, 4)  # 横跨4列
+        layout.addWidget(self.prefix_input, 2, 1, 1, 4)
 
         # 起始编号
         self.start_number_label = QLabel("起始编号:")
@@ -123,7 +121,7 @@ class BatchRenameApp(QMainWindow):
         # 开始处理按钮
         self.process_button = QPushButton("开始处理")
         self.process_button.clicked.connect(self.start_processing)
-        layout.addWidget(self.process_button, 9, 0, 1, 5)  # 横跨5列
+        layout.addWidget(self.process_button, 9, 0, 1, 5)
 
         # 进度条
         self.progress_bar = QProgressBar()
@@ -163,7 +161,7 @@ class BatchRenameApp(QMainWindow):
             QMessageBox.critical(self, "错误", "起始编号必须是一个正整数。")
             return
 
-        extension = self.extension_input.text()
+        extension = self.extension_input.text().strip()
         if not extension.startswith("."):
             extension = f".{extension}"
 
@@ -179,11 +177,10 @@ class BatchRenameApp(QMainWindow):
             QMessageBox.critical(self, "错误", "压缩质量必须是0到100之间的整数。")
             return
 
-        self.process_button.setEnabled(False)  # 禁用按钮
+        self.process_button.setEnabled(False)
         self.result_label.setText("处理中...")
 
-        self.worker_thread = WorkerThread(directory, prefix, start_number, extension, convert_format,
-                                          compress_quality)
+        self.worker_thread = WorkerThread(directory, prefix, start_number, extension, convert_format, compress_quality)
         self.worker_thread.progress_updated.connect(self.update_progress)
         self.worker_thread.finished.connect(self.processing_finished)
         self.worker_thread.error_occurred.connect(self.processing_error)
@@ -197,7 +194,7 @@ class BatchRenameApp(QMainWindow):
             self.result_label.setText(f"已成功处理 {processed_count} 个文件！")
         else:
             self.result_label.setText("处理失败或没有文件被处理。")
-        self.process_button.setEnabled(True)  # 启用按钮
+        self.process_button.setEnabled(True)
 
     def processing_error(self, error_message):
         QMessageBox.critical(self, "错误", f"处理过程中发生错误:\n{error_message}")
