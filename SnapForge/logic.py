@@ -1,3 +1,4 @@
+# logic.py
 import os
 import re
 import uuid
@@ -12,15 +13,14 @@ def batch_process(directory, prefix=None, start_number=1, extension=".jpg", conv
                   progress_callback=None):
     extension = extension.lower()
     count = start_number
-    total_files = sum(1 for filename in os.listdir(directory) if filename.lower().endswith(extension))
+    total_files = 0  # 初始化 total_files 为 0
     processed_files = 0
 
-    if total_files == 0:
-        logging.warning("目录中没有可处理的文件。")
-        return 0  # 如果没有文件可处理，直接返回
-
+    # 每次循环开始前获取文件列表
     for filename in os.listdir(directory):
         if filename.lower().endswith(extension):
+            total_files += 1  # 更新 total_files
+
             src = os.path.join(directory, filename)
 
             if prefix:
@@ -28,37 +28,31 @@ def batch_process(directory, prefix=None, start_number=1, extension=".jpg", conv
                 unique_filename = valid_filename + "_" + str(uuid.uuid4())
                 new_extension = f".{convert_format.lower()}" if convert_format else extension
                 dst = os.path.join(directory, f"{unique_filename}{new_extension}")
-            else:
-                dst = src  # 如果不重命名，则目标路径和源路径相同
 
-            # 处理图片格式转换和质量压缩
+                while os.path.exists(dst):
+                    count += 1
+                    dst = os.path.join(directory, f"{unique_filename}{new_extension}")
+            else:
+                dst = src
+
             try:
-                with Image.open(src) as img:
-                    if convert_format:
-                        # 如果转换为 JPG 格式且图片包含透明通道，则转换为 RGB
+                if convert_format:
+                    with Image.open(src) as img:
                         if new_extension == ".jpg" and img.mode in ("RGBA", "LA"):
                             img = img.convert("RGB")
                         img.save(dst, format=convert_format.upper(), quality=quality or 95)  # 提供默认质量值
-                    elif quality is not None:
-                        img.save(dst, quality=quality)
-                    else:
-                        if prefix:
-                            os.rename(src, dst)
+                    os.remove(src)
+                else:
+                    os.rename(src, dst)
             except Exception as e:
                 logging.error(f"处理文件 {filename} 时出错: {e}")
                 continue
 
-            # 删除源文件 (如果已成功转换或重命名)
-            if os.path.exists(dst) and dst != src:
-                try:
-                    os.remove(src)
-                except PermissionError:
-                    logging.warning(f"无法删除文件 {src}，权限不足或文件被占用。")
-
             count += 1
             processed_files += 1
+            # 在这里调用 progress_callback，而不是在循环中
             if progress_callback:
                 progress = int((processed_files / total_files) * 100)
-                progress_callback(progress)  # 调用回调函数
+                progress_callback(progress)
 
     return count - start_number

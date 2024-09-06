@@ -1,3 +1,4 @@
+# UI.py
 import os
 import sys
 from PyQt6.QtGui import QIcon
@@ -5,7 +6,6 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QL
                              QFileDialog, QMessageBox, QCheckBox, QProgressBar, QGridLayout)
 from PyQt6.QtCore import QThread, pyqtSignal
 from logic import batch_process  # 从 logic.py 导入处理函数
-
 
 class WorkerThread(QThread):
     progress_updated = pyqtSignal(int)
@@ -36,9 +36,7 @@ class WorkerThread(QThread):
         except Exception as e:
             self.error_occurred.emit(str(e))
         finally:
-            # 确保在异常情况下也能发送完成信号
             self.finished.emit(0)
-
 
 class BatchRenameApp(QMainWindow):
     def __init__(self):
@@ -156,53 +154,50 @@ class BatchRenameApp(QMainWindow):
         prefix = self.prefix_input.text() if self.rename_checkbox.isChecked() else None
 
         try:
-            start_number = int(self.start_number_input.text()) if self.rename_checkbox.isChecked() else 1
-        except ValueError:
-            QMessageBox.critical(self, "错误", "起始编号必须是一个正整数。")
+            start_number = int(self.start_number_input.text())
+            if start_number <= 0:
+                raise ValueError("起始编号必须是正整数")
+        except ValueError as e:
+            QMessageBox.critical(self, "错误", str(e))
             return
 
         extension = self.extension_input.text().strip()
         if not extension.startswith("."):
             extension = f".{extension}"
 
-        convert_format = self.convert_format_input.text().strip().lower() if self.convert_format_checkbox.isChecked() else None
-        if convert_format and not convert_format.startswith("."):
-            convert_format = f".{convert_format}"
+        convert_format = self.convert_format_input.text().strip().upper() if self.convert_format_checkbox.isChecked() else None
 
         try:
-            compress_quality = int(self.compress_quality_input.text()) if self.compress_checkbox.isChecked() else None
-            if compress_quality is not None and (compress_quality < 0 or compress_quality > 100):
-                raise ValueError
-        except ValueError:
-            QMessageBox.critical(self, "错误", "压缩质量必须是0到100之间的整数。")
+            quality = int(self.compress_quality_input.text())
+            if quality < 0 or quality > 100:
+                raise ValueError("压缩质量必须在 0 到 100 之间")
+        except ValueError as e:
+            QMessageBox.critical(self, "错误", str(e))
             return
 
-        self.process_button.setEnabled(False)
-        self.result_label.setText("处理中...")
-
-        self.worker_thread = WorkerThread(directory, prefix, start_number, extension, convert_format, compress_quality)
-        self.worker_thread.progress_updated.connect(self.update_progress)
-        self.worker_thread.finished.connect(self.processing_finished)
-        self.worker_thread.error_occurred.connect(self.processing_error)
-        self.worker_thread.start()
+        self.worker = WorkerThread(
+            directory=directory,
+            prefix=prefix,
+            start_number=start_number,
+            extension=extension,
+            convert_format=convert_format,
+            compress_quality=quality if self.compress_checkbox.isChecked() else None
+        )
+        self.worker.progress_updated.connect(self.update_progress)
+        self.worker.finished.connect(self.process_finished)
+        self.worker.error_occurred.connect(self.show_error)
+        self.worker.start()
 
     def update_progress(self, progress):
         self.progress_bar.setValue(progress)
 
-    def processing_finished(self, processed_count):
-        if processed_count > 0:
-            self.result_label.setText(f"已成功处理 {processed_count} 个文件！")
-        else:
-            self.result_label.setText("处理失败或没有文件被处理。")
-        self.process_button.setEnabled(True)
+    def process_finished(self, processed_count):
+        self.result_label.setText(f"处理完成，共处理 {processed_count} 个文件。")
 
-    def processing_error(self, error_message):
-        QMessageBox.critical(self, "错误", f"处理过程中发生错误:\n{error_message}")
-        self.result_label.setText("处理失败！")
-        self.process_button.setEnabled(True)
+    def show_error(self, message):
+        QMessageBox.critical(self, "错误", f"处理过程中出现错误: {message}")
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = BatchRenameApp()
     window.show()
