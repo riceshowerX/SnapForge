@@ -1,6 +1,6 @@
 
 <div align="center" style="display: flex; align-items: center;">
-  <img src="[https://camo.githubusercontent.com/4ad0a9a06c20db47fdff23de88c25a38bad0276322977ee1b813920f784e3bbf/68747470733a2f2f7269636573686f776572582e6769746875622e696f2f706963782d696d616765732d686f7374696e672fe7a4bee4baa4e5a4b4e5838f2e337965616c35396437622e77656270]([https://github.com/riceshowerX/picx-images-hosting/raw/master/网站图标已注册/社交头像.64dt0cv31m.webp](https://github.com/riceshowerX/picx-images-hosting/raw/master/网站图标已注册/社交头像.64dt0cv31m.webp))" alt="Logo" width="70" height="70" style="margin-right: 10px;"> 
+  <img src="https://camo.githubusercontent.com/4ad0a9a06c20db47fdff23de88c25a38bad0276322977ee1b813920f784e3bbf/68747470733a2f2f7269636573686f776572582e6769746875622e696f2f706963782d696d616765732d686f7374696e672fe7a4bee4baa4e5a4b4e5838f2e337965616c35396437622e77656270" alt="Logo" width="70" height="70" style="margin-right: 10px;"> 
   <h1>SnapForge</h1> 
 </div>
 
@@ -76,3 +76,4 @@ SnapForge 使用 Apache License 2.0 许可。详细信息请参阅 [LICENSE 文�
 - **独立评估:** 用户需自行评估本项目的适用性和安全性，确保其符合自身需求。
 
 用户在使用本项目的过程中出现的任何问题、故障或损害，均由用户自行负责，开发者和贡献者概不负责。通过使用本项目，用户即表示已阅读并同意上述所有条款和条件。
+
