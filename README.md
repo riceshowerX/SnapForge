@@ -1,6 +1,6 @@
 
 <div align="center" style="display: flex; align-items: center;">
-  <img src="https://camo.githubusercontent.com/4ad0a9a06c20db47fdff23de88c25a38bad0276322977ee1b813920f784e3bbf/68747470733a2f2f7269636573686f776572582e6769746875622e696f2f706963782d696d616765732d686f7374696e672fe7a4bee4baa4e5a4b4e5838f2e337965616c35396437622e77656270" alt="Logo" width="70" height="70" style="margin-right: 10px;"> 
+  <img src="https://raw.githubusercontent.com/riceshowerX/picx-images-hosting/master/%E7%BD%91%E7%AB%99%E5%9B%BE%E6%A0%87%E5%B7%B2%E6%B3%A8%E5%86%8C/%E7%A4%BE%E4%BA%A4%E5%A4%B4%E5%83%8F.64dt0cv31m.webp" alt="Logo" width="70" height="70" style="margin-right: 10px;"> 
   <h1>SnapForge</h1> 
 </div>
 
