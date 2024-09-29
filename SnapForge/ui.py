@@ -36,8 +36,6 @@ class WorkerThread(QThread):
             self.finished.emit(processed_count)
         except Exception as e:
             self.error_occurred.emit(str(e))
-        finally:
-            self.finished.emit(0)
 
     def update_progress(self, progress):
         self.progress_updated.emit(progress)
@@ -86,7 +84,7 @@ class BatchRenameApp(QMainWindow):
         layout.addWidget(self.start_number_input, 3, 1, 1, 4)
 
         # 文件扩展名
-        self.extension_label = QLabel("文件扩展名:")
+        self.extension_label = QLabel("文件扩展名 (支持: .jpg, .jpeg, .png, .bmp, .gif, .tiff):")
         layout.addWidget(self.extension_label, 4, 0)
 
         self.extension_input = QLineEdit()
@@ -197,9 +195,18 @@ class BatchRenameApp(QMainWindow):
 
     def process_finished(self, processed_count):
         self.result_label.setText(f"处理完成，共处理 {processed_count} 个文件。")
+        self.restore_ui()
 
     def show_error(self, message):
         QMessageBox.critical(self, "错误", f"处理过程中出现错误: {message}")
+        self.restore_ui()
+
+    def restore_ui(self):
+        self.process_button.setEnabled(True)
+        self.directory_button.setEnabled(True)
+        self.rename_checkbox.setEnabled(True)
+        self.convert_format_checkbox.setEnabled(True)
+        self.compress_checkbox.setEnabled(True)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

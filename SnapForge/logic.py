@@ -1,64 +1,54 @@
 # logic.py
 import os
-import re
-import uuid
 from PIL import Image
 import logging
 
-# 初始化日志记录
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 class ImageProcessor:
     def batch_process(self, directory, prefix=None, start_number=1, extension=".jpg", convert_format=None, quality=None, progress_callback=None):
+        supported_formats = [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff"]
         extension = extension.lower()
-        count = start_number
-        total_files = 0
+        if extension not in supported_formats:
+            logging.error(f"不支持的文件格式: {extension}")
+            return 0
+
+        files = [f for f in os.listdir(directory) if f.lower().endswith(extension)]
+        total_files = len(files)
         processed_files = 0
 
-        files = os.listdir(directory)  # 提前获取文件列表
-        for filename in files:
-            if filename.lower().endswith(extension):
-                total_files += 1  # 更新 total_files
+        for i, filename in enumerate(files):
+            file_path = os.path.join(directory, filename)
 
-                src = os.path.join(directory, filename)
+            # 文件处理
+            try:
+                image = Image.open(file_path)
 
-                # 设置新的文件扩展名
-                new_extension = convert_format.lower() if convert_format else extension
-                if not new_extension.startswith("."):
-                    new_extension = f".{new_extension}"
-
+                # 重命名文件
                 if prefix:
-                    valid_filename = re.sub(r'[\\/*?:"<>|]', '_', f"{prefix}_{count}")
-                    unique_filename = valid_filename + "_" + str(uuid.uuid4())
-                    dst = os.path.join(directory, f"{unique_filename}{new_extension}")
-
-                    # 确保目标文件名唯一
-                    while os.path.exists(dst):
-                        count += 1
-                        valid_filename = re.sub(r'[\\/*?:"<>|]', '_', f"{prefix}_{count}")
-                        unique_filename = valid_filename + "_" + str(uuid.uuid4())
-                        dst = os.path.join(directory, f"{unique_filename}{new_extension}")
+                    new_filename = f"{prefix}_{start_number + i}{extension}"
+                    new_file_path = os.path.join(directory, new_filename)
+                    image.save(new_file_path)
                 else:
-                    dst = src
+                    new_file_path = file_path
 
-                try:
-                    if convert_format:
-                        with Image.open(src) as img:
-                            if new_extension == ".jpg" and img.mode in ("RGBA", "LA"):
-                                img = img.convert("RGB")
-                            img.save(dst, format=convert_format.upper(), quality=quality or 95)  # 提供默认质量值
-                        os.remove(src)
-                    else:
-                        os.rename(src, dst)
-                except (PermissionError, FileNotFoundError) as e:
-                    logging.error(f"处理文件 {filename} 时发生错误: {e}")
-                    continue
+                # 格式转换
+                if convert_format:
+                    new_file_path = new_file_path.replace(extension, f".{convert_format.lower()}")
+                    image.save(new_file_path, format=convert_format)
 
-                count += 1
+                # 压缩处理
+                if quality is not None:
+                    image.save(new_file_path, quality=quality)
+
                 processed_files += 1
-                # 在这里调用 progress_callback
-                if progress_callback:
+                if i % 10 == 0 and progress_callback:
                     progress = int((processed_files / total_files) * 100)
                     progress_callback(progress)
 
-        return count - start_number
+            except Exception as e:
+                logging.error(f"处理文件 {filename} 时发生错误: {str(e)}")
+                continue
+
+        if progress_callback:
+            progress_callback(100)
+
+        return processed_files
