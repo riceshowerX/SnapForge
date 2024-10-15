@@ -32,16 +32,26 @@ class ImageProcessor:
 
     def process_image(self, file_path, new_name, directory, convert_format, compress_quality):
         try:
-            # 使用 OpenCV 读取图像
+            # 检查文件是否存在
+            if not os.path.exists(file_path):
+                logging.error(f"文件不存在: {file_path}")
+                return False
+
             image = cv2.imread(file_path)
-            if convert_format:
-                # 转换格式
+            if image is None:
+                logging.error(f"无法读取文件: {file_path}")
+                return False
+
+            # 格式转换
+            if convert_format and convert_format.lower() != os.path.splitext(file_path)[1][1:]:
                 new_name = new_name.replace(os.path.splitext(new_name)[1], f".{convert_format.lower()}")
-            if compress_quality is not None:
-                # 保存图像时应用压缩质量
+
+            # 保存图像
+            if compress_quality is not None and convert_format in ['jpg', 'jpeg']:
                 cv2.imwrite(os.path.join(directory, new_name), image, [int(cv2.IMWRITE_JPEG_QUALITY), compress_quality])
             else:
                 cv2.imwrite(os.path.join(directory, new_name), image)
+
             return True
         except Exception as e:
             logging.error(f"处理文件 {file_path} 时出现错误: {e}")
@@ -77,11 +87,10 @@ class WorkerThread(QThread):
             self.finished.emit(processed_count)
         except Exception as e:
             self.error_occurred.emit(str(e))
-        finally:
-            self.finished.emit(0)
 
     def update_progress(self, progress):
         self.progress_updated.emit(progress)
+
 
 class BatchRenameApp(QMainWindow):
     def __init__(self):
@@ -243,3 +252,10 @@ class BatchRenameApp(QMainWindow):
 
     def show_error(self, error_message):
         QMessageBox.critical(self, "错误", error_message)
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = BatchRenameApp()
+    window.show()
+    sys.exit(app.exec())
