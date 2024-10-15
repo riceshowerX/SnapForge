@@ -1,0 +1,264 @@
+2024-09-29 15:41:23,858 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\84.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:23,858 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\012.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:23,858 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\003.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:23,858 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\007.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:23,858 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\54.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:23,858 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\100.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:23,858 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\006.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:23,858 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\001.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:23,858 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\68.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:23,858 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\009.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:23,858 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\94.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:29,009 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\001.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:29,009 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\003.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:29,009 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\006.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:29,009 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\007.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:29,009 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\009.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:29,009 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\012.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:29,009 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\54.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:29,009 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\100.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:29,009 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\68.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:29,009 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\84.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:29,009 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\94.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:46,409 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\001.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:46,410 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\003.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:46,410 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\006.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:46,410 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\007.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:46,410 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\009.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:46,410 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\100.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:46,410 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\012.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:46,410 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\54.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:46,410 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\68.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:46,410 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\84.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:46,410 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\94.png 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\001.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\003.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\006.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\007.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\009.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\012.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\100.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\54.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\68.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\84.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\94.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,917 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\001.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,918 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\003.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,918 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\007.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,918 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\006.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,918 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\009.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,918 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\012.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,918 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\100.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,919 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\54.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,920 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\84.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,920 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\68.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:52,920 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\94.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,144 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\001.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,144 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\003.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,144 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\006.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,144 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\007.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,144 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\009.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,144 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\012.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,144 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\54.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,144 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\100.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,144 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\84.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,144 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\68.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,144 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\94.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,328 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\001.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,329 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\003.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,329 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\006.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,329 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\007.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,329 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\012.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,330 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\009.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,330 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\100.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,330 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\54.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,330 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\84.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,330 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\68.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:41:53,330 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\94.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,030 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\001.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,030 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\003.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,030 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\006.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,030 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\007.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,030 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\012.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,030 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\009.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,030 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\100.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,030 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\54.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,030 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\68.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,030 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\84.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,030 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\94.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\001.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\003.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\006.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\007.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\009.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\012.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\54.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\68.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\100.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\84.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,512 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\94.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,695 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\001.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,695 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\003.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,695 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\006.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,695 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\007.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,695 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\009.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,695 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\012.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,695 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\100.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,695 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\54.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,695 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\68.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,695 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\84.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:10,695 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\94.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,061 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\001.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,063 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\003.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,063 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\006.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,063 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\007.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,064 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\009.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,064 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\012.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,064 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\100.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,064 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\54.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,064 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\68.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,064 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\84.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,065 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\94.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,294 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\001.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,294 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\003.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,294 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\006.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,294 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\007.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,294 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\012.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,294 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\54.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,294 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\100.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,296 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\009.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,296 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\68.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,296 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\84.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+
+2024-09-29 15:42:13,297 - ERROR - ui.py - 47 - 处理文件 C:/Users/Administrator/Desktop/新建文件夹 (2)\94.jpg 时出现错误: OpenCV(4.10.0) D:\a\opencv-python\opencv-python\opencv\modules\imgcodecs\src\loadsave.cpp:798: error: (-215:Assertion failed) !_img.empty() in function 'cv::imwrite'
+

@@ -1,17 +1,14 @@
 # main.py
 import sys
 import logging
+import traceback
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from ui import BatchRenameApp
 
 def main():
-    # 初始化日志记录，添加日志文件大小限制
-    from logging.handlers import RotatingFileHandler
-    logging.basicConfig(
-        handlers=[RotatingFileHandler('app.log', maxBytes=1 * 1024 * 1024, backupCount=5)],  # 1MB, 最多5个备份
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(filename)s - %(lineno)d - %(message)s'
-    )
+    # 初始化日志记录
+    logging.basicConfig(filename='app.log', level=logging.INFO,
+                        format='%(asctime)s - %(levelname)s - %(filename)s - %(lineno)d - %(message)s')
 
     app = QApplication(sys.argv)
 
@@ -21,9 +18,10 @@ def main():
         sys.exit(app.exec())
 
     except Exception as e:
-        logging.exception("发生未捕获的异常")
+        error_msg = f"发生未捕获的异常：\n{str(e)}"
+        logging.exception(error_msg)  # 将错误信息记录到日志文件
         # 弹出错误对话框
-        QMessageBox.critical(None, "错误", f"发生未捕获的异常：\n{str(e)}")
+        QMessageBox.critical(None, "错误", error_msg)
         sys.exit(1)
 
 if __name__ == "__main__":

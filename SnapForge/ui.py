@@ -1,11 +1,52 @@
 # UI.py
 import os
 import sys
+import cv2  # 使用 OpenCV 进行图像处理
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QLineEdit, QPushButton,
                              QFileDialog, QMessageBox, QCheckBox, QProgressBar, QGridLayout)
 from PyQt6.QtCore import QThread, pyqtSignal
-from logic import ImageProcessor  # 从 logic.py 导入 ImageProcessor 类
+from concurrent.futures import ThreadPoolExecutor
+import logging
+
+class ImageProcessor:
+    def batch_process(self, directory, prefix, start_number, extension, convert_format, compress_quality, progress_callback):
+        files = [f for f in os.listdir(directory) if f.endswith(extension)]
+        total_files = len(files)
+        processed_count = 0
+
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            for i, file in enumerate(files):
+                file_path = os.path.join(directory, file)
+                new_name = f"{prefix}{start_number + i}{extension}"
+                futures.append(executor.submit(self.process_image, file_path, new_name, directory, convert_format, compress_quality))
+
+            for future in futures:
+                result = future.result()
+                if result:
+                    processed_count += 1
+                    progress_callback(int((processed_count / total_files) * 100))
+
+        return processed_count
+
+    def process_image(self, file_path, new_name, directory, convert_format, compress_quality):
+        try:
+            # 使用 OpenCV 读取图像
+            image = cv2.imread(file_path)
+            if convert_format:
+                # 转换格式
+                new_name = new_name.replace(os.path.splitext(new_name)[1], f".{convert_format.lower()}")
+            if compress_quality is not None:
+                # 保存图像时应用压缩质量
+                cv2.imwrite(os.path.join(directory, new_name), image, [int(cv2.IMWRITE_JPEG_QUALITY), compress_quality])
+            else:
+                cv2.imwrite(os.path.join(directory, new_name), image)
+            return True
+        except Exception as e:
+            logging.error(f"处理文件 {file_path} 时出现错误: {e}")
+            return False
+
 
 class WorkerThread(QThread):
     progress_updated = pyqtSignal(int)
@@ -20,7 +61,7 @@ class WorkerThread(QThread):
         self.extension = extension
         self.convert_format = convert_format
         self.compress_quality = compress_quality
-        self.processor = ImageProcessor()  # 实例化 ImageProcessor
+        self.processor = ImageProcessor()
 
     def run(self):
         try:
@@ -36,6 +77,8 @@ class WorkerThread(QThread):
             self.finished.emit(processed_count)
         except Exception as e:
             self.error_occurred.emit(str(e))
+        finally:
+            self.finished.emit(0)
 
     def update_progress(self, progress):
         self.progress_updated.emit(progress)
@@ -46,7 +89,7 @@ class BatchRenameApp(QMainWindow):
 
         self.setWindowTitle("图片批量处理工具")
         self.setGeometry(300, 300, 500, 450)
-        self.setWindowIcon(QIcon("resources/icon.png"))  # 请确保图标文件存在
+        self.setWindowIcon(QIcon("resources/icon.png"))
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -84,7 +127,7 @@ class BatchRenameApp(QMainWindow):
         layout.addWidget(self.start_number_input, 3, 1, 1, 4)
 
         # 文件扩展名
-        self.extension_label = QLabel("文件扩展名 (支持: .jpg, .jpeg, .png, .bmp, .gif, .tiff):")
+        self.extension_label = QLabel("文件扩展名:")
         layout.addWidget(self.extension_label, 4, 0)
 
         self.extension_input = QLineEdit()
@@ -165,51 +208,38 @@ class BatchRenameApp(QMainWindow):
 
         extension = self.extension_input.text().strip()
         if not extension.startswith("."):
-            extension = f".{extension}"
-
-        convert_format = self.convert_format_input.text().strip().upper() if self.convert_format_checkbox.isChecked() else None
-
-        try:
-            quality = int(self.compress_quality_input.text())
-            if quality < 0 or quality > 100:
-                raise ValueError("压缩质量必须在 0 到 100 之间")
-        except ValueError as e:
-            QMessageBox.critical(self, "错误", str(e))
+            QMessageBox.critical(self, "错误", "请确保扩展名以 '.' 开头。")
             return
 
-        self.worker = WorkerThread(
-            directory=directory,
-            prefix=prefix,
-            start_number=start_number,
-            extension=extension,
-            convert_format=convert_format,
-            compress_quality=quality if self.compress_checkbox.isChecked() else None
-        )
-        self.worker.progress_updated.connect(self.update_progress)
-        self.worker.finished.connect(self.process_finished)
-        self.worker.error_occurred.connect(self.show_error)
-        self.worker.start()
+        convert_format = self.convert_format_input.text().strip().lower() if self.convert_format_checkbox.isChecked() else None
+        compress_quality = None
+
+        if self.compress_checkbox.isChecked():
+            try:
+                compress_quality = int(self.compress_quality_input.text())
+                if not (0 <= compress_quality <= 100):
+                    raise ValueError("压缩质量必须在 0 到 100 之间。")
+            except ValueError as e:
+                QMessageBox.critical(self, "错误", str(e))
+                return
+
+        self.progress_bar.setValue(0)
+        self.result_label.setText("")
+
+        self.thread = WorkerThread(directory, prefix, start_number, extension, convert_format, compress_quality)
+        self.thread.progress_updated.connect(self.update_progress)
+        self.thread.finished.connect(self.processing_finished)
+        self.thread.error_occurred.connect(self.show_error)
+        self.thread.start()
 
     def update_progress(self, progress):
         self.progress_bar.setValue(progress)
 
-    def process_finished(self, processed_count):
-        self.result_label.setText(f"处理完成，共处理 {processed_count} 个文件。")
-        self.restore_ui()
+    def processing_finished(self, processed_count):
+        if processed_count > 0:
+            self.result_label.setText(f"处理完成，成功处理 {processed_count} 个文件。")
+        else:
+            self.result_label.setText("没有处理任何文件。")
 
-    def show_error(self, message):
-        QMessageBox.critical(self, "错误", f"处理过程中出现错误: {message}")
-        self.restore_ui()
-
-    def restore_ui(self):
-        self.process_button.setEnabled(True)
-        self.directory_button.setEnabled(True)
-        self.rename_checkbox.setEnabled(True)
-        self.convert_format_checkbox.setEnabled(True)
-        self.compress_checkbox.setEnabled(True)
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = BatchRenameApp()
-    window.show()
-    sys.exit(app.exec())
+    def show_error(self, error_message):
+        QMessageBox.critical(self, "错误", error_message)
