@@ -62,23 +62,16 @@ st.markdown(custom_css, unsafe_allow_html=True)
 
 # ---------- 顶部Banner ----------
 st.markdown("""
-<div class="header-banner">
-    <div class="logo">🖼️⚒️</div>
-    <h1>SnapForge</h1>
-    <div class="subtitle">
-        <b>高效、专业、美观的批量/单文件图片处理平台</b><br>
-        <span style="opacity:.85">完全开源，支持高阶批量处理、AI识别、去重、去背景、智能分析等</span>
-    </div>
-    <div class="gh-btn-area">
-        <a href="https://github.com/riceshowerX/SnapForge" target="_blank" title="前往GitHub仓库">GitHub仓库主页</a>
-        <a href="https://github.com/riceshowerX/SnapForge/issues/new/choose" target="_blank" title="反馈建议/提Issue">反馈建议</a>
-    </div>
-    <div class="gh-author">
-        <img src="https://avatars.githubusercontent.com/u/138862916?v=4">
-        <span>
-            由 <a href="https://github.com/riceshowerX" target="_blank" style="color:#fff;text-decoration:underline;font-weight:600;">riceshowerX</a> 开发 &nbsp;|&nbsp; <a href="https://github.com/riceshowerX/SnapForge" target="_blank" style="color:#fff;text-decoration:underline;">@SnapForge</a>
-        </span>
-    </div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 26px 12px 26px;background:linear-gradient(90deg,#406aff 0%,#5cc6fa 100%);border-radius:0 0 1.1rem 1.1rem;box-shadow:0 2px 16px #406aff10;margin-bottom:1.2rem;">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <span style="font-size:2.1rem;">🖼️</span>
+    <span style="font-size:1.5rem;font-weight:700;color:#fff;letter-spacing:1.2px;">SnapForge</span>
+    <small style="font-size:.92rem;color:#e3eaff;opacity:.8;margin-left:.7em;">高效图片批处理工具</small>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <a href="https://github.com/riceshowerX/SnapForge" target="_blank" style="color:#fff;font-weight:600;padding:0.4em 1.2em;background:#406aff;border-radius:1.7em;text-decoration:none;border:1.5px solid #fff1;">GitHub</a>
+    <a href="https://github.com/riceshowerX/SnapForge/issues/new/choose" target="_blank" style="color:#406aff;background:#fff;font-weight:600;padding:0.4em 1.2em;border-radius:1.7em;text-decoration:none;border:1.5px solid #5cc6fa;">反馈</a>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -102,6 +95,7 @@ with tabs[0]:
 
     def goto_step(n):
         st.session_state["batch_step"] = n
+        st.rerun()
 
     steps = [
         _("上传图片"), _("设置处理参数"), _("确认与执行"), _("下载与预览")
@@ -148,8 +142,9 @@ with tabs[0]:
             img_cols = st.columns(min(len(file_paths), 4))
             for idx, path in enumerate(file_paths[:8]):
                 img_cols[idx % 4].image(path, caption=os.path.basename(path), width=120)
-            if st.button(_("下一步"), use_container_width=True):
-                goto_step(2)
+            if st.button(_("下一步"), use_container_width=True, key="to_step2"):
+                st.session_state["batch_step"] = 2
+                st.rerun()
         else:
             st.info(_("请上传图片后点击下一步"), icon="ℹ️")
 
@@ -200,9 +195,11 @@ with tabs[0]:
             next_step = st.form_submit_button(_("下一步"), use_container_width=True)
             prev_step = st.form_submit_button(_("上一步"), use_container_width=True)
             if next_step:
-                goto_step(3)
+                st.session_state["batch_step"] = 3
+                st.rerun()
             if prev_step:
-                goto_step(1)
+                st.session_state["batch_step"] = 1
+                st.rerun()
 
     # Step 3: 确认参数
     elif st.session_state["batch_step"] == 3:
@@ -216,10 +213,12 @@ with tabs[0]:
         st.write(_("批量裁剪:"), st.session_state.get("enable_crop", False))
         st.write(_("批量滤镜:"), st.session_state.get("filter_type", ""))
         col1, col2 = st.columns(2)
-        if col1.button(_("上一步"), use_container_width=True):
-            goto_step(2)
-        if col2.button(_("🚀 确认无误，开始处理图片！"), use_container_width=True):
-            goto_step(4)
+        if col1.button(_("上一步"), use_container_width=True, key="to_step2_from3"):
+            st.session_state["batch_step"] = 2
+            st.rerun()
+        if col2.button(_("🚀 确认无误，开始处理图片！"), use_container_width=True, key="to_step4"):
+            st.session_state["batch_step"] = 4
+            st.rerun()
 
     # Step 4: 处理状态与结果
     elif st.session_state["batch_step"] == 4:
@@ -234,7 +233,6 @@ with tabs[0]:
             else:
                 progress_bar.progress(pct)
 
-        # 只用 session_state 保存的文件路径
         file_paths = st.session_state.get("uploaded_image_paths", [])
         extension = st.session_state.get("uploaded_image_ext", None)
         if extension:
@@ -293,12 +291,14 @@ with tabs[0]:
                     for idx, p in enumerate(result_file_paths[:8]):
                         if os.path.exists(p):
                             cols[idx % 4].image(p, caption=os.path.basename(p), width=120)
-                if st.button(_("返回首页"), use_container_width=True):
-                    goto_step(1)
+                if st.button(_("返回首页"), use_container_width=True, key="to_home4"):
+                    st.session_state["batch_step"] = 1
+                    st.rerun()
         else:
             st.warning(_("未找到上传图片，请返回首页重新上传。"))
-            if st.button(_("返回首页"), use_container_width=True):
-                goto_step(1)
+            if st.button(_("返回首页"), use_container_width=True, key="to_home_noimg"):
+                st.session_state["batch_step"] = 1
+                st.rerun()
 
 # ---------- Tab 1: 图片信息查看（无变化） ----------
 with tabs[1]:
