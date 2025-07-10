@@ -10,36 +10,44 @@ from logic import (
 from PIL import Image
 from utils_i18n import get_translator
 
-# ----------- 全局美化 CSS -----------
+# ----------- 全局升级美化 CSS -----------
 def inject_css():
     st.markdown("""
     <style>
-    body { background: #f3f6fc; }
-    .app-container { background: #fff; border-radius: 1.3rem; box-shadow: 0 4px 32px #406aff18;
-        max-width: 950px; margin: 0 auto 2.2rem auto; padding: 2.5rem 2.5rem 2rem 2.5rem;}
-    .sf-sidebar-brand { text-align: center; padding: 24px 0 12px 0; margin-bottom: 0.7em;}
-    .sf-sidebar-brand .logo { font-size: 2.7rem; line-height:1; color:#406aff;}
-    .sf-sidebar-brand .title { font-size: 1.3rem; font-weight:800; color:#406aff; margin: 0.13em 0 0.18em 0;}
-    .sf-sidebar-brand .subtitle { font-size: 0.92rem; color: #6fa1f6; }
-    hr.sf-sidebar-hr { border:0;border-top:1.5px solid #e0ebff; margin:1em 0 1em 0; }
-    section[data-testid="stSidebar"] {background: #f4f7fd; min-width:235px; max-width:245px; border-right: 1.5px solid #e0ebff;}
+    body { background: linear-gradient(120deg, #f3f6fc 0%, #f7faff 100%); }
+    .app-container { background: #fff; border-radius: 1.5rem; box-shadow: 0 6px 44px #406aff18;
+        max-width: 1080px; margin: 0 auto 2.2rem auto; padding: 2.8rem 2.8rem 2.4rem 2.8rem;}
+    .sf-sidebar-brand { text-align: center; padding: 30px 0 16px 0; margin-bottom: 1.1em;}
+    .sf-sidebar-brand .logo { font-size: 2.9rem; line-height:1; color:#406aff;}
+    .sf-sidebar-brand .title { font-size: 1.31rem; font-weight:900; color:#406aff; margin: 0.13em 0 0.18em 0;}
+    .sf-sidebar-brand .subtitle { font-size: 0.99rem; color: #6fa1f6; }
+    hr.sf-sidebar-hr { border:0;border-top:1.7px solid #e0ebff; margin:1.3em 0 1.3em 0; }
+    section[data-testid="stSidebar"] {background: #f4f7fd; min-width:240px; max-width:255px; border-right: 1.7px solid #e0ebff;}
     .stRadio > div {gap: 0.2em;}
-    .stRadio label {font-size:1.09rem;font-weight:600;color:#406aff;padding:0.55em 1.4em;border-radius:1.2em 0 0 1.2em;margin-bottom:2px;display:block;transition:background .14s,color .12s;}
-    .stRadio div[role="radiogroup"] > div[data-baseweb="radio"] > div {margin-bottom: 0.4em;}
+    .stRadio label {font-size:1.13rem;font-weight:700;color:#406aff;padding:0.6em 1.55em;border-radius:1.3em 0 0 1.3em;margin-bottom:2.5px;display:block;transition:background .14s,color .12s;}
+    .stRadio div[role="radiogroup"] > div[data-baseweb="radio"] > div {margin-bottom: 0.45em;}
     .stRadio div[role="radiogroup"] > div[data-baseweb="radio"] input:checked + div > label { background:#e4edff !important; color:#2357c7 !important;}
     .stRadio label:hover { background:#e4edff; color:#2357c7;}
-    .stButton>button, .stDownloadButton>button { border-radius: 2rem; font-weight: 700; font-size: 1.08rem; min-height: 2.7rem; box-shadow: 0 2px 12px 0 #406aff22; transition: 0.15s;}
+    .stButton>button, .stDownloadButton>button { border-radius: 2.2rem; font-weight: 700; font-size: 1.13rem; min-height: 2.8rem; box-shadow: 0 2px 12px 0 #406aff22; transition: 0.15s;}
     .stButton>button:hover, .stDownloadButton>button:hover { background: #406aff; color: #fff;}
-    .section-title { font-size: 1.14rem; font-weight: 700; color: #406aff; margin-bottom: 0.65rem; border-left: 4px solid #5cc6fa; padding-left: 0.7em; letter-spacing: 0.6px;}
-    .stTextInput>div>input, .stNumberInput>div>input, .stSelectbox>div>div>div { border-radius: 0.8rem; min-height: 2.2rem;}
-    .stAlert { border-radius: 1.1rem; }
-    .stTextArea>div>textarea { border-radius: 0.8rem; min-height: 8rem; font-size: 1.04rem; }
-    .stSlider { padding-bottom: 0.9rem; }
-    .stProgress > div > div { border-radius: 1rem; }
-    .footer { margin-top: 2.5rem; padding: 0.8rem 0; color: #b1b4bb; text-align: center; font-size: 1.03rem;}
-    .sf-sidebar-gh { text-align:center; margin:2.2em 0 0.7em 0;}
-    .sf-sidebar-gh a { background:#406aff;color:#fff;font-weight:700;padding:0.5em 1.4em;border-radius:1.6em;box-shadow:0 2px 14px #406aff22;font-size:1.07rem;text-decoration:none;border:2px solid #5cc6fa;transition:background .13s, color .13s;}
+    .section-title { font-size: 1.18rem; font-weight: 800; color: #406aff; margin-bottom: 0.82rem; border-left: 4px solid #5cc6fa; padding-left: 0.7em; letter-spacing: 0.6px;}
+    .stTextInput>div>input, .stNumberInput>div>input, .stSelectbox>div>div>div { border-radius: 0.9rem; min-height: 2.3rem;}
+    .stAlert { border-radius: 1.2rem; }
+    .stTextArea>div>textarea { border-radius: 0.9rem; min-height: 8.2rem; font-size: 1.08rem; }
+    .stSlider { padding-bottom: 1.1rem; }
+    .stProgress > div > div { border-radius: 1.1rem; }
+    .footer { margin-top: 2.8rem; padding: 1.0rem 0; color: #b1b4bb; text-align: center; font-size: 1.05rem;}
+    .sf-sidebar-gh { text-align:center; margin:2.5em 0 0.8em 0;}
+    .sf-sidebar-gh a { background:#406aff;color:#fff;font-weight:700;padding:0.56em 1.55em;border-radius:1.7em;box-shadow:0 2px 14px #406aff22;font-size:1.12rem;text-decoration:none;border:2px solid #5cc6fa;transition:background .13s, color .13s;}
     .sf-sidebar-gh a:hover { background:#fff; color:#406aff; border:2px solid #406aff;}
+    .sf-stepper {margin:1.2rem 0 2rem 0;display:flex;align-items:center;gap:4px;}
+    .sf-step {padding:0.5em 1.2em;border-radius:1.2em;font-size:1.11rem;}
+    .sf-step.active {background:#406aff;color:#fff;font-weight:900;}
+    .sf-step.inactive {background:#f0f5ff;color:#406aff;}
+    .sf-step-arrow {color:#b4c8ff;font-size:1.35em;margin-right:4px;}
+    .sf-thumb-row {display:flex;gap:1.2rem;flex-wrap:wrap;margin:0.7em 0 1.1em 0;}
+    .sf-thumb {border-radius:1.1em;box-shadow:0 2px 12px #406aff11;border:1.5px solid #e4ebff;padding:0.3em;}
+    .sf-section-hr {border-top:2px dashed #e0ebff;margin:2.2em 0 1.6em 0;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -83,20 +91,20 @@ def batch_image_ui(_):
     if "batch_step" not in st.session_state:
         st.session_state["batch_step"] = 1
 
-    def goto_step(n): st.session_state["batch_step"] = n; st.rerun()
+    def goto_step(n):
+        st.session_state["batch_step"] = n
+        st.rerun()
 
     steps = [_("上传图片"), _("设置处理参数"), _("确认与执行"), _("下载与预览")]
-    # Stepper UI
-    st.markdown(
-        "<div style='margin:1rem 0 1.5rem 0;display:flex;align-items:center;gap:4px;'>"
-        + "".join(
-            f"<span style='padding:0.4em 1.1em;border-radius:1em;"
-            f"{'background:#406aff;color:#fff;font-weight:700;' if idx+1==st.session_state['batch_step'] else 'background:#f0f5ff;color:#406aff;'}"
-            f"margin-right:4px;'>{idx+1}. {title}</span>"
-            + ("<span style='color:#b4c8ff;font-size:1.2em;margin-right:4px;'>&rarr;</span>" if idx < len(steps)-1 else "")
+    st.markdown('<div class="sf-stepper">' +
+        "".join(
+            f"<span class='sf-step {'active' if idx+1==st.session_state['batch_step'] else 'inactive'}'>{idx+1}. {title}</span>"
+            + ("<span class='sf-step-arrow'>&rarr;</span>" if idx < len(steps)-1 else "")
             for idx, title in enumerate(steps)
-        ) + "</div>", unsafe_allow_html=True
+        ) + "</div>",
+        unsafe_allow_html=True
     )
+
     processor = ImageProcessor()
     output_dir = "output"
     os.makedirs(output_dir, exist_ok=True)
@@ -122,10 +130,13 @@ def batch_image_ui(_):
                 file_paths.append(temp_path)
             st.session_state["uploaded_image_paths"] = file_paths
             st.session_state["uploaded_image_ext"] = extension if mode==_("批量处理（多文件上传）") else None
-            st.markdown("##### " + _("图片缩略图预览"))
-            img_cols = st.columns(min(len(file_paths), 4))
-            for idx, path in enumerate(file_paths[:8]):
-                img_cols[idx % 4].image(path, caption=os.path.basename(path), width=120)
+            st.markdown('<div class="section-title">' + _("图片缩略图预览") + '</div>', unsafe_allow_html=True)
+            st.markdown('<div class="sf-thumb-row">', unsafe_allow_html=True)
+            for path in file_paths[:8]:
+                st.markdown(f'<div class="sf-thumb">', unsafe_allow_html=True)
+                st.image(path, caption=os.path.basename(path), width=120)
+                st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
             if st.button(_("下一步"), use_container_width=True, key="to_step2"):
                 goto_step(2)
         else:
@@ -237,7 +248,7 @@ def batch_image_ui(_):
             with st.spinner(_("图片处理中，请耐心等待...")):
                 processed, total_files, result_file_paths = processor.batch_process(**args)
                 progress_bar.progress(100)
-                log_area.text_area(_("处理日志"), log.get_text(), height=200)
+                log_area.text_area(_("处理日志"), log.get_text(), height=220)
                 if processed == 0:
                     result_area.error(_("❌ 未成功处理任何图片，请检查日志与参数。"))
                 elif processed < total_files:
@@ -259,11 +270,14 @@ def batch_image_ui(_):
                         use_container_width=True
                     )
                     st.session_state["result_file_paths"] = result_file_paths
-                    st.markdown("##### " + _("处理结果缩略图预览"))
-                    cols = st.columns(4)
-                    for idx, p in enumerate(result_file_paths[:8]):
+                    st.markdown('<div class="section-title">' + _("处理结果缩略图预览") + '</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="sf-thumb-row">', unsafe_allow_html=True)
+                    for p in result_file_paths[:8]:
                         if os.path.exists(p):
-                            cols[idx % 4].image(p, caption=os.path.basename(p), width=120)
+                            st.markdown(f'<div class="sf-thumb">', unsafe_allow_html=True)
+                            st.image(p, caption=os.path.basename(p), width=120)
+                            st.markdown('</div>', unsafe_allow_html=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
                 if st.button(_("返回首页"), use_container_width=True, key="to_home4"):
                     goto_step(1)
         else:
@@ -281,7 +295,10 @@ def image_info_ui(_):
         with open(temp_path, "wb") as out:
             out.write(uploaded.read())
         img = Image.open(temp_path)
-        st.image(img, caption=_("图片预览"))
+        st.markdown('<div class="section-title">' + _("图片预览") + '</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sf-thumb-row"><div class="sf-thumb">', unsafe_allow_html=True)
+        st.image(img, caption=_("图片预览"), width=180)
+        st.markdown('</div></div>', unsafe_allow_html=True)
         st.write(f"{_('尺寸')}: {img.size}  |  {_('模式')}: {img.mode}  |  {_('格式')}: {img.format}")
         st.write(f"{_('文件大小')}: {os.path.getsize(temp_path)//1024} KB")
         dpi = img.info.get("dpi")
