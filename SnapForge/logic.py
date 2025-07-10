@@ -23,6 +23,7 @@ class ImageProcessor:
             ".jpg": "JPEG", ".jpeg": "JPEG", ".png": "PNG",
             ".bmp": "BMP", ".gif": "GIF", ".tiff": "TIFF", ".webp": "WEBP"
         }
+
     def batch_process(
         self,
         files,
@@ -96,6 +97,7 @@ class ImageProcessor:
             finally:
                 self._update_progress(progress_callback, index + 1, total_files, filename)
         return (processed, total_files, result_paths)
+
     def _normalize_extension(self, ext):
         if not ext:
             return None
@@ -105,6 +107,7 @@ class ImageProcessor:
         if ext == ".jpeg":
             return ".jpg"
         return ext
+
     def _generate_filename(self, prefix, number, extension, target_dir):
         base_name = f"{prefix}_{number:04d}" if prefix else f"{number:04d}"
         new_name = f"{base_name}{extension}"
@@ -113,6 +116,7 @@ class ImageProcessor:
             new_name = f"{base_name}_{counter}{extension}"
             counter += 1
         return new_name
+
     def _process_image(
         self,
         src_path,
@@ -161,6 +165,7 @@ class ImageProcessor:
             if target_ext in [".jpg", ".jpeg"] and img.mode in ("RGBA", "LA"):
                 img = img.convert("RGB")
             img.save(dest_path, **save_params)
+
     def _resize_image(self, img, width, height, mode="fit", only_shrink=True):
         orig_w, orig_h = img.size
         if only_shrink and orig_w <= width and orig_h <= height:
@@ -190,10 +195,12 @@ class ImageProcessor:
             return img.crop((left, top, left + width, top + height))
         else:
             return img
+
     def _update_progress(self, callback, processed, total, filename=""):
         if callback:
             progress = int(processed / total * 100)
             callback(progress, filename)
+
     def apply_watermark(self, img, watermark):
         text = watermark.get("text")
         font_path = watermark.get("font", None)
@@ -222,6 +229,7 @@ class ImageProcessor:
         xy = positions.get(pos, positions["bottom-right"])
         draw.text(xy, text, font=font, fill=color)
         return Image.alpha_composite(img, overlay)
+
     def apply_filter(self, img, filter_type):
         if filter_type == "grayscale":
             return img.convert("L").convert("RGBA")
