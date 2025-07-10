@@ -319,8 +319,11 @@ with tabs[3]:
     elif provider == "deepseek":
         api_params["api_key"] = st.text_input("DeepSeek API Key")
         user_endpoint = st.text_input("DeepSeek Endpoint", value="https://api.deepseek.com/v1/vision/detect")
+        from urllib.parse import urlparse, urlunparse
         allowed_endpoints = ["https://api.deepseek.com/v1/vision/detect"]
-        api_params["endpoint"] = user_endpoint if user_endpoint in allowed_endpoints else "https://api.deepseek.com/v1/vision/detect"
+        parsed_endpoint = urlparse(user_endpoint)
+        sanitized_endpoint = urlunparse((parsed_endpoint.scheme, parsed_endpoint.netloc, parsed_endpoint.path, '', '', ''))
+        api_params["endpoint"] = sanitized_endpoint if sanitized_endpoint in allowed_endpoints else "https://api.deepseek.com/v1/vision/detect"
     run_btn = st.button(_("开始AI识别"), use_container_width=True, disabled=not files)
     output_dir = "output"
     if run_btn and files:
