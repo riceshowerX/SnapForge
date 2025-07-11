@@ -1,7 +1,7 @@
 # logic.py
 import os
 import io
-# 删除了不再需要的 base64 和 requests
+import shutil
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps
 import imagehash
 import piexif
@@ -74,8 +74,7 @@ class ImageProcessor:
         return f".{ext.lower()}" if not ext.startswith('.') else ext.lower()
 
     def _generate_filename(self, prefix, number, extension, target_dir):
-        if not prefix:
-            prefix = "processed"
+        if not prefix: prefix = "processed"
         base_name = f"{prefix}_{number:04d}"
         new_name = f"{base_name}{extension}"
         counter = 1
@@ -88,40 +87,30 @@ class ImageProcessor:
         with Image.open(src_path) as img:
             exif_data = img.info.get("exif") if kwargs.get('preserve_metadata') else None
             
-            if img.format == 'GIF':
-                img = img.convert("RGBA")
-            else:
-                img = img.convert("RGBA")
+            if img.format == 'GIF': img = img.convert("RGBA")
+            else: img = img.convert("RGBA")
 
             if kwargs.get('crop_params') and kwargs['crop_params'].get('w', 0) > 0 and kwargs['crop_params'].get('h', 0) > 0:
                 cp = kwargs['crop_params']
                 img = img.crop((cp["x"], cp["y"], cp["x"] + cp["w"], cp["y"] + cp["h"]))
 
-            if kwargs.get('rotate', 0) != 0:
-                img = img.rotate(kwargs['rotate'], expand=True, fillcolor=(0,0,0,0))
+            if kwargs.get('rotate', 0) != 0: img = img.rotate(kwargs['rotate'], expand=True, fillcolor=(0,0,0,0))
 
-            if kwargs.get('resize_enabled'):
-                img = self._resize_image(img, kwargs['resize_width'], kwargs['resize_height'], kwargs.get('resize_mode', 'fit'), kwargs.get('resize_only_shrink', True))
+            if kwargs.get('resize_enabled'): img = self._resize_image(img, kwargs['resize_width'], kwargs['resize_height'], kwargs.get('resize_mode', 'fit'), kwargs.get('resize_only_shrink', True))
             
-            if kwargs.get('filter_type'):
-                img = self.apply_filter(img, kwargs['filter_type'])
+            if kwargs.get('filter_type'): img = self.apply_filter(img, kwargs['filter_type'])
 
-            if kwargs.get('watermark'):
-                img = self.apply_watermark(img, kwargs['watermark'])
+            if kwargs.get('watermark'): img = self.apply_watermark(img, kwargs['watermark'])
             
             save_params = {}
-            if target_ext in self.format_mapping:
-                save_params["format"] = self.format_mapping[target_ext]
+            if target_ext in self.format_mapping: save_params["format"] = self.format_mapping[target_ext]
             
             if kwargs.get('quality') is not None:
                 quality = kwargs.get('quality')
-                if target_ext in (".jpg", ".jpeg", ".webp"):
-                    save_params["quality"] = int(max(1, min(100, quality)))
-                elif target_ext == ".png":
-                    save_params["compress_level"] = int(max(0, min(9, (100 - quality) // 10)))
+                if target_ext in (".jpg", ".jpeg", ".webp"): save_params["quality"] = int(max(1, min(100, quality)))
+                elif target_ext == ".png": save_params["compress_level"] = int(max(0, min(9, (100 - quality) // 10)))
             
-            if exif_data:
-                save_params["exif"] = exif_data
+            if exif_data: save_params["exif"] = exif_data
             
             if target_ext in [".jpg", ".jpeg", ".bmp"] and img.mode in ("RGBA", "LA", "P"):
                 background = Image.new("RGB", img.size, (255, 255, 255))
@@ -152,8 +141,7 @@ class ImageProcessor:
         font_path, font_size, color, pos = watermark.get("font"), watermark.get("size", 32), watermark.get("color", (255,255,255,128)), watermark.get("pos", "bottom-right")
         try:
             font = ImageFont.truetype(font_path or "arial.ttf", font_size)
-        except IOError:
-            font = ImageFont.load_default()
+        except IOError: font = ImageFont.load_default()
         bbox = draw.textbbox((0, 0), text, font=font)
         text_width, text_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
         margin = 15
@@ -252,4 +240,14 @@ def remove_background(image_path, output_path=None):
         with open(output_path, 'wb') as o: o.write(output_data)
     return Image.open(io.BytesIO(output_data))
 
-# AI识别功能已根据您的要求被完全删除
+def select_best_image_in_group(group_paths):
+    best_image_path, max_resolution, max_size = None, -1, -1
+    for path in group_paths:
+        try:
+            with Image.open(path) as img:
+                resolution = img.width * img.height
+                size = os.path.getsize(path)
+                if resolution > max_resolution or (resolution == max_resolution and size > max_size):
+                    max_resolution, max_size, best_image_path = resolution, size, path
+        except Exception: continue
+    return best_image_path if best_image_path else group_paths[0]

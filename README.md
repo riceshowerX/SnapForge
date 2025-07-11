@@ -1,8 +1,10 @@
 
 <div align="center">
 
-  <!-- Logo已替换为您指定的链接 -->
-  <img src="https://github.com/riceshowerX/picx-images-hosting/raw/master/%E7%BD%91%E7%AB%99/android-chrome-192x192-1.6wqw9el8i6.webp" alt="SnapForge Logo" width="90" height="90">
+  <!-- Logo -->
+  <a href="https://snapforge.streamlit.app/" target="_blank">
+    <img src="https://github.com/riceshowerX/picx-images-hosting/raw/master/%E7%BD%91%E7%AB%99/android-chrome-192x192-1.6wqw9el8i6.webp" alt="SnapForge Logo" width="90" height="90">
+  </a>
 
   <h1>SnapForge</h1>
 
@@ -15,11 +17,11 @@
 
   <!-- 徽章 -->
   <p>
+    <a href="https://snapforge.streamlit.app/" target="_blank">
+      <img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg" alt="Streamlit App">
+    </a>
     <a href="https://github.com/riceshowerX/SnapForge/blob/main/LICENSE">
       <img src="https://img.shields.io/github/license/riceshowerX/SnapForge?style=for-the-badge&color=007EC6" alt="License">
-    </a>
-    <a href="https://github.com/riceshowerX/SnapForge/releases/latest">
-      <img src="https://img.shields.io/github/v/release/riceshowerX/SnapForge?style=for-the-badge&color=7856D5" alt="Release">
     </a>
     <img src="https://img.shields.io/github/stars/riceshowerX/SnapForge?style=for-the-badge&color=FE7D37" alt="Stars">
     <img src="https://img.shields.io/badge/Python-3.8+-blue?style=for-the-badge&logo=python" alt="Python Version">
@@ -28,29 +30,32 @@
 
 ---
 
-## 📸 软件界面预览
+## ✨ 在线体验 (Live Demo)
 
-![屏幕截图_11-7-2025_222137_localhost](https://github.com/user-attachments/assets/8c5a38a0-0b4a-426f-bd97-9bbca9065951)
+无需任何安装，立即在浏览器中体验SnapForge的全部功能！
 
-
----
-
-## ✨ 核心功能
-
-| 功能模块 | 详细说明 |
-| :--- | :--- |
-| **🖼️ 批量处理** | 支持对图片进行**格式转换** (JPEG, PNG, WEBP等)、**尺寸调整**、**压缩**、**重命名**、**水印添加**、**旋转**和**滤镜**等多种操作。 |
-| **💡 智能工具** | 提供 **AI一键去背景** (基于`rembg`和U²-Net)、**OCR文字识别**、**相似图片查找**以及**智能分类** (按尺寸/主色调) 等高级功能。 |
-| **📊 信息查看** | 一键查看图片的详细信息，包括**尺寸**、**文件大小**、**EXIF元数据**、**主色调**、**调色板**以及**RGB颜色直方图**。 |
-| **🌐 现代化UI** | 基于 Streamlit 构建，界面美观、响应迅速，支持**中/英文**一键切换，并提供清晰的**处理日志**和进度反馈。 |
-| **⚙️ 灵活配置** | 提供丰富的参数选项，如多种缩放模式（Fit, Fill, Pad, Crop）、自定义重命名规则、压缩质量调节等，满足专业需求。 |
-| **跨平台** | 完全兼容 **Windows / macOS / Linux** 主流操作系统。 |
+<div align="center" style="margin: 30px;">
+  <a href="https://snapforge.streamlit.app/" target="_blank" style="display: inline-block; padding: 14px 28px; background-color: #406aff; color: white; text-align: center; text-decoration: none; font-size: 18px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); transition: all 0.2s ease;">
+    🚀 点击这里，立即体验 Live Demo 🚀
+  </a>
+</div>
 
 ---
 
-## 🚀 快速上手
+<!-- *** 新增章节 *** -->
+## 🛡️ 使用建议与隐私声明
 
-在本地运行 SnapForge 非常简单，只需三个步骤：
+我们强烈建议您将**在线体验版**用于快速功能评估和处理非敏感图片。
+
+尽管 Streamlit Cloud 是一个安全可靠的平台，但为了**100%保障您的数据隐私和安全**，并获得**最佳处理性能**，我们推荐您在处理任何私人、重要或商业图片时，**在您自己的计算机上进行本地部署**。
+
+本地部署意味着所有图片文件始终保留在您的电脑上，绝不会上传到任何云服务器，让您完全掌控自己的数据。
+
+---
+
+## 🔧 本地安装指南
+
+如果您希望在本地离线使用、进行二次开发，或者处理大量敏感文件，请按照以下步骤操作：
 
 **1. 克隆项目仓库**
 ```bash
@@ -77,6 +82,26 @@ streamlit run app.py
 
 ---
 
+## 📸 软件界面预览
+
+![屏幕截图_11-7-2025_222137_localhost](https://github.com/user-attachments/assets/56c1b4c5-8be9-4490-9d86-a09bb48776b7)
+
+
+---
+
+## 🌟 核心功能
+
+| 功能模块 | 详细说明 |
+| :--- | :--- |
+| **🖼️ 批量处理** | 支持对图片进行**格式转换** (JPEG, PNG, WEBP等)、**尺寸调整**、**压缩**、**重命名**、**水印添加**、**旋转**和**滤镜**等多种操作。 |
+| **💡 交互式去重** | 革命性的去重工具！**智能预选**最佳图片，让您**交互式审查**并一键**打包下载**需要保留或多余的副本，安全又高效。|
+| **🛠️ 智能工具** | 提供 **AI一键去背景** (基于`rembg`和U²-Net)、**OCR文字识别**、以及**智能分类** (按尺寸/主色调) 等高级功能。 |
+| **📊 信息查看** | 一键查看图片的详细信息，包括**尺寸**、**文件大小**、**EXIF元数据**、**主色调**、**调色板**以及**RGB颜色直方图**。 |
+| **🌐 现代化UI** | 基于 Streamlit 构建，界面美观、响应迅速，支持**中/英文**一键切换，并提供清晰的**处理日志**和进度反馈。 |
+| **跨平台** | 完全兼容 **Windows / macOS / Linux** 主流操作系统。 |
+
+---
+
 ## 🧠 关于U²-Net模型 (去背景功能)
 
 SnapForge的去背景功能由强大的 [rembg](https://github.com/danielgatis/rembg) 库驱动，其核心模型为 [U²-Net](https://github.com/xuebinqin/U-2-Net)。
@@ -93,8 +118,8 @@ SnapForge的去背景功能由强大的 [rembg](https://github.com/danielgatis/r
 - [x] **UI/UX**: 现代化、多语言的Web界面 (中/英)
 - [x] **核心处理**: 批量格式转换、重命名、压缩、尺寸调整
 - [x] **高级处理**: 批量添加水印、旋转、滤镜
+- [x] **智能工具**: 交互式图片去重（智能预选+直接下载）
 - [x] **智能工具**: AI一键去背景 (支持批量)
-- [x] **智能工具**: 相似图片查找
 - [x] **智能工具**: OCR文字识别 & 智能分类
 - [x] **信息查看**: EXIF、主色调、直方图展示
 - [ ] **输出配置**: 自定义输出目录结构与命名模板

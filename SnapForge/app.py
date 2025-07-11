@@ -4,10 +4,12 @@ import streamlit as st
 import zipfile
 import io
 import tempfile
+import shutil
 from logic import (
     ImageProcessor, ProcessLog, find_duplicate_images,
     get_exif_data, get_image_main_color,
-    plot_image_histogram, ocr_image, smart_classify, remove_background
+    plot_image_histogram, ocr_image, smart_classify, remove_background,
+    select_best_image_in_group # 确保引入新函数
 )
 from PIL import Image
 from utils_i18n import get_translator
@@ -67,6 +69,8 @@ body { background-color: var(--bg-color); color: var(--text-color); font-family:
 }
 .stButton>button:hover, .stDownloadButton>button:hover { background-color: var(--primary-color); color: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(64, 106, 255, 0.3); }
 .stButton>button[kind="primary"] { background-color: var(--primary-color); color: #fff; }
+.stButton>button[kind="secondary"] { border-color: #F63366; color: #F63366; }
+.stButton>button[kind="secondary"]:hover { background-color: #F63366; color: #fff; border-color: #F63366; }
 .stButton>button[kind="primary"]:hover { filter: brightness(1.1); }
 .stTextInput>div>input, .stNumberInput>div>input, .stSelectbox>div>div>div { border-radius: var(--border-radius-sm); background-color: #f8f9fa; }
 .res-card { background: linear-gradient(100deg, #e9f2fe 0%, #e8fcff 100%); border-radius: var(--border-radius-lg); padding: 1.5rem; margin: 1.3rem 0; }
@@ -81,7 +85,7 @@ selected_lang = st.sidebar.selectbox("Language / 语言", ["English", "中文"])
 _ = get_translator(selected_lang)
 st.sidebar.title(_("⚙️ 设置"))
 
-# ---------- 顶部Banner (已更换为新图标) ----------
+# ---------- 顶部Banner ----------
 st.markdown(f"""
 <div class="header-banner">
     <svg class="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -105,7 +109,6 @@ st.markdown(f"""
 
 # ---------- 主体 ----------
 st.markdown('<div class="main-card">', unsafe_allow_html=True)
-# 移除了 "AI识别"
 tab_titles = [
     _("批量处理"), _("信息查看"), _("图片去重"),
     _("OCR分类"), _("智能去背景"), _("处理记录")
@@ -137,50 +140,24 @@ def pack_files_to_zip(file_paths):
 # ---------- Tab 0: 批量处理 ----------
 with tabs[0]:
     processor = ImageProcessor()
-    
     st.markdown(f'<h3>{_("📂 上传与处理模式")}</h3>', unsafe_allow_html=True)
-    
-    upload_mode = st.radio(
-        _("处理模式"), 
-        [_("批量处理（多文件上传）"), _("单文件处理")], 
-        horizontal=True, 
-        key="process_mode"
-    )
-
+    upload_mode = st.radio(_("处理模式"), [_("批量处理（多文件上传）"), _("单文件处理")], horizontal=True, key="process_mode")
     files = []
     if upload_mode == _("批量处理（多文件上传）"):
-        files = st.file_uploader(
-            _("上传图片文件（可混合格式）"), 
-            type=["jpg", "jpeg", "png", "bmp", "gif", "tiff", "webp"], 
-            accept_multiple_files=True, 
-            key="batch_upload"
-        )
-        
+        files = st.file_uploader(_("上传图片文件（可混合格式）"), type=["jpg", "jpeg", "png", "bmp", "gif", "tiff", "webp"], accept_multiple_files=True, key="batch_upload")
         process_filter_mode = st.radio(
             _("文件筛选"),
             (_("处理所有上传的图片格式"), _("仅处理指定格式的图片")),
-            index=0, horizontal=True,
-            help=_("“处理所有”会对上传的各种格式图片进行处理；“仅处理指定”则只处理下拉框中选定的类型。")
+            index=0, horizontal=True, help=_("“处理所有”会对上传的各种格式图片进行处理；“仅处理指定”则只处理下拉框中选定的类型。")
         )
-
         extension_to_filter = None
         if process_filter_mode == _("仅处理指定格式的图片"):
-            extension_to_filter = st.selectbox(
-                _("选择要处理的格式"), 
-                [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp"], 
-                index=0, key="filter_ext_select"
-            )
+            extension_to_filter = st.selectbox(_("选择要处理的格式"), [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp"], index=0, key="filter_ext_select")
     else:
-        one_file = st.file_uploader(
-            _("上传一个图片文件"), 
-            type=["jpg", "jpeg", "png", "bmp", "gif", "tiff", "webp"], 
-            accept_multiple_files=False, 
-            key="single_upload"
-        )
+        one_file = st.file_uploader(_("上传一个图片文件"), type=["jpg", "jpeg", "png", "bmp", "gif", "tiff", "webp"], accept_multiple_files=False, key="single_upload")
         if one_file:
             files = [one_file]
         extension_to_filter = None
-
     st.markdown(f'<h3 style="margin-top: 2rem;">{_("🛠️ 图片处理参数")}</h3>', unsafe_allow_html=True)
     with st.expander(_("重命名、格式转换与压缩"), expanded=True):
         enable_rename = st.checkbox(_("启用重命名"), value=True)
@@ -191,7 +168,6 @@ with tabs[0]:
         enable_compress = st.checkbox(_("启用质量压缩"))
         quality = st.slider(_("压缩质量 (1-100)"), 1, 100, 85, disabled=not enable_compress)
         st.caption(_("💡 JPEG/WEBP用质量，PNG为压缩等级"))
-
     with st.expander(_("尺寸调整与高级选项"), expanded=False):
         enable_resize = st.checkbox(_("启用尺寸调整"))
         resize_width = st.number_input(_("目标宽度(px)"), min_value=1, value=800, disabled=not enable_resize)
@@ -214,28 +190,21 @@ with tabs[0]:
         enable_crop = st.checkbox(_("启用批量裁剪"))
         crop_params = None
         if enable_crop:
-            crop_x = st.number_input(_("裁剪X"), 0)
-            crop_y = st.number_input(_("裁剪Y"), 0)
-            crop_w = st.number_input(_("裁剪宽"), 0)
-            crop_h = st.number_input(_("裁剪高"), 0)
+            crop_x, crop_y = st.number_input(_("裁剪X"), 0), st.number_input(_("裁剪Y"), 0)
+            crop_w, crop_h = st.number_input(_("裁剪宽"), 0), st.number_input(_("裁剪高"), 0)
             crop_params = {"x": crop_x, "y": crop_y, "w": crop_w, "h": crop_h}
         rotate = st.number_input(_("批量旋转角度"), -360, 360, 0)
         filter_type = st.selectbox(_("批量滤镜"), ["", "grayscale", "sharpen", "blur", "contour", "emboss", "edge", "enhance"])
-
     run_btn = st.button(_("🚀 开始处理图片"), type="primary", use_container_width=True, disabled=not files)
-    
     if run_btn:
         if "result_file_paths" in st.session_state:
             del st.session_state["result_file_paths"]
         st.session_state["result_file_paths"] = []
-
         st.markdown('<div class="res-card">', unsafe_allow_html=True)
         log_area, progress_bar, result_area, download_area = st.empty(), st.empty(), st.empty(), st.empty()
-        
         def streamlit_progress_callback(pct, filename=None):
             msg = _("正在处理: {}").format(filename) if filename else _("处理中...")
             progress_bar.progress(pct, msg)
-
         if not files:
             result_area.warning(_("请先上传图片文件！"), icon="⚠️")
         else:
@@ -246,8 +215,7 @@ with tabs[0]:
                     'files': file_paths, 'process_log': log,
                     'prefix': prefix if enable_rename else None,
                     'start_number': start_num if enable_rename else 1,
-                    'filter_extension': extension_to_filter,
-                    'convert_format': target_ext if enable_convert else None,
+                    'filter_extension': extension_to_filter, 'convert_format': target_ext if enable_convert else None,
                     'quality': quality if enable_compress else None,
                     'progress_callback': streamlit_progress_callback, 'preserve_metadata': preserve_metadata,
                     'resize_enabled': enable_resize, 'resize_width': resize_width, 'resize_height': resize_height,
@@ -260,14 +228,12 @@ with tabs[0]:
                     processed, total_input, result_paths = processor.batch_process(**args)
                     progress_bar.progress(100, _("处理完成！"))
                     log_area.text_area(_("处理日志"), log.get_text(), height=200)
-                    
                     if processed == 0 and total_input > 0:
                         result_area.error(_("❌ 未成功处理任何图片，请检查日志。"))
                     elif processed < total_input:
                         result_area.warning(_("⚠️ 部分成功：处理了 {} / {} 张符合条件的图片。").format(processed, total_input))
                     else:
                         result_area.success(_("✅ 处理完成：{} / {}").format(processed, total_input))
-                        
                     if result_paths:
                         zip_buffer = pack_files_to_zip(result_paths)
                         download_area.download_button(_("⬇️ 下载全部结果"), zip_buffer, "processed_images.zip", "application/zip", use_container_width=True)
@@ -284,16 +250,13 @@ with tabs[1]:
     if uploaded_info:
         try:
             img = Image.open(uploaded_info)
-            st.image(img, caption=_("图片预览"), use_column_width=True)
-
+            st.image(img, caption=_("图片预览"), use_container_width=True)
             temp_path_info = os.path.join(TEMP_DIR, uploaded_info.name)
             uploaded_info.seek(0)
             with open(temp_path_info, "wb") as out: out.write(uploaded_info.read())
-
             c1, c2 = st.columns(2)
             c1.info(f"**{_('尺寸')}:** {img.size[0]} x {img.size[1]} px")
             c2.info(f"**{_('文件大小')}:** {uploaded_info.size // 1024} KB")
-            
             with st.expander(_("🎨 色彩与格式信息")):
                 st.write(f"**{_('模式')}:** {img.mode} | **{_('格式')}:** {img.format}")
                 if img.info.get("dpi"): st.write(f"**DPI:** {img.info.get('dpi')}")
@@ -304,53 +267,86 @@ with tabs[1]:
                     st.markdown(f'<div style="width:100%;height:30px;background:rgb{dom_color};border-radius:4px;border:1px solid #ccc"></div>', unsafe_allow_html=True)
                 buf = plot_image_histogram(temp_path_info)
                 if buf: st.image(buf, caption=_("RGB直方图"))
-
             exif_data = get_exif_data(temp_path_info)
             if exif_data:
                 with st.expander(_("📷 EXIF 元数据")):
                     st.json(exif_data, expanded=False)
-            
         except Exception as e:
             st.error(_("分析图片时出错: {}").format(e))
 
-# ---------- Tab 2: 图片去重 ----------
+# ---------- Tab 2: 图片去重 (全新直接下载方案) ----------
 with tabs[2]:
-    st.markdown(f'<h3>{_("👯‍♀️ 图片去重")}</h3>', unsafe_allow_html=True)
+    st.markdown(f'<h3>{_("👯‍♀️ 交互式图片去重")}</h3>', unsafe_allow_html=True)
+    st.info(_("上传图片后，系统将自动预选要保留的最佳图片。您可以审查并修改选择，然后直接下载结果。"))
     files_dedup = st.file_uploader(_("上传需要去重的图片(至少2张)"), type=["jpg","jpeg","png","bmp","gif","tiff","webp"], accept_multiple_files=True, key="dedup_upload")
-    threshold_dedup = st.slider(_("相似度阈值 (越低越严格)"), 0, 20, 8, key="dedup_threshold")
-    if st.button(_("开始去重"), use_container_width=True, disabled=len(files_dedup)<2):
+    run_dedup_btn = st.button(_("查找重复图片"), use_container_width=True, disabled=len(files_dedup)<2, type="primary")
+    if run_dedup_btn:
+        st.session_state.duplicate_groups = []
         file_paths_dedup = save_uploaded_files(files_dedup, TEMP_DIR)
         with st.spinner(_("正在查找重复图片...")):
-            dups = find_duplicate_images(file_paths_dedup, threshold_dedup)
-            if not dups:
-                st.success(_("✅ 未检测到重复图片。"))
-            else:
-                st.warning(_("检测到 {} 组重复图片：").format(len(dups)))
-                for i, group in enumerate(dups):
-                    if selected_lang == "中文":
-                        st.markdown(f"**{_('第')} {i+1} {_('组')}**")
-                    else:
-                        st.markdown(f"**{_('第')} {i+1}**")
-                    cols = st.columns(len(group))
-                    for idx, path in enumerate(group):
-                        if os.path.exists(path):
-                            cols[idx].image(path, caption=os.path.basename(path), use_column_width=True)
+            st.session_state.duplicate_groups = find_duplicate_images(file_paths_dedup, 8) # Using default threshold
+    
+    if "duplicate_groups" in st.session_state and st.session_state.duplicate_groups:
+        st.markdown("---")
+        st.warning(_("检测到 {} 组重复图片：请检查下面的选择，然后下载您需要的结果。").format(len(st.session_state.duplicate_groups)))
+        
+        kept_files_paths = []
+        to_delete_files_paths = []
 
-# ---------- Tab 3: OCR/智能分类 (原Tab 4) ----------
+        with st.form(key="dedup_form"):
+            for i, group in enumerate(st.session_state.duplicate_groups):
+                best_image_path = select_best_image_in_group(group)
+                
+                # Create labels with metadata for the radio button
+                def format_label(path):
+                    try:
+                        with Image.open(path) as img:
+                            return f"{os.path.basename(path)} ({img.width}x{img.height}, {os.path.getsize(path)//1024} KB)"
+                    except Exception:
+                        return f"{os.path.basename(path)} ({_('无法读取')})"
+
+                kept_image_path = st.radio(
+                    f"**{_('第')} {i+1}{_('组') if selected_lang == '中文' else ''} - {_('选择要保留的图片：')}**",
+                    options=group,
+                    format_func=format_label,
+                    index=group.index(best_image_path) if best_image_path in group else 0,
+                    key=f"dedup_group_{i}"
+                )
+                
+                kept_files_paths.append(kept_image_path)
+                to_delete_files_paths.extend([p for p in group if p != kept_image_path])
+
+            submitted = st.form_submit_button(_("准备下载包"), use_container_width=True)
+
+        if submitted:
+            st.markdown("---")
+            st.markdown(f"<h4>{_('下载您的文件')}</h4>", unsafe_allow_html=True)
+            col_dl1, col_dl2 = st.columns(2)
+            with col_dl1:
+                if kept_files_paths:
+                    zip_buffer_kept = pack_files_to_zip(kept_files_paths)
+                    st.download_button(label=_("⬇️ 下载保留的图片 ({})").format(len(kept_files_paths)), data=zip_buffer_kept, file_name="kept_images.zip", mime="application/zip", use_container_width=True, type="primary")
+            with col_dl2:
+                if to_delete_files_paths:
+                    zip_buffer_deleted = pack_files_to_zip(to_delete_files_paths)
+                    st.download_button(label=_("⬇️ 下载多余的副本 ({})").format(len(to_delete_files_paths)), data=zip_buffer_deleted, file_name="redundant_images.zip", mime="application/zip", use_container_width=True, type="secondary")
+
+    elif run_dedup_btn:
+        st.success(_("✅ 经过扫描，未在您的上传中检测到重复图片。"))
+
+# ---------- Tab 3: OCR/智能分类 ----------
 with tabs[3]:
     st.markdown(f'<h3>{_("🔍 OCR & 智能分类")}</h3>', unsafe_allow_html=True)
     st.info(_("此选项卡提供两种独立的智能工具。"))
-    
     st.markdown(f"**1. {_('批量OCR文字识别')}**")
     files_ocr = st.file_uploader(_("上传图片进行OCR"), accept_multiple_files=True, key="ocr_upload")
     if st.button(_("开始OCR识别"), disabled=not files_ocr):
         file_paths_ocr = save_uploaded_files(files_ocr, TEMP_DIR)
         for idx, p in enumerate(file_paths_ocr):
             c1, c2 = st.columns([1,2])
-            c1.image(p, use_column_width=True)
+            c1.image(p, use_container_width=True)
             text = ocr_image(p)
             c2.text_area(_("识别结果"), text, height=150, key=f"ocr_{idx}")
-
     st.markdown(f"<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
     st.markdown(f"**2. {_('智能图片分类')}**")
     files_classify = st.file_uploader(_("上传图片进行分类"), accept_multiple_files=True, key="classify_upload")
@@ -360,7 +356,7 @@ with tabs[3]:
             st.image(p, width=120)
             st.write(f"{_('分类结果: ')}{', '.join(smart_classify(p))}")
 
-# ---------- Tab 4: 智能去背景 (原Tab 5) ----------
+# ---------- Tab 4: 智能去背景 ----------
 with tabs[4]:
     st.markdown(f'<h3>{_("🪄 智能去背景")}</h3>', unsafe_allow_html=True)
     files_bg = st.file_uploader(_("上传图片去除背景(推荐PNG)"), accept_multiple_files=True, key="bg_upload")
@@ -377,17 +373,15 @@ with tabs[4]:
                 except Exception as e:
                     st.error(f"{os.path.basename(in_path)} {_('去背景失败')}: {e}")
                 progress_bar_bg.progress((i + 1) / len(input_paths_bg))
-        
         if result_paths_bg:
             st.success(_("处理完成！"))
             cols = st.columns(3)
             for i, p in enumerate(result_paths_bg):
-                cols[i % 3].image(p, caption=os.path.basename(p), use_column_width=True)
-            
+                cols[i % 3].image(p, caption=os.path.basename(p), use_container_width=True)
             zip_buffer_bg = pack_files_to_zip(result_paths_bg)
             st.download_button(_("⬇️ 下载全部结果"), zip_buffer_bg, "background_removed.zip", "application/zip", use_container_width=True)
 
-# ---------- Tab 5: 处理记录/结果预览 (原Tab 6) ----------
+# ---------- Tab 5: 处理记录/结果预览 ----------
 with tabs[5]:
     st.markdown(f'<h3>{_("🗂️ 最近处理结果预览")}</h3>', unsafe_allow_html=True)
     rfp = st.session_state.get("result_file_paths", [])
@@ -397,7 +391,7 @@ with tabs[5]:
         for i, p in enumerate(rfp[:12]):
             if os.path.exists(p):
                 with cols[i % 4]:
-                    st.image(p, caption=os.path.basename(p), use_column_width=True)
+                    st.image(p, caption=os.path.basename(p), use_container_width=True)
             else:
                 with cols[i % 4]:
                     st.warning(f"{os.path.basename(p)} {_('不存在')}")
