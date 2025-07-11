@@ -9,7 +9,7 @@ from logic import (
     ImageProcessor, ProcessLog, find_duplicate_images,
     get_exif_data, get_image_main_color,
     plot_image_histogram, ocr_image, smart_classify, remove_background,
-    select_best_image_in_group, move_duplicates_to_trash # 确保引入新函数
+    select_best_image_in_group # 确保引入新函数
 )
 from PIL import Image
 from utils_i18n import get_translator
@@ -274,74 +274,62 @@ with tabs[1]:
         except Exception as e:
             st.error(_("分析图片时出错: {}").format(e))
 
-# ---------- Tab 2: 图片去重 (全新交互式版本) ----------
+# ---------- Tab 2: 图片去重 (全新直接下载方案) ----------
 with tabs[2]:
     st.markdown(f'<h3>{_("👯‍♀️ 交互式图片去重")}</h3>', unsafe_allow_html=True)
-    st.info(_("上传图片后，系统将自动预选要保留的最佳图片。您可以审查并修改选择，然后一键清理。"))
+    st.info(_("上传图片后，系统将自动预选要保留的最佳图片。您可以审查并修改选择，然后直接下载结果。"))
     files_dedup = st.file_uploader(_("上传需要去重的图片(至少2张)"), type=["jpg","jpeg","png","bmp","gif","tiff","webp"], accept_multiple_files=True, key="dedup_upload")
-    col1, col2 = st.columns(2)
-    with col1:
-        threshold_dedup = st.slider(_("相似度阈值 (越低越严格)"), 0, 20, 8, key="dedup_threshold")
-    with col2:
-        run_dedup_btn = st.button(_("查找重复图片"), use_container_width=True, disabled=len(files_dedup)<2, type="primary")
-
+    run_dedup_btn = st.button(_("查找重复图片"), use_container_width=True, disabled=len(files_dedup)<2, type="primary")
     if run_dedup_btn:
         st.session_state.duplicate_groups = []
-        st.session_state.user_selections = {}
-        dedup_dir = os.path.join(TEMP_DIR, "deduplication")
-        if os.path.exists(dedup_dir):
-            shutil.rmtree(dedup_dir)
-        os.makedirs(dedup_dir)
-        file_paths_dedup = save_uploaded_files(files_dedup, dedup_dir)
+        file_paths_dedup = save_uploaded_files(files_dedup, TEMP_DIR)
         with st.spinner(_("正在查找重复图片...")):
-            st.session_state.duplicate_groups = find_duplicate_images(file_paths_dedup, threshold_dedup)
+            st.session_state.duplicate_groups = find_duplicate_images(file_paths_dedup, 8) # Using default threshold
     
     if "duplicate_groups" in st.session_state and st.session_state.duplicate_groups:
         st.markdown("---")
-        st.warning(_("检测到 {} 组重复图片：请检查下面的选择，然后执行清理。").format(len(st.session_state.duplicate_groups)))
+        st.warning(_("检测到 {} 组重复图片：请检查下面的选择，然后下载您需要的结果。").format(len(st.session_state.duplicate_groups)))
         
-        selections = {}
+        kept_files_paths = []
+        to_delete_files_paths = []
+
         with st.form(key="dedup_form"):
             for i, group in enumerate(st.session_state.duplicate_groups):
-                st.markdown(f"**{_('第')} {i+1} {_('组') if selected_lang == '中文' else ''}**")
                 best_image_path = select_best_image_in_group(group)
                 
-                options = []
-                for path in group:
+                # Create labels with metadata for the radio button
+                def format_label(path):
                     try:
                         with Image.open(path) as img:
-                            label = f"{os.path.basename(path)} ({img.width}x{img.height}, {os.path.getsize(path)//1024} KB)"
-                            options.append((label, path))
+                            return f"{os.path.basename(path)} ({img.width}x{img.height}, {os.path.getsize(path)//1024} KB)"
                     except Exception:
-                        options.append((f"{os.path.basename(path)} [{_('无法读取')}]", path))
-                
-                option_labels = [opt[0] for opt in options]
-                option_paths = [opt[1] for opt in options]
+                        return f"{os.path.basename(path)} ({_('无法读取')})"
 
-                try:
-                    default_index = option_paths.index(best_image_path)
-                except ValueError:
-                    default_index = 0
+                kept_image_path = st.radio(
+                    f"**{_('第')} {i+1}{_('组') if selected_lang == '中文' else ''} - {_('选择要保留的图片：')}**",
+                    options=group,
+                    format_func=format_label,
+                    index=group.index(best_image_path) if best_image_path in group else 0,
+                    key=f"dedup_group_{i}"
+                )
                 
-                kept_image_path = st.radio(_("选择要保留的图片："), options=option_paths, format_func=lambda p: [opt[0] for opt in options if opt[1] == p][0], index=default_index, key=f"dedup_group_{i}")
-                selections[kept_image_path] = [p for p in group if p != kept_image_path]
+                kept_files_paths.append(kept_image_path)
+                to_delete_files_paths.extend([p for p in group if p != kept_image_path])
 
-            st.session_state.user_selections = selections
-            
+            submitted = st.form_submit_button(_("准备下载包"), use_container_width=True)
+
+        if submitted:
             st.markdown("---")
-            st.markdown(f"<h4>{_('执行操作')}</h4>", unsafe_allow_html=True)
-            
-            col_act1, col_act2 = st.columns(2)
-            form_submitted = st.form_submit_button(label=_("✅ 清理并将副本移至回收站"), use_container_width=True, help=_("推荐操作。多余的图片将被移动到临时目录下的 'duplicates_trash' 文件夹中。"), type="primary")
-
-            if form_submitted:
-                files_to_delete = [item for sublist in st.session_state.user_selections.values() for item in sublist]
-                base_folder = os.path.dirname(files_to_delete[0])
-                moved_count, freed_space = move_duplicates_to_trash(files_to_delete, base_folder)
-                st.success(_("操作完成！已将 {} 张重复图片移至回收站，释放了 {:.2f} MB 空间。").format(moved_count, freed_space))
-                st.info(_("您可以在处理完成并下载zip包后，在您的临时文件夹中找到 'duplicates_trash' 目录。"))
-                del st.session_state.duplicate_groups
-                del st.session_state.user_selections
+            st.markdown(f"<h4>{_('下载您的文件')}</h4>", unsafe_allow_html=True)
+            col_dl1, col_dl2 = st.columns(2)
+            with col_dl1:
+                if kept_files_paths:
+                    zip_buffer_kept = pack_files_to_zip(kept_files_paths)
+                    st.download_button(label=_("⬇️ 下载保留的图片 ({})").format(len(kept_files_paths)), data=zip_buffer_kept, file_name="kept_images.zip", mime="application/zip", use_container_width=True, type="primary")
+            with col_dl2:
+                if to_delete_files_paths:
+                    zip_buffer_deleted = pack_files_to_zip(to_delete_files_paths)
+                    st.download_button(label=_("⬇️ 下载多余的副本 ({})").format(len(to_delete_files_paths)), data=zip_buffer_deleted, file_name="redundant_images.zip", mime="application/zip", use_container_width=True, type="secondary")
 
     elif run_dedup_btn:
         st.success(_("✅ 经过扫描，未在您的上传中检测到重复图片。"))

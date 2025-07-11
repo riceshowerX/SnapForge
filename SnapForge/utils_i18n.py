@@ -1,21 +1,10 @@
 # utils_i18n.py
 lang_dict = {
-    # ===================================================================
-    # 应用程序全局文本
-    # ===================================================================
     "高效、专业、美观的批量图片处理平台": "An efficient, professional, and beautiful platform for image processing.",
     "⚙️ 设置": "⚙️ Settings", "前往GitHub仓库": "Go to GitHub Repository", "反馈建议/提Issue": "Feedback & Issues",
     "由": "by", "设计与开发": "Designed & Developed",
-    
-    # ===================================================================
-    # Tab 标题
-    # ===================================================================
     "批量处理": "Batch Process", "信息查看": "Image Info", "图片去重": "Find Duplicates",
     "OCR分类": "OCR & Classify", "智能去背景": "AI Background Remover", "处理记录": "History & Results",
-
-    # ===================================================================
-    # Tab 0: 批量处理
-    # ===================================================================
     "📂 上传与处理模式": "1. Upload & Mode", "处理模式": "Processing Mode",
     "批量处理（多文件上传）": "Batch Upload (Multiple Files)", "单文件处理": "Single File",
     "上传图片文件（可混合格式）": "Upload Image Files (Mixed Formats Supported)", "文件筛选": "File Filtering",
@@ -42,56 +31,32 @@ lang_dict = {
     "⚠️ 部分成功：处理了 {} / {} 张符合条件的图片。": "⚠️ Partial Success: Processed {} out of {} eligible images.",
     "✅ 处理完成：{} / {}": "✅ Success: Processed {} / {} images.", "⬇️ 下载全部结果": "⬇️ Download All Results",
     "处理中发生严重错误: {}": "A critical error occurred during processing: {}",
-
-    # ===================================================================
-    # Tab 1: 信息查看
-    # ===================================================================
     "🖼️ 图片信息查看": "🖼️ View Image Information", "上传图片以查看详细信息": "Upload an image to view its details",
     "图片预览": "Preview", "尺寸": "Dimensions", "文件大小": "File Size",
     "🎨 色彩与格式信息": "🎨 Color & Format Information", "模式": "Mode", "格式": "Format", "帧数": "Frame Count",
     "主色调": "Dominant Color", "RGB直方图": "RGB Histogram", "📷 EXIF 元数据": "📷 EXIF Metadata",
     "分析图片时出错: {}": "Error analyzing image: {}",
-
-    # ===================================================================
-    # Tab 2: 图片去重
-    # ===================================================================
     "👯‍♀️ 交互式图片去重": "👯‍♀️ Interactive Duplicate Finder",
-    "上传图片后，系统将自动预选要保留的最佳图片。您可以审查并修改选择，然后一键清理。": "After uploading, the system will auto-select the best image to keep. You can review and change the selections, then clean them up with one click.",
+    "上传图片后，系统将自动预选要保留的最佳图片。您可以审查并修改选择，然后直接下载结果。": "After uploading, the system will auto-select the best image to keep. You can review, modify the selections, and then directly download the results.",
     "上传需要去重的图片(至少2张)": "Upload images to find duplicates (min. 2)",
     "相似度阈值 (越低越严格)": "Similarity Threshold (Lower is stricter)",
     "查找重复图片": "Find Duplicates", "正在查找重复图片...": "Searching for duplicate images...",
-    "检测到 {} 组重复图片：请检查下面的选择，然后执行清理。": "Found {} groups of duplicate images. Please review the selections below and proceed.",
-    "第": "Group", "组": "", "选择要保留的图片：": "Select the image to keep:", "无法读取": "Cannot Read",
-    "执行操作": "Execute Action", "✅ 清理并将副本移至回收站": "✅ Clean & Move Duplicates to Trash",
-    "推荐操作。多余的图片将被移动到临时目录下的 'duplicates_trash' 文件夹中。": "Recommended. Redundant files will be moved to a 'duplicates_trash' folder within the temporary directory.",
-    "🔥 永久删除所有副本": "🔥 Permanently Delete Duplicates", "警告：此操作不可恢复！": "Warning: This action is irreversible!",
-    "操作完成！已将 {} 张重复图片移至回收站，释放了 {:.2f} MB 空间。": "Done! Moved {} duplicate files to trash, freeing up {:.2f} MB of space.",
-    "您可以在处理完成并下载zip包后，在您的临时文件夹中找到 'duplicates_trash' 目录。": "You can find the 'duplicates_trash' directory in your temp folder after the session.",
-    "操作完成！已永久删除 {} 张重复图片，释放了 {:.2f} MB 空间。": "Done! Permanently deleted {} duplicate files, freeing up {:.2f} MB of space.",
-    "删除文件 {} 时出错: {}": "Error deleting file {}: {}",
+    "检测到 {} 组重复图片：请检查下面的选择，然后下载您需要的结果。": "Found {} groups of duplicate images. Please review the selections below and download your desired files.",
+    "第": "Group", "组": "", "选择要保留的图片：": "Select image to keep:", "无法读取": "Cannot Read",
+    "准备下载包": "Prepare Download Packages", "下载您的文件": "Download Your Files",
+    "⬇️ 下载保留的图片 ({})": "⬇️ Download Kept Images ({})",
+    "⬇️ 下载多余的副本 ({})": "⬇️ Download Redundant Copies ({})",
     "✅ 经过扫描，未在您的上传中检测到重复图片。": "✅ Scan complete. No duplicate images were detected in your upload.",
-
-    # ===================================================================
-    # Tab 3: OCR & 分类
-    # ===================================================================
     "🔍 OCR & 智能分类": "🔍 OCR & Smart Classification",
     "此选项卡提供两种独立的智能工具。": "This tab provides two independent smart tools.",
     "批量OCR文字识别": "Batch OCR", "上传图片进行OCR": "Upload images for OCR", "开始OCR识别": "Start OCR",
     "识别结果": "Recognition Result", "智能图片分类": "Smart Classification",
     "上传图片进行分类": "Upload images for classification", "开始智能分类": "Start Classification",
     "分类结果: ": "Classification Result: ",
-
-    # ===================================================================
-    # Tab 4: 智能去背景
-    # ===================================================================
     "🪄 智能去背景": "🪄 AI Background Remover",
     "上传图片去除背景(推荐PNG)": "Upload images to remove background (PNG recommended)",
     "开始去背景": "Remove Background", "正在去除背景...": "Removing backgrounds...",
     "去背景失败": "failed to remove background",
-    
-    # ===================================================================
-    # Tab 5: 处理记录
-    # ===================================================================
     "🗂️ 最近处理结果预览": "🗂️ Preview of Last Results",
     "这里将展示“批量处理”选项卡最近一次成功运行的结果。": "This area shows the results from the last successful run in the 'Batch Process' tab.",
     "不存在": "does not exist",
@@ -100,7 +65,6 @@ lang_dict = {
 
 def get_translator(lang="中文"):
     def _(text_key):
-        if lang == "中文":
-            return text_key
+        if lang == "中文": return text_key
         return lang_dict.get(text_key, text_key)
     return _
