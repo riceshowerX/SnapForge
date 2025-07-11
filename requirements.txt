@@ -1,15 +1,8 @@
 streamlit
-fastapi
-uvicorn
 Pillow
 imagehash
 piexif
 colorthief
 matplotlib
 pytesseract
-baidu-aip
-requests
-oss2
-python-multipart
 rembg
-onnxruntime
