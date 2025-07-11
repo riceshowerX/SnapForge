@@ -6,3 +6,4 @@ colorthief
 matplotlib
 pytesseract
 rembg
+onnxruntime
