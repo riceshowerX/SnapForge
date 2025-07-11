@@ -1,5 +1,4 @@
 streamlit
-fastapi
 uvicorn
 Pillow
 imagehash

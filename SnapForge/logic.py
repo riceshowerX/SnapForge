@@ -1,14 +1,13 @@
+# logic.py
 import os
-import threading
-import concurrent.futures
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
+import io
+# 删除了不再需要的 base64 和 requests
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps
 import imagehash
 import piexif
 from colorthief import ColorThief
 import matplotlib.pyplot as plt
-import io
 import pytesseract
-from typing import List, Optional, Dict, Any
 from rembg import remove
 
 class ProcessLog:
@@ -21,126 +20,63 @@ class ProcessLog:
         return "\n".join(self.entries)
 
 class ImageProcessor:
-    def __init__(self, threads: int = 1):
-        self.supported_formats = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp"}
+    def __init__(self):
         self.format_mapping = {
             ".jpg": "JPEG", ".jpeg": "JPEG", ".png": "PNG",
             ".bmp": "BMP", ".gif": "GIF", ".tiff": "TIFF", ".webp": "WEBP"
         }
-        self.threads = threads
 
-    def batch_process(
-        self,
-        files: List[str],
-        prefix: Optional[str]=None,
-        start_number: int=1,
-        extension: Optional[str]=None,
-        convert_format: Optional[str]=None,
-        quality: Optional[int]=None,
-        progress_callback=None,
-        preserve_metadata: bool=True,
-        resize_enabled: bool=False,
-        resize_width: Optional[int]=None,
-        resize_height: Optional[int]=None,
-        resize_mode: str="fit",
-        resize_only_shrink: bool=True,
-        watermark: Optional[Dict]=None,
-        crop_params: Optional[Dict]=None,
-        rotate: int=0,
-        filter_type: Optional[str]=None,
-        exif_edit: Optional[Dict]=None,
-        process_log: Optional[ProcessLog]=None
-    ):
-        if extension:
-            extension = self._normalize_extension(extension)
-        if convert_format:
-            convert_format = self._normalize_extension(convert_format)
-        processed = 0
-        total_files = len(files)
+    def batch_process(self, files, process_log, **kwargs):
+        filter_ext_norm = self._normalize_extension(kwargs.get('filter_extension'))
+        convert_ext_norm = self._normalize_extension(kwargs.get('convert_format'))
+        
+        processed_counter = 0
         result_paths = []
-        if total_files == 0:
-            if progress_callback:
-                progress_callback(100, "")
-            return (0, 0, [])
-        out_dir = os.path.dirname(os.path.abspath(files[0]))
-
-        # 支持多线程并发
-        results = [None] * total_files
-        lock = threading.Lock()
-        def process_one(index, file_path):
-            nonlocal processed
-            filename = os.path.basename(file_path)
-            filename = "".join(x for x in filename if x.isalnum() or x in "._-")
-            try:
-                # 图片类型检测
-                file_ext = self._normalize_extension(os.path.splitext(file_path)[1])
-                if extension and file_ext != extension:
-                    if process_log: process_log.add(f"跳过: {filename}（类型不符，仅处理{extension}）", level="skip")
-                    return
-                try:
-                    with Image.open(file_path) as test_img:
-                        test_img.verify()
-                except Exception:
-                    if process_log: process_log.add(f"跳过: {filename}（不是有效图片）", level="skip")
-                    return
-                if resize_enabled and (not resize_width or not resize_height or resize_width < 1 or resize_height < 1):
-                    if process_log: process_log.add(f"跳过: {filename}（非法尺寸参数）", level="skip")
-                    return
-                if convert_format and file_ext == convert_format and not quality:
-                    if process_log: process_log.add(f"跳过: {filename}（输入输出格式相同且无压缩变更）", level="skip")
-                    return
-                # 自动检测EXIF与色彩空间
-                exif_info = get_exif_data(file_path)
-                img_info = ""
-                try:
-                    with Image.open(file_path) as im:
-                        img_info = f", 分辨率: {im.size}, 模式: {im.mode}, DPI: {im.info.get('dpi', '未知')}"
-                except Exception:
-                    pass
-                new_filename = self._generate_filename(
-                    prefix, start_number + index,
-                    convert_format or file_ext, out_dir
-                )
-                temp_path = os.path.join(out_dir, new_filename)
-                self._process_image(
-                    file_path, temp_path,
-                    convert_format, quality, preserve_metadata,
-                    resize_enabled, resize_width, resize_height, resize_mode, resize_only_shrink,
-                    watermark, crop_params, rotate, filter_type, exif_edit
-                )
-                with lock:
-                    nonlocal result_paths
-                    processed += 1
-                    result_paths.append(temp_path)
-                if process_log: process_log.add(f"成功: {filename} → {new_filename}{img_info}", level="info")
-            except Exception as e:
-                if process_log: process_log.add(f"失败: {filename}，原因: {repr(e)}", level="error")
-            finally:
-                self._update_progress(progress_callback, processed, total_files, filename)
-
-        # 并发处理
-        if self.threads > 1:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.threads) as executor:
-                futures = [executor.submit(process_one, idx, path) for idx, path in enumerate(files)]
-                concurrent.futures.wait(futures)
+        
+        files_to_process = []
+        if filter_ext_norm:
+            for file_path in files:
+                if self._normalize_extension(os.path.splitext(file_path)[1]) == filter_ext_norm:
+                    files_to_process.append(file_path)
+                else:
+                    process_log.add(f"跳过: {os.path.basename(file_path)}（格式不符）", level="skip")
         else:
-            for idx, file_path in enumerate(files):
-                process_one(idx, file_path)
+            files_to_process = files
 
-        return (processed, total_files, result_paths)
+        total_to_process = len(files_to_process)
+        if total_to_process == 0:
+            self._update_progress(kwargs.get('progress_callback'), 1, 1, "无文件处理")
+            return 0, 0, []
 
+        out_dir = os.path.dirname(os.path.abspath(files[0]))
+        for index, file_path in enumerate(files_to_process):
+            filename = os.path.basename(file_path)
+            try:
+                original_ext = self._normalize_extension(os.path.splitext(file_path)[1])
+                final_ext = convert_ext_norm or original_ext
+                new_filename = self._generate_filename(kwargs.get('prefix'), kwargs.get('start_number', 1) + processed_counter, final_ext, out_dir)
+                temp_path = os.path.join(out_dir, new_filename)
+                
+                self._process_image(file_path, temp_path, final_ext, **kwargs)
+
+                processed_counter += 1
+                result_paths.append(temp_path)
+                process_log.add(f"成功: {filename} → {new_filename}", level="info")
+            except Exception as e:
+                process_log.add(f"失败: {filename}，原因: {e}", level="error")
+            finally:
+                self._update_progress(kwargs.get('progress_callback'), index + 1, total_to_process, filename)
+        
+        return processed_counter, total_to_process, result_paths
+    
     def _normalize_extension(self, ext):
-        if not ext:
-            return None
-        ext = ext.lower()
-        if not ext.startswith("."):
-            ext = "." + ext
-        if ext == ".jpeg":
-            return ".jpg"
-        return ext
+        if not ext: return None
+        return f".{ext.lower()}" if not ext.startswith('.') else ext.lower()
 
     def _generate_filename(self, prefix, number, extension, target_dir):
-        base_name = f"{prefix}_{number:04d}" if prefix else f"{number:04d}"
+        if not prefix:
+            prefix = "processed"
+        base_name = f"{prefix}_{number:04d}"
         new_name = f"{base_name}{extension}"
         counter = 1
         while os.path.exists(os.path.join(target_dir, new_name)):
@@ -148,366 +84,172 @@ class ImageProcessor:
             counter += 1
         return new_name
 
-    def _process_image(
-        self,
-        src_path,
-        dest_path,
-        target_ext,
-        quality,
-        preserve_metadata,
-        resize_enabled=False,
-        resize_width=None,
-        resize_height=None,
-        resize_mode="fit",
-        resize_only_shrink=True,
-        watermark=None,
-        crop_params=None,
-        rotate=0,
-        filter_type=None,
-        exif_edit=None
-    ):
-        file_ext = self._normalize_extension(os.path.splitext(src_path)[1])
+    def _process_image(self, src_path, dest_path, target_ext, **kwargs):
         with Image.open(src_path) as img:
-            img = img.convert("RGBA") if img.mode not in ("RGB", "RGBA") else img.copy()
-            exif_data = img.info.get("exif") if preserve_metadata else None
-            # EXIF智能写回
-            if exif_edit and exif_data:
-                try:
-                    exif_dict = piexif.load(exif_data)
-                    for k, v in exif_edit.items():
-                        if k in exif_dict["0th"]:
-                            exif_dict["0th"][k] = v
-                    exif_data = piexif.dump(exif_dict)
-                except Exception:
-                    pass
-            if crop_params:
-                x, y, w, h = crop_params.get("x",0), crop_params.get("y",0), crop_params.get("w"), crop_params.get("h")
-                img = img.crop((x, y, x+w, y+h)) if w and h else img
-            if rotate:
-                img = img.rotate(rotate, expand=True)
-            if resize_enabled and resize_width and resize_height:
-                img = self._resize_image(img, resize_width, resize_height, resize_mode, resize_only_shrink)
-            if filter_type:
-                img = self.apply_filter(img, filter_type)
-            if watermark:
-                img = self.apply_watermark(img, watermark)
+            exif_data = img.info.get("exif") if kwargs.get('preserve_metadata') else None
+            
+            if img.format == 'GIF':
+                img = img.convert("RGBA")
+            else:
+                img = img.convert("RGBA")
+
+            if kwargs.get('crop_params') and kwargs['crop_params'].get('w', 0) > 0 and kwargs['crop_params'].get('h', 0) > 0:
+                cp = kwargs['crop_params']
+                img = img.crop((cp["x"], cp["y"], cp["x"] + cp["w"], cp["y"] + cp["h"]))
+
+            if kwargs.get('rotate', 0) != 0:
+                img = img.rotate(kwargs['rotate'], expand=True, fillcolor=(0,0,0,0))
+
+            if kwargs.get('resize_enabled'):
+                img = self._resize_image(img, kwargs['resize_width'], kwargs['resize_height'], kwargs.get('resize_mode', 'fit'), kwargs.get('resize_only_shrink', True))
+            
+            if kwargs.get('filter_type'):
+                img = self.apply_filter(img, kwargs['filter_type'])
+
+            if kwargs.get('watermark'):
+                img = self.apply_watermark(img, kwargs['watermark'])
+            
             save_params = {}
-            if target_ext:
-                pil_format = self.format_mapping.get(target_ext)
-                if pil_format:
-                    save_params["format"] = pil_format
-            if quality is not None:
+            if target_ext in self.format_mapping:
+                save_params["format"] = self.format_mapping[target_ext]
+            
+            if kwargs.get('quality') is not None:
+                quality = kwargs.get('quality')
                 if target_ext in (".jpg", ".jpeg", ".webp"):
-                    save_params["quality"] = max(1, min(100, quality))
+                    save_params["quality"] = int(max(1, min(100, quality)))
                 elif target_ext == ".png":
-                    save_params["compress_level"] = min(9, max(0, 9 - quality // 11))
+                    save_params["compress_level"] = int(max(0, min(9, (100 - quality) // 10)))
+            
             if exif_data:
                 save_params["exif"] = exif_data
-            if target_ext in [".jpg", ".jpeg"] and img.mode in ("RGBA", "LA"):
-                img = img.convert("RGB")
+            
+            if target_ext in [".jpg", ".jpeg", ".bmp"] and img.mode in ("RGBA", "LA", "P"):
+                background = Image.new("RGB", img.size, (255, 255, 255))
+                background.paste(img, mask=img.split()[3])
+                img = background
+            
             img.save(dest_path, **save_params)
 
     def _resize_image(self, img, width, height, mode="fit", only_shrink=True):
         orig_w, orig_h = img.size
-        if only_shrink and orig_w <= width and orig_h <= height:
-            return img
+        if only_shrink and orig_w <= width and orig_h <= height: return img
         if mode == "fit":
-            img_copy = img.copy()
-            img_copy.thumbnail((width, height), Image.LANCZOS)
-            return img_copy
-        elif mode == "fill":
-            ratio = max(width / orig_w, height / orig_h)
-            new_size = (int(orig_w * ratio), int(orig_h * ratio))
-            img2 = img.resize(new_size, Image.LANCZOS)
-            left = (img2.width - width) // 2
-            top = (img2.height - height) // 2
-            return img2.crop((left, top, left + width, top + height))
-        elif mode == "pad":
-            img_copy = img.copy()
-            img_copy.thumbnail((width, height), Image.LANCZOS)
-            new_img = Image.new("RGBA", (width, height), (255,255,255,0))
-            offset_x = (width - img_copy.width) // 2
-            offset_y = (height - img_copy.height) // 2
-            new_img.paste(img_copy, (offset_x, offset_y))
-            return new_img
-        elif mode == "crop":
-            left = max(0, (orig_w - width) // 2)
-            top = max(0, (orig_h - height) // 2)
-            return img.crop((left, top, left + width, top + height))
-        else:
+            img.thumbnail((width, height), Image.Resampling.LANCZOS)
             return img
-
+        return ImageOps.fit(img, (width, height), Image.Resampling.LANCZOS)
+            
     def _update_progress(self, callback, processed, total, filename=""):
         if callback:
-            progress = int(processed / total * 100)
-            progress = min(100, max(0, progress))  # 确保进度值在 [0, 100] 范围内
+            progress = int(processed / total * 100) if total > 0 else 100
             callback(progress, filename)
 
-    def apply_watermark(self, img, watermark: Dict[str, Any]):
-        # 支持图片logo水印
+    def apply_watermark(self, img, watermark):
         text = watermark.get("text")
-        font_path = watermark.get("font", None)
-        font_size = watermark.get("size", 32)
-        color = watermark.get("color", (255,255,255,128))
-        pos = watermark.get("pos", "bottom-right")
-        logo_path = watermark.get("logo", None)
-        logo_alpha = watermark.get("logo_alpha", 128)
-
-        if img.mode != "RGBA":
-            img = img.convert("RGBA")
-        overlay = Image.new("RGBA", img.size, (0,0,0,0))
+        if not text: return img
+        base_image = img.copy()
+        overlay = Image.new("RGBA", base_image.size, (0, 0, 0, 0))
         draw = ImageDraw.Draw(overlay)
-
-        # 文字水印
-        if text:
-            try:
-                font = ImageFont.truetype(font_path or "arial.ttf", font_size)
-            except:
-                font = ImageFont.load_default()
-            text_size = draw.textsize(text, font=font)
-            margin = 10
-            positions = {
-                "bottom-right": (img.width - text_size[0] - margin, img.height - text_size[1] - margin),
-                "bottom-left": (margin, img.height - text_size[1] - margin),
-                "top-right": (img.width - text_size[0] - margin, margin),
-                "top-left": (margin, margin),
-                "center": ((img.width-text_size[0])//2, (img.height-text_size[1])//2)
-            }
-            xy = positions.get(pos, positions["bottom-right"])
-            draw.text(xy, text, font=font, fill=color)
-
-        # logo水印
-        if logo_path and os.path.isfile(logo_path):
-            try:
-                with Image.open(logo_path) as logo:
-                    logo = logo.convert("RGBA")
-                    # 缩放logo到图片宽度的1/6
-                    scale = img.width // 6 / logo.width
-                    logo = logo.resize((int(logo.width*scale), int(logo.height*scale)))
-                    l_w, l_h = logo.size
-                    # 位置与文字一致
-                    margin = 10
-                    positions = {
-                        "bottom-right": (img.width - l_w - margin, img.height - l_h - margin),
-                        "bottom-left": (margin, img.height - l_h - margin),
-                        "top-right": (img.width - l_w - margin, margin),
-                        "top-left": (margin, margin),
-                        "center": ((img.width-l_w)//2, (img.height-l_h)//2)
-                    }
-                    xy = positions.get(pos, positions["bottom-right"])
-                    # 设置透明度
-                    alpha = logo.split()[3].point(lambda p: logo_alpha)
-                    logo.putalpha(alpha)
-                    overlay.paste(logo, xy, logo)
-            except Exception:
-                pass
-
-        return Image.alpha_composite(img, overlay)
+        font_path, font_size, color, pos = watermark.get("font"), watermark.get("size", 32), watermark.get("color", (255,255,255,128)), watermark.get("pos", "bottom-right")
+        try:
+            font = ImageFont.truetype(font_path or "arial.ttf", font_size)
+        except IOError:
+            font = ImageFont.load_default()
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width, text_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        margin = 15
+        positions = {
+            "bottom-right": (base_image.width - text_width - margin, base_image.height - text_height - margin),
+            "bottom-left": (margin, base_image.height - text_height - margin),
+            "top-right": (base_image.width - text_width - margin, margin),
+            "top-left": (margin, margin),
+            "center": ((base_image.width - text_width) // 2, (base_image.height - text_height) // 2)
+        }
+        x, y = positions.get(pos, positions["bottom-right"])
+        draw.text((x, y), text, font=font, fill=color)
+        return Image.alpha_composite(base_image, overlay)
 
     def apply_filter(self, img, filter_type):
-        if filter_type == "grayscale":
-            return img.convert("L").convert("RGBA")
-        elif filter_type == "sharpen":
-            return img.filter(ImageFilter.SHARPEN)
-        elif filter_type == "blur":
-            return img.filter(ImageFilter.BLUR)
-        elif filter_type == "contour":
-            return img.filter(ImageFilter.CONTOUR)
-        elif filter_type == "emboss":
-            return img.filter(ImageFilter.EMBOSS)
-        elif filter_type == "edge":
-            return img.filter(ImageFilter.FIND_EDGES)
+        rgb_img = img.convert("RGB")
+        if filter_type == "grayscale": return img.convert("L")
+        elif filter_type == "sharpen": filtered_img = rgb_img.filter(ImageFilter.SHARPEN)
+        elif filter_type == "blur": filtered_img = rgb_img.filter(ImageFilter.BLUR)
+        elif filter_type == "contour": filtered_img = rgb_img.filter(ImageFilter.CONTOUR)
+        elif filter_type == "emboss": filtered_img = rgb_img.filter(ImageFilter.EMBOSS)
+        elif filter_type == "edge": filtered_img = rgb_img.filter(ImageFilter.FIND_EDGES)
         elif filter_type == "enhance":
-            enhancer = ImageEnhance.Contrast(img)
-            return enhancer.enhance(1.5)
-        else:
-            return img
+            enhancer = ImageEnhance.Contrast(rgb_img)
+            filtered_img = enhancer.enhance(1.5)
+        else: return img
+        return filtered_img.convert("RGBA")
 
-def find_duplicate_images(file_paths, threshold=8, method="phash"):
-    """支持多种去重算法: phash(默认), ahash, dhash, colorhist"""
-    hashes = {}
-    groups = []
+# --- Independent Functions ---
+def find_duplicate_images(file_paths, threshold=8):
+    hashes, groups, used = {}, [], set()
     for path in file_paths:
         try:
-            with Image.open(path) as img:
-                if method == "phash":
-                    h = imagehash.phash(img)
-                elif method == "ahash":
-                    h = imagehash.average_hash(img)
-                elif method == "dhash":
-                    h = imagehash.dhash(img)
-                elif method == "colorhist":
-                    h = tuple(img.histogram())
-                else:
-                    h = imagehash.phash(img)
-            hashes[path] = h
-        except Exception:
-            continue
-    used = set()
+            with Image.open(path) as img: hashes[path] = imagehash.phash(img)
+        except Exception: continue
     for path1, hash1 in hashes.items():
-        if path1 in used:
-            continue
+        if path1 in used: continue
         group = [path1]
         for path2, hash2 in hashes.items():
-            if path2 != path1 and path2 not in used:
-                # 支持 colorhist
-                try:
-                    dist = (hash1 - hash2) if hasattr(hash1, '__sub__') else sum(abs(a-b) for a,b in zip(hash1, hash2))//1000
-                except Exception:
-                    dist = 1000
-                if dist <= threshold:
-                    group.append(path2)
-                    used.add(path2)
+            if path2 != path1 and path2 not in used and abs(hash1 - hash2) <= threshold: group.append(path2)
         if len(group) > 1:
-            for p in group:
-                used.add(p)
-            groups.append(group)
+            for p in group: used.add(p)
+            groups.append(sorted(group))
     return groups
 
 def get_exif_data(image_path):
     try:
         exif_dict = piexif.load(image_path)
         exif_data = {}
-        for ifd in exif_dict:
-            if isinstance(exif_dict[ifd], dict):
-                for tag in exif_dict[ifd]:
-                    tag_name = piexif.TAGS[ifd][tag]["name"]
-                    value = exif_dict[ifd][tag]
+        for ifd in ("0th", "Exif", "GPS", "1st", "thumbnail"):
+            if ifd in exif_dict and isinstance(exif_dict[ifd], dict):
+                for tag, value in exif_dict[ifd].items():
+                    tag_name = piexif.TAGS.get(ifd, {}).get(tag, {}).get("name", hex(tag))
                     if isinstance(value, bytes):
-                        try:
-                            value = value.decode()
-                        except Exception:
-                            value = str(value)
-                    exif_data[tag_name] = value
-        return exif_data
-    except Exception:
-        return {}
+                        try: value = value.strip(b'\x00').decode('utf-8', errors='ignore')
+                        except: value = str(value)
+                    exif_data[f"{ifd}:{tag_name}"] = value
+        return exif_data if exif_data else {}
+    except Exception: return {}
 
 def get_image_main_color(image_path):
     try:
-        ct = ColorThief(image_path)
-        dom_color = ct.get_color(quality=1)
-        palette = ct.get_palette(color_count=6)
-        return dom_color, palette
-    except Exception:
-        return None, []
+        ct = ColorThief(image_path); return ct.get_color(quality=1), ct.get_palette(color_count=6, quality=1)
+    except Exception: return None, []
 
 def plot_image_histogram(image_path):
     try:
-        img = Image.open(image_path).convert('RGB')
-        plt.figure(figsize=(4,1.5))
-        color = ('r','g','b')
-        for i,c in enumerate(color):
-            histo = img.getchannel(i).histogram()
-            plt.plot(histo, color=c, label=f"{c.upper()}")
-        plt.legend()
-        plt.tight_layout()
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        plt.close()
-        buf.seek(0)
+        with Image.open(image_path) as img: rgb_img = img.convert('RGB')
+        plt.style.use('seaborn-v0_8-whitegrid')
+        plt.figure(figsize=(4, 2)); colors = ('r', 'g', 'b')
+        for i, color in enumerate(colors): plt.plot(rgb_img.getchannel(i).histogram(), color=color)
+        plt.xlim([0, 256]); plt.tight_layout(); buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=100); plt.close(); buf.seek(0)
         return buf
-    except Exception:
-        return None
+    except Exception: return None
 
-def ocr_image(image_path, lang="chi_sim", auto_rotate=True):
-    """OCR支持自动旋转和居中，提升准确率"""
+def ocr_image(image_path, lang="chi_sim+eng"):
     try:
-        img = Image.open(image_path)
-        if auto_rotate:
-            try:
-                osd = pytesseract.image_to_osd(img)
-                if "Rotate: 90" in osd:
-                    img = img.rotate(-90, expand=True)
-                elif "Rotate: 180" in osd:
-                    img = img.rotate(-180, expand=True)
-                elif "Rotate: 270" in osd:
-                    img = img.rotate(-270, expand=True)
-            except Exception:
-                pass
-        text = pytesseract.image_to_string(img, lang=lang)
-        return text.strip()
-    except Exception as e:
-        return f"OCR失败: {e}"
+        with Image.open(image_path) as img: return pytesseract.image_to_string(img, lang=lang).strip()
+    except Exception as e: return f"OCR Error: {e}"
 
 def smart_classify(image_path):
     try:
-        img = Image.open(image_path)
-        w, h = img.size
-        if w > h*1.5:
-            shape = "横幅"
-        elif h > w*1.5:
-            shape = "竖幅"
-        else:
-            shape = "方形"
+        with Image.open(image_path) as img:
+            w, h = img.size; aspect_ratio = w / h
+            shape = "横向宽幅" if aspect_ratio > 1.5 else "纵向长幅" if aspect_ratio < 0.67 else "常规比例"
         dom_color, _ = get_image_main_color(image_path)
         color_str = str(dom_color) if dom_color else "未知"
         return [shape, f"主色:{color_str}"]
-    except Exception:
-        return ["无法识别"]
-
-def ai_image_recognition_cloud(file_paths, provider="baidu", **provider_kwargs):
-    if provider == "baidu":
-        return ai_recognition_baidu(file_paths, **provider_kwargs)
-    elif provider == "deepseek":
-        return ai_recognition_deepseek(file_paths, **provider_kwargs)
-    else:
-        return {path: ["未实现"] for path in file_paths}
-
-def ai_recognition_baidu(file_paths, app_id=None, api_key=None, secret_key=None, **kwargs):
-    try:
-        from aip import AipImageClassify
-    except ImportError:
-        raise Exception("请先 pip install baidu-aip")
-    if not app_id or not api_key or not secret_key:
-        return {path: ["缺少API参数"] for path in file_paths}
-    client = AipImageClassify(app_id, api_key, secret_key)
-    results = {}
-    for path in file_paths:
-        with open(path, 'rb') as f:
-            img_data = f.read()
-        res = client.advancedGeneral(img_data)
-        tags = [item['keyword'] for item in res.get('result', [])]
-        results[path] = tags or ["未识别"]
-    return results
-
-def ai_recognition_deepseek(file_paths, api_key=None, endpoint=None, **kwargs):
-    import requests
-    if not api_key:
-        return {path: ["缺少API参数"] for path in file_paths}
-    results = {}
-    for path in file_paths:
-        with open(path, 'rb') as f:
-            img_data = f.read()
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/octet-stream"
-        }
-        allowed_endpoints = ["https://api.deepseek.com/v1/vision/detect"]
-        url = endpoint if endpoint in allowed_endpoints else "https://api.deepseek.com/v1/vision/detect"
-        try:
-            response = requests.post(
-                url,
-                data=img_data,
-                headers=headers,
-                timeout=15
-            )
-            response.raise_for_status()
-            res = response.json()
-            if "labels" in res:
-                tags = res["labels"]
-            elif "result" in res:
-                tags = [item.get("label", "") for item in res["result"]]
-            else:
-                tags = ["未识别"]
-            results[path] = tags or ["未识别"]
-        except Exception as e:
-            results[path] = [f"调用失败: {e}"]
-    return results
+    except Exception: return ["无法识别"]
 
 def remove_background(image_path, output_path=None):
-    with Image.open(image_path) as img:
-        result = remove(img)
-        if output_path:
-            result.save(output_path)
-        return result
+    with open(image_path, 'rb') as i: input_data = i.read()
+    output_data = remove(input_data)
+    if output_path:
+        with open(output_path, 'wb') as o: o.write(output_data)
+    return Image.open(io.BytesIO(output_data))
+
+# AI识别功能已根据您的要求被完全删除
