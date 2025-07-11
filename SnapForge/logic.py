@@ -1,7 +1,7 @@
 # logic.py
 import os
 import io
-# 删除了不再需要的 base64 和 requests
+import shutil
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps
 import imagehash
 import piexif
@@ -252,4 +252,34 @@ def remove_background(image_path, output_path=None):
         with open(output_path, 'wb') as o: o.write(output_data)
     return Image.open(io.BytesIO(output_data))
 
-# AI识别功能已根据您的要求被完全删除
+def select_best_image_in_group(group_paths):
+    best_image_path = None
+    max_resolution = -1
+    max_size = -1
+    for path in group_paths:
+        try:
+            with Image.open(path) as img:
+                resolution = img.width * img.height
+                size = os.path.getsize(path)
+                if resolution > max_resolution:
+                    max_resolution, max_size, best_image_path = resolution, size, path
+                elif resolution == max_resolution and size > max_size:
+                    max_size, best_image_path = size, path
+        except Exception:
+            continue
+    return best_image_path if best_image_path else group_paths[0]
+
+def move_duplicates_to_trash(files_to_delete, base_dir):
+    trash_dir = os.path.join(base_dir, "duplicates_trash")
+    os.makedirs(trash_dir, exist_ok=True)
+    moved_files, total_size = 0, 0
+    for file_path in files_to_delete:
+        if os.path.exists(file_path):
+            try:
+                file_size = os.path.getsize(file_path)
+                shutil.move(file_path, trash_dir)
+                moved_files += 1
+                total_size += file_size
+            except Exception:
+                continue
+    return moved_files, total_size / (1024 * 1024)
