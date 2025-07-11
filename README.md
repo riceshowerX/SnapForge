@@ -30,7 +30,8 @@
 
 ## 📸 软件界面预览
 
-![SnapForge界面预览](https://github.com/user-attachments/assets/a475207e-2650-4212-b7aa-3e3d32d6974b)
+![屏幕截图_11-7-2025_222137_localhost](https://github.com/user-attachments/assets/8c5a38a0-0b4a-426f-bd97-9bbca9065951)
+
 
 ---
 
