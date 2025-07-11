@@ -1,12 +1,8 @@
 
 <div align="center">
 
-  <!-- 新 Logo -->
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#406aff" width="100" height="100">
-    <path d="M20 3H4C2.897 3 2 3.897 2 5v14c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-1V5c0-1.103-.897-2-2-2zM4 19V5h16l.002 14H4z"></path>
-    <path d="M10.293 14.293 8.464 12.464 6 15h12l-3.536-4.42-2.171 2.713z"></path>
-    <path d="m19.207 2.207-1.414 1.414L19.207 5.035l1.414-1.414L22.035 2.207l-1.414-1.414zm-2.828 4.243L15 8.464l1.414 1.414 1.414-1.414L19.243 7.05l-1.414-1.414zM15 2.207l1.414-1.414L17.828 2.207l-1.414 1.414z"></path>
-  </svg>
+  <!-- Logo已替换为您指定的链接 -->
+  <img src="https://github.com/riceshowerX/picx-images-hosting/raw/master/%E7%BD%91%E7%AB%99/android-chrome-192x192-1.6wqw9el8i6.webp" alt="SnapForge Logo" width="90" height="90">
 
   <h1>SnapForge</h1>
 
@@ -65,7 +61,8 @@ cd SnapForge
 我们推荐在一个虚拟环境中安装，以保持环境纯净。
 ```bash
 # 安装所有Python库
-pip install -r requirements.txt```
+pip install -r requirements.txt
+```
 > **重要提示 (OCR功能)**: `pytesseract` 库需要系统级的 **Tesseract OCR 引擎** 支持。请根据您的操作系统进行安装，否则OCR功能将无法使用。
 > - **Windows**: 从 [Tesseract at UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki) 下载并安装，**务必在安装时勾选 "Add Tesseract to system PATH"**。
 > - **macOS**: `brew install tesseract tesseract-lang`
