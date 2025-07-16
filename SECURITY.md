@@ -2,6 +2,10 @@
 
 The SnapForge team takes security seriously. We appreciate your efforts to responsibly disclose your findings, and we will make every effort to acknowledge your contributions.
 
+**English** | <a href="SECURITY.zh-CN.md">简体中文</a>
+
+---
+
 ## ✅ Supported Versions
 
 Security patches are provided only for the **most recent version** of SnapForge available on the `main` branch. We encourage all users to stay up-to-date.
