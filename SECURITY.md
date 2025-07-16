@@ -4,30 +4,20 @@ The SnapForge team takes security seriously. We appreciate your efforts to respo
 
 ## ✅ Supported Versions
 
-Since SnapForge is a rapidly evolving application, security patches will only be provided for the **most recent version** available on the `main` branch. We encourage all users to run the latest code.
+Security patches are provided only for the **most recent version** of SnapForge available on the `main` branch. We encourage all users to stay up-to-date.
 
 | Version | Supported |
 | :--- | :--- |
 | **Latest (`main` branch)** | :white_check_mark: |
 | All older versions | :x: |
 
-If you are using an older version, please update to the latest version from `main` before reporting any issues.
-
 ## 🛡️ Reporting a Vulnerability
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Instead, we encourage you to report them privately. This helps us ensure that we can address the vulnerability before it becomes widely known.
-
-### Method 1: Private Vulnerability Reporting (Preferred)
-
-The best way to report a vulnerability is through **GitHub's private vulnerability reporting feature**. This method ensures your report goes directly to the repository maintainers in a secure and private manner.
+To ensure vulnerabilities are handled securely and privately, we require all security reports to be submitted through **GitHub's private vulnerability reporting feature**. This is the sole and direct channel to the project maintainers.
 
 [**>> Click here to report a vulnerability privately on GitHub <<**](https://github.com/riceshowerX/SnapForge/security/advisories/new)
-
-### Method 2: Email
-
-If you prefer, you can also send an email to **[请在此处替换为您的联系邮箱]**. Please use a descriptive subject line, such as `SECURITY: Vulnerability in SnapForge`.
 
 ### What to Include in Your Report
 
@@ -41,10 +31,10 @@ To help us resolve the issue quickly, please provide as much of the following in
 
 ### Our Commitment
 
-When you report a vulnerability, you can expect the following:
+When you report a vulnerability via GitHub, you can expect the following:
 
 1.  We will acknowledge receipt of your report within **48 hours**.
-2.  We will provide you with updates on our progress as we investigate and fix the issue.
+2.  We will provide updates on our progress as we investigate and fix the issue.
 3.  We will notify you when the vulnerability has been patched.
 4.  We will publicly credit you for your discovery (unless you prefer to remain anonymous).
 
