@@ -8,144 +8,175 @@
 
   <h1>SnapForge</h1>
 
-  <p>
-    <strong>一个强大、美观且开源的图片处理平台，专为极致效率而生。</strong>
-  </p>
-  <p>
-    SnapForge 提供了一个基于 Streamlit 的现代化Web界面，利用<strong>多核并行处理</strong>技术，让复杂的批量图片处理任务变得前所未有的简单和快速。无论是格式转换、<strong>高级模板重命名</strong>，还是AI抠图，一切尽在掌握。
-  </p>
+  <p><strong>A powerful, elegant, and open-source image processing platform, built for ultimate efficiency.</strong></p>
+  
+  <p>SnapForge provides a modern web interface powered by Streamlit, leveraging <strong>multi-core parallel processing</strong> to make complex batch image tasks simpler and faster than ever. From format conversion and <strong>advanced template-based renaming</strong> to AI background removal, everything is at your fingertips.</p>
 
-  <!-- 徽章 -->
+  <!-- Badges -->
   <p>
-    <a href="https://snapforge.streamlit.app/" target="_blank">
-      <img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg" alt="Streamlit App">
-    </a>
-    <a href="https://github.com/riceshowerX/SnapForge/blob/main/LICENSE">
-      <img src="https://img.shields.io/github/license/riceshowerX/SnapForge?style=for-the-badge&color=007EC6" alt="License">
-    </a>
-    <img src="https://img.shields.io/github/stars/riceshowerX/SnapForge?style=for-the-badge&color=FE7D37" alt="Stars">
+    <a href="https://snapforge.streamlit.app/" target="_blank"><img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg" alt="Streamlit App"></a>
+    <a href="https://github.com/riceshowerX/SnapForge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/riceshowerX/SnapForge?style=for-the-badge&color=007EC6" alt="License"></a>
+    <a href="https://github.com/riceshowerX/SnapForge/stargazers"><img src="https://img.shields.io/github/stars/riceshowerX/SnapForge?style=for-the-badge&color=FE7D37" alt="Stars"></a>
+    <a href="https://github.com/riceshowerX/SnapForge/issues"><img src="https://img.shields.io/github/issues/riceshowerX/SnapForge?style=for-the-badge&color=brightgreen" alt="Issues"></a>
     <img src="https://img.shields.io/badge/Python-3.8+-blue?style=for-the-badge&logo=python" alt="Python Version">
   </p>
+  
+  <p>
+    <strong>English</strong> | <a href="README.zh-CN.md">简体中文</a>
+  </p>
+
 </div>
 
 ---
 
-## ✨ 在线体验 (Live Demo)
+### 📖 Table of Contents
 
-无需任何安装，立即在浏览器中体验SnapForge的全部功能！
+- [✨ Live Demo](#-live-demo)
+- [🛡️ Privacy Notice & Usage Recommendation](#️-privacy-notice--usage-recommendation)
+- [🌟 Key Features](#-key-features)
+- [📸 Interface Preview](#-interface-preview)
+- [🔧 Local Installation & Usage](#-local-installation--usage)
+- [🧠 Tech Stack & Acknowledgements](#-tech-stack--acknowledgements)
+- [🛣️ Roadmap](#️-roadmap)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [⚠️ Disclaimer](#️-disclaimer)
+
+---
+
+### ✨ Live Demo
+
+Try SnapForge directly in your browser without any installation!
 
 <div align="center" style="margin: 30px;">
   <a href="https://snapforge.streamlit.app/" target="_blank" style="display: inline-block; padding: 14px 28px; background-color: #406aff; color: white; text-align: center; text-decoration: none; font-size: 18px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); transition: all 0.2s ease;">
-    🚀 点击这里，立即体验 Live Demo 🚀
+    🚀 Launch Live Demo 🚀
   </a>
 </div>
 
 ---
 
-## 🛡️ 使用建议与隐私声明
+### 🛡️ Privacy Notice & Usage Recommendation
 
-我们强烈建议您将**在线体验版**用于快速功能评估和处理非敏感图片。
+We strongly recommend using the **Live Demo** for quick feature evaluation and processing non-sensitive images.
 
-尽管 Streamlit Cloud 是一个安全可靠的平台，但为了**100%保障您的数据隐私和安全**，并获得**最佳处理性能**（充分利用您本地机器的所有CPU核心），我们推荐您在处理任何私人、重要或商业图片时，**在您自己的计算机上进行本地部署**。
+To **guarantee 100% data privacy and security** and to achieve **optimal processing performance** (by fully utilizing your local CPU cores), we advise you to **run SnapForge locally on your own machine** when handling private, critical, or commercial images.
 
-本地部署意味着所有图片文件始终保留在您的电脑上，绝不会上传到任何云服务器，让您完全掌控自己的数据。
+Local deployment ensures that all image files remain on your computer and are never uploaded to any cloud server, giving you complete control over your data.
 
 ---
 
-## 🔧 本地安装指南
+### 🌟 Key Features
 
-如果您希望在本地离线使用、进行二次开发，或者处理大量敏感文件，请按照以下步骤操作：
+| Feature Module | Description |
+| :--- | :--- |
+| **🚀 High-Performance Batch Processing** | Utilizes multi-core parallel processing to significantly speed up operations like **format conversion**, **resizing**, **compression**, **watermarking**, **rotation**, and **filters**. |
+| **✍️ Advanced Renaming Templates** | Use dynamic placeholders like `{prefix}`, `{counter}`, `{original_name}`, `{width}`, and `{height}` to fully customize file naming conventions like a pro. |
+| **💡 Interactive Deduplication** | A revolutionary deduplication tool! It **intelligently pre-selects** the best images, allowing you to **interactively review** and one-click **download** retained or redundant copies safely and efficiently. |
+| **🛠️ Smart AI Tools** | Features **one-click AI background removal** (powered by `rembg`), **OCR text recognition** (`pytesseract`), and **smart sorting** (by dimensions/dominant color). |
+| **📊 Comprehensive Info Viewer** | Instantly view detailed image information, including **dimensions**, **file size**, **EXIF metadata**, **dominant color**, **color palette**, and an **RGB color histogram**. |
+| **🌐 Modern UI** | Built with Streamlit for a beautiful, responsive interface. Supports one-click **language switching (EN/CN)** and provides clear **processing logs** and progress feedback. |
 
-**1. 克隆项目仓库**
+---
+
+### 📸 Interface Preview
+
+![SnapForge Interface Preview](https://github.com/user-attachments/assets/56c1b4c5-8be9-4490-9d86-a09bb48776b7)
+
+---
+
+### 🔧 Local Installation & Usage
+
+**1. Clone the Repository**
 ```bash
 git clone https://github.com/riceshowerX/SnapForge.git
 cd SnapForge
 ```
 
-**2. 安装依赖项**
-我们推荐在一个虚拟环境中安装，以保持环境纯净。
+**2. Create and Activate a Virtual Environment (Recommended)**
 ```bash
-# 安装所有Python库
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# macOS / Linux
+python3 -m venv venv
+source venv/bin/activate
+```
+
+**3. Install Dependencies**
+```bash
 pip install -r requirements.txt
 ```
-> **重要提示 (OCR功能)**: `pytesseract` 库需要系统级的 **Tesseract OCR 引擎** 支持。请根据您的操作系统进行安装，否则OCR功能将无法使用。
-> - **Windows**: 从 [Tesseract at UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki) 下载并安装，**务必在安装时勾选 "Add Tesseract to system PATH"**。
-> - **macOS**: `brew install tesseract tesseract-lang`
-> - **Linux (Ubuntu/Debian)**: `sudo apt install tesseract-ocr tesseract-ocr-chi-sim`
 
-**3. 运行应用**
+<details>
+<summary><strong>👉 IMPORTANT: Install Tesseract OCR Engine (Required for OCR)</strong></summary>
+
+The `pytesseract` library requires a system-level installation of the **Tesseract OCR engine**. Please install it according to your OS:
+
+-   **Windows**: Download and install from [Tesseract at UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki). **Ensure you check "Add Tesseract to system PATH" during installation**.
+-   **macOS**: `brew install tesseract tesseract-lang`
+-   **Linux (Debian/Ubuntu)**: `sudo apt update && sudo apt install tesseract-ocr`
+
+</details>
+
+**4. Run the Application**
 ```bash
 streamlit run app.py
 ```
-应用启动后，浏览器会自动打开 `http://localhost:8501`。首次使用“去背景”功能时，程序会自动下载所需的模型文件 (约176MB)，请耐心等待。
+The application will automatically open at `http://localhost:8501` in your browser.
+> **Note**: The first time you use the "AI Background Removal" feature, the required model file (approx. 176MB) will be downloaded automatically. Please be patient.
 
 ---
 
-## 📸 软件界面预览
+### 🧠 Tech Stack & Acknowledgements
 
-![SnapForge界面预览](https://github.com/user-attachments/assets/56c1b4c5-8be9-4490-9d86-a09bb48776b7)
+- **Core Framework**: [Streamlit](https://streamlit.io/) - The fastest way to build beautiful data apps.
+- **AI Background Removal**: [rembg](https://github.com/danielgatis/rembg) - A powerful and easy-to-use library for removing image backgrounds.
+  - **Core Model**: [U²-Net](https://github.com/xuebinqin/U-2-Net) (licensed for non-commercial research purposes only). The model is automatically downloaded to `~/.u2net/u2net.onnx`.
+- **OCR**: [pytesseract](https://github.com/madmaze/pytesseract) - A Python wrapper for Google's Tesseract-OCR Engine.
+- **Image Processing**: [Pillow](https://python-pillow.org/) - The Swiss Army knife of Python imaging libraries.
 
----
-
-## 🌟 核心功能
-
-| 功能模块 | 详细说明 |
-| :--- | :--- |
-| **🚀 高性能批量处理** | **利用多核并行处理**，大幅提升处理速度。支持**格式转换**、**尺寸调整**、**压缩**、**水印添加**、**旋转**和**滤镜**等操作。 |
-| **✍️ 高级命名模板** | 使用 `{prefix}`, `{counter}`, `{original_filename}`, `{width}`, `{height}` 等**动态占位符**，像专业软件一样完全自定义文件命名规则。 |
-| **💡 交互式去重** | 革命性的去重工具！**智能预选**最佳图片，让您**交互式审查**并一键**打包下载**需要保留或多余的副本，安全又高效。|
-| **🛠️ 智能工具** | 提供 **AI一键去背景** (基于`rembg`和U²-Net)、**OCR文字识别**、以及**智能分类** (按尺寸/主色调) 等高级功能。 |
-| **📊 信息查看** | 一键查看图片的详细信息，包括**尺寸**、**文件大小**、**EXIF元数据**、**主色调**、**调色板**以及**RGB颜色直方图**。 |
-| **🌐 现代化UI** | 基于 Streamlit 构建，界面美观、响应迅速，支持**中/英文**一键切换，并提供清晰的**处理日志**和进度反馈。 |
+SnapForge utilizes these models and libraries for academic and technical research purposes only. The project does not distribute, modify, or store the model files. All rights to third-party libraries belong to their respective owners.
 
 ---
 
-## 🧠 关于U²-Net模型 (去背景功能)
+### 🛣️ Roadmap
 
-SnapForge的去背景功能由强大的 [rembg](https://github.com/danielgatis/rembg) 库驱动，其核心模型为 [U²-Net](https://github.com/xuebinqin/U-2-Net)。
-
-- **模型下载路径**:
-  - Windows: `C:\Users\你的用户名\.u2net\u2net.onnx`
-  - Linux/Mac: `~/.u2net/u2net.onnx`
-- **模型版权**: U²-Net模型归原作者所有，其许可证限制其仅用于非商业用途。SnapForge仅为学术和技术研究目的调用此模型，项目本身不分发、不修改、也不存储模型文件。
-
----
-
-## 🛣️ 开发路线图
-
-- [x] **UI/UX**: 现代化、多语言的Web界面 (中/英)
-- [x] **核心处理**: 批量格式转换、重命名、压缩、尺寸调整
-- [x] **高级处理**: 批量添加水印、旋转、滤镜
-- [x] **命名系统**: 高级、可自定义的命名模板
-- [x] **性能优化**: 基于多进程的并行处理引擎
-- [x] **智能工具**: 交互式图片去重（智能预选+直接下载）
-- [x] **智能工具**: AI一键去背景 (支持批量)
-- [x] **智能工具**: OCR文字识别 & 智能分类
-- [x] **信息查看**: EXIF、主色调、直方图展示
-- [ ] **可移植性**: 提供一键打包的桌面版（如使用PyInstaller或Nuitka）
-- [ ] **工作流**: 保存和加载处理预设
+- [x] **UI/UX**: Modern, multi-language web interface (EN/CN).
+- [x] **Core Processing**: Batch conversion, renaming, compression, resizing.
+- [x] **Advanced Processing**: Batch watermarking, rotation, filters.
+- [x] **Naming System**: Advanced, customizable renaming templates.
+- [x] **Performance**: Multi-process parallel processing engine.
+- [x] **Smart Tools**: Interactive image deduplication with smart pre-selection.
+- [x] **Smart Tools**: AI one-click background removal (batch-capable).
+- [x] **Smart Tools**: OCR text recognition & smart sorting.
+- [x] **Info Viewer**: EXIF, dominant color, histogram display.
+- [ ] **Workflows**: Save and load processing presets for one-click operations.
+- [ ] **Portability**: Provide a one-click executable desktop version (e.g., using PyInstaller or Nuitka).
 
 ---
 
-## 🤝 如何贡献
+### 🤝 Contributing
 
-我们热烈欢迎各种形式的贡献！无论是**提交新功能**、**修复Bug**、**优化代码**、**完善文档**，还是仅仅**提出一个好建议**，都对项目至关重要。
+We warmly welcome contributions of all forms! Whether it's **submitting new features**, **fixing bugs**, **optimizing code**, **improving documentation**, or just **suggesting a great idea**, your input is vital to the project.
 
-- **报告问题**: 请通过 [Issues](https://github.com/riceshowerX/SnapForge/issues) 详细描述您遇到的问题。
-- **提交代码**: 请通过 [Pull Requests](https://github.com/riceshowerX/SnapForge/pulls) 提交您的代码变更。
+- **Report Issues**: Please describe any bugs or issues in detail via [**Issues**](https://github.com/riceshowerX/SnapForge/issues).
+- **Submit Code**: Please submit your code changes via [**Pull Requests**](https://github.com/riceshowerX/SnapForge/pulls).
 
-> 这是一个由个人在业余时间维护的开源项目。您的理解、支持和贡献是它不断前进的动力！
-
----
-
-## 📄 许可证
-
-本项目的主体代码基于 [MIT License](https://github.com/riceshowerX/SnapForge/blob/main/LICENSE) 开源。
-
-同时，本项目依赖的第三方库（如 `streamlit`, `rembg` 等）各自拥有其独立的开源许可证。我们已尽力遵守并尊重所有相关许可证的要求。
+> This is an open-source project maintained by an individual in their spare time. Your understanding, support, and contributions are the driving force behind its continued development!
 
 ---
 
-## ⚠️ 免责声明
+### 📄 License
 
-本项目按“原样”提供，不附带任何明示或暗示的保证。对于因使用本软件（或其任何部分）而导致的任何直接或间接的损害、数据丢失或业务中断，开发者和贡献者概不负责。所有风险均由用户自行承担。
+The main body of this project is open-sourced under the [**MIT License**](https://github.com/riceshowerX/SnapForge/blob/main/LICENSE).
+
+Third-party libraries relied upon by this project (such as `streamlit`, `rembg`, etc.) are subject to their own separate open-source licenses. We have made every effort to comply with and respect all relevant license requirements.
+
+---
+
+### ⚠️ Disclaimer
+
+This project is provided "as is," without any express or implied warranty. In no event shall the developers or contributors be liable for any direct or indirect damages, data loss, or business interruption arising from the use of this software (or any part thereof). All risks are assumed by the user.
+
