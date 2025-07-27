@@ -1,4 +1,4 @@
-# app.py (Upgraded Version)
+# app.py (Final, Corrected Version)
 
 import streamlit as st
 import zipfile
@@ -9,12 +9,12 @@ import os
 from pathlib import Path
 from PIL import Image
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Callable
 
 # -----------------------------------------------------------------------------
 # 1. 后端逻辑导入 (Import Backend Logic)
 # -----------------------------------------------------------------------------
-# 从优化后的逻辑文件中导入，并使用新的枚举类型
+# 从名为 'logic.py' 的后端文件导入
 try:
     from logic import (
         ImageProcessor, ProcessConfig, ResizeMode, FilterType,
@@ -23,7 +23,10 @@ try:
         select_best_image_in_group
     )
 except ImportError:
-    st.error("错误：无法找到 'logic_optimized.py' 文件。请确保它与 'app.py' 在同一目录下。")
+    st.error(
+        "关键错误：无法找到 'logic.py' 文件。"
+        "请确保后端逻辑文件 'logic.py' 与此应用脚本 'app.py' 放在同一目录下。"
+    )
     st.stop()
 
 # 假设的多语言翻译工具，如果不存在则使用默认实现
@@ -91,7 +94,7 @@ class UIManager:
     .header-actions a:hover { transform: translateY(-2px); box-shadow: 0 6px 16px 0 rgba(0, 20, 80, 0.1); color: #fff; background: var(--primary-color); }
     .main-card {
         background: var(--card-bg-color); border-radius: var(--border-radius-lg); padding: 2rem;
-        margin: 0 auto 2rem auto; box-shadow: var(--card-shadow); max-width: 820px; border: 1px solid #eef2f6;
+        margin: 0 auto 2rem auto; box-shadow: var(--card-shadow); border: 1px solid #eef2f6;
     }
     .card h3, .main-card h3 {
         font-size: 1.35rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--primary-color);
@@ -136,7 +139,7 @@ class UIManager:
     </div>
     """
 
-    def __init__(self, translator):
+    def __init__(self, translator: Callable[[str], str]):
         self._ = translator
 
     def load_resources(self):
@@ -185,7 +188,7 @@ def pack_files_to_zip(file_paths: List[Path]) -> io.BytesIO:
     zip_buffer.seek(0)
     return zip_buffer
 
-def display_results_grid(image_paths: List[Path], num_columns: int = 4):
+def display_results_grid(image_paths: List[Path], _: Callable[[str], str], num_columns: int = 4):
     """以网格形式展示图片结果"""
     if not image_paths: return
     st.markdown("---")
@@ -200,7 +203,7 @@ def display_results_grid(image_paths: List[Path], num_columns: int = 4):
                 else:
                     col.warning(f"{path.name}\n{_('文件不存在')}")
 
-def render_processing_options() -> ProcessConfig:
+def render_processing_options(_: Callable[[str], str]) -> ProcessConfig:
     """渲染批量处理的所有配置选项并返回ProcessConfig对象"""
     st.markdown(f'<h3 style="margin-top: 2rem;">{_("🛠️ 图片处理参数")}</h3>', unsafe_allow_html=True)
     
@@ -275,30 +278,8 @@ def render_processing_options() -> ProcessConfig:
 # 4. 主应用渲染 (Main Application Rendering)
 # -----------------------------------------------------------------------------
 
-# --- 初始化 ---
-st.set_page_config(page_title="SnapForge", page_icon="🖼️", layout="wide")
-app_state = AppState.init()
-TEMP_DIR = Path(app_state.temp_dir)
-
-# --- 侧边栏与国际化 ---
-with st.sidebar:
-    st.title("SnapForge")
-    selected_lang = st.selectbox("Language / 语言", ["English", "中文"])
-    _ = get_translator(selected_lang)
-    st.header(_("⚙️ 设置"))
-    if st.button(_("清理缓存和重置状态"), use_container_width=True, type="secondary"):
-        if TEMP_DIR.exists():
-            shutil.rmtree(TEMP_DIR)
-        st.session_state.app_state = AppState() # 完全重置状态
-        st.success(_("缓存已清理！页面将刷新。"))
-        st.rerun()
-
-# --- 加载UI资源 ---
-ui = UIManager(_)
-ui.load_resources()
-
-# --- 主应用内容 ---
-def main_app():
+def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
+    """渲染主应用界面的所有选项卡和交互逻辑"""
     tab_titles = [_("批量处理"), _("信息查看"), _("图片去重"), _("智能工具"), _("处理记录")]
     tabs = st.tabs(tab_titles)
 
@@ -310,7 +291,7 @@ def main_app():
             _("上传图片文件（可混合格式）"), type=["jpg", "jpeg", "png", "bmp", "gif", "tiff", "webp"], 
             accept_multiple_files=True, key="batch_upload"
         )
-        config = render_processing_options()
+        config = render_processing_options(_)
         
         if st.button(_("🚀 开始处理图片"), type="primary", use_container_width=True, disabled=not uploaded_files):
             app_state.result_file_paths.clear()
@@ -433,7 +414,7 @@ def main_app():
                 app_state.bg_removed_files = result_paths
             if app_state.bg_removed_files:
                 st.download_button(_("⬇️ 下载去背景结果"), pack_files_to_zip(app_state.bg_removed_files), "bg_removed.zip", "application/zip", use_container_width=True)
-                display_results_grid(app_state.bg_removed_files)
+                display_results_grid(app_state.bg_removed_files, _)
         
         with st.expander(_("✍️ 批量OCR文字识别 (Batch OCR)")):
             files_ocr = st.file_uploader(_("上传图片进行OCR"), accept_multiple_files=True, key="ocr_upload")
@@ -450,12 +431,38 @@ def main_app():
         st.markdown(f'<h3>{_("🗂️ 最近处理结果预览")}</h3>', unsafe_allow_html=True)
         if app_state.result_file_paths:
             st.info(_("这里将展示“批量处理”选项卡最近一次成功运行的结果。"))
-            display_results_grid(app_state.result_file_paths, num_columns=4)
+            display_results_grid(app_state.result_file_paths, _, num_columns=4)
         else:
             st.info(_("暂无最近处理结果。请先在“批量处理”中运行一次任务。"))
 
 # --- 运行主应用并渲染页脚 ---
-st.markdown('<div class="main-card">', unsafe_allow_html=True)
-main_app()
-st.markdown('</div>', unsafe_allow_html=True)
-ui.display_footer()
+def run():
+    """配置页面、初始化状态并运行主应用"""
+    st.set_page_config(page_title="SnapForge", page_icon="🖼️", layout="wide")
+    
+    app_state = AppState.init()
+    TEMP_DIR = Path(app_state.temp_dir)
+
+    with st.sidebar:
+        st.title("SnapForge")
+        selected_lang = st.selectbox("Language / 语言", ["English", "中文"])
+        _ = get_translator(selected_lang)
+        st.header(_("⚙️ 设置"))
+        if st.button(_("清理缓存和重置状态"), use_container_width=True, type="secondary"):
+            if TEMP_DIR.exists():
+                shutil.rmtree(TEMP_DIR)
+            st.session_state.app_state = AppState()
+            st.success(_("缓存已清理！页面将刷新。"))
+            st.rerun()
+
+    ui = UIManager(_)
+    ui.load_resources()
+
+    st.markdown('<div class="main-card">', unsafe_allow_html=True)
+    main_app(_, TEMP_DIR, app_state)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    ui.display_footer()
+
+if __name__ == "__main__":
+    run()
