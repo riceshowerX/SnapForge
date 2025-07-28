@@ -14,7 +14,6 @@
 
   <!-- Badges -->
   <p>
-    <a href="https://snapforge.streamlit.app/" target="_blank"><img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg" alt="Streamlit App"></a>
     <a href="https://github.com/riceshowerX/SnapForge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/riceshowerX/SnapForge?style=for-the-badge&color=007EC6" alt="License"></a>
     <a href="https://github.com/riceshowerX/SnapForge/stargazers"><img src="https://img.shields.io/github/stars/riceshowerX/SnapForge?style=for-the-badge&color=FE7D37" alt="Stars"></a>
     <a href="https://github.com/riceshowerX/SnapForge/issues"><img src="https://img.shields.io/github/issues/riceshowerX/SnapForge?style=for-the-badge&color=brightgreen" alt="Issues"></a>
@@ -42,29 +41,6 @@
 - [📄 License](#-license)
 - [⚠️ Disclaimer](#️-disclaimer)
 
----
-
-### ✨ Live Demo
-
-Try SnapForge directly in your browser without any installation!
-
-<div align="center" style="margin: 30px;">
-  <a href="https://snapforge.streamlit.app/" target="_blank" style="display: inline-block; padding: 14px 28px; background-color: #406aff; color: white; text-align: center; text-decoration: none; font-size: 18px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); transition: all 0.2s ease;">
-    🚀 Launch Live Demo 🚀
-  </a>
-</div>
-
----
-
-### 🛡️ Privacy Notice & Usage Recommendation
-
-We strongly recommend using the **Live Demo** for quick feature evaluation and processing non-sensitive images.
-
-To **guarantee 100% data privacy and security** and to achieve **optimal processing performance** (by fully utilizing your local CPU cores), we advise you to **run SnapForge locally on your own machine** when handling private, critical, or commercial images.
-
-Local deployment ensures that all image files remain on your computer and are never uploaded to any cloud server, giving you complete control over your data.
-
----
 
 ### 🌟 Key Features
 
