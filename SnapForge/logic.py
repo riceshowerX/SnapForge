@@ -9,7 +9,6 @@ from enum import StrEnum, auto
 from typing import (
     Optional, Dict, Any, Tuple, List, Set, Callable, Sequence
 )
-
 # Pillow and external libraries
 from PIL import (
     Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps, UnidentifiedImageError
@@ -19,17 +18,13 @@ import piexif
 from colorthief import ColorThief
 import matplotlib.pyplot as plt
 import pytesseract
-from rembg import remove
-
 # =====================
 # 1. 类型与配置 (已重构)
 # =====================
-
 class ResizeMode(StrEnum):
     CONTAIN = auto()
     COVER = auto()
     STRETCH = auto()
-
 class FilterType(StrEnum):
     GRAYSCALE = auto()
     SHARPEN = auto()
@@ -38,31 +33,25 @@ class FilterType(StrEnum):
     EMBOSS = auto()
     EDGE = auto()
     ENHANCE = auto()
-
 # --- 分解后的配置类，职责更单一 ---
-
 @dataclass(slots=True)
 class RenameConfig:
     """重命名相关配置"""
     prefix: str = "image"
     start_number: int = 1
     naming_template: str = "{prefix}_{counter:04d}"
-
     def __post_init__(self):
         if self.start_number < 0:
             raise ValueError("start_number must be non-negative")
-
 @dataclass(slots=True)
 class ConvertConfig:
     """格式转换相关配置"""
     format: str
     quality: int = 85
-
     def __post_init__(self):
         self.format = self.format.lower().lstrip('.')
         if not (0 <= self.quality <= 100):
             raise ValueError("quality must be between 0 and 100")
-
 @dataclass(slots=True)
 class ResizeConfig:
     """缩放相关配置"""
@@ -70,7 +59,6 @@ class ResizeConfig:
     height: int = 600
     mode: ResizeMode = ResizeMode.CONTAIN
     only_shrink: bool = True
-
 @dataclass(slots=True)
 class CropConfig:
     """裁剪相关配置"""
@@ -78,22 +66,18 @@ class CropConfig:
     y: int
     w: int
     h: int
-
 @dataclass(slots=True)
 class RotateConfig:
     """旋转相关配置"""
     angle: int = 0
-
 @dataclass(slots=True)
 class FilterConfig:
     """滤镜相关配置"""
     type: FilterType
     enhance_factor: float = 1.5
-
     def __post_init__(self):
         if self.enhance_factor <= 0:
             raise ValueError("enhance_factor must be positive")
-
 @dataclass(slots=True)
 class WatermarkConfig:
     """水印相关配置"""
@@ -103,7 +87,6 @@ class WatermarkConfig:
     color: Tuple[int, int, int, int] = (255, 255, 255, 128)
     position: str = "bottom-right"
     margin: int = 20
-
 # --- 主配置类 (通过组合构建) ---
 @dataclass(kw_only=True, slots=True, frozen=False)
 class ProcessConfig:
@@ -114,16 +97,12 @@ class ProcessConfig:
     rotate_config: Optional[RotateConfig] = None
     filter_config: Optional[FilterConfig] = None
     watermark_config: Optional[WatermarkConfig] = None
-
     preserve_metadata: bool = True
     num_processes: int = field(default_factory=lambda: max(1, (os.cpu_count() or 2) - 1))
     tesseract_cmd: Optional[str] = None
-
     def __post_init__(self):
         if self.num_processes < 1:
             raise ValueError("num_processes must be >= 1")
-
-
 # =====================
 # 2. 日志与常量 (已改进)
 # =====================
@@ -131,20 +110,15 @@ FORMAT_MAPPING = {
     "jpg": "JPEG", "jpeg": "JPEG", "png": "PNG", "bmp": "BMP",
     "gif": "GIF", "tiff": "TIFF", "webp": "WEBP"
 }
-
 def get_logger(name: str = "image_processor"):
     """
     获取一个logger实例。库代码不应配置处理器(handler)，这应由应用层代码负责。
     """
     return logging.getLogger(name)
-
 logger = get_logger(__name__)
-
-
 # =====================
 # 3. 核心处理逻辑 (已重构)
 # =====================
-
 def process_image(
     src_path: Path, dest_dir: Path, config: ProcessConfig, *, counter: int
 ) -> Tuple[str, str, Optional[str]]:
@@ -152,11 +126,9 @@ def process_image(
     try:
         with Image.open(src_path) as temp_img:
             width, height = temp_img.size
-
         # --- 文件名处理 ---
         original_stem = src_path.stem
         original_ext = src_path.suffix.lower()
-
         if config.rename_config:
             rc = config.rename_config
             naming_context = {
@@ -166,22 +138,17 @@ def process_image(
             base_name = rc.naming_template.format(**naming_context)
         else:
             base_name = original_stem
-        
         final_ext = f".{config.convert_config.format}" if config.convert_config else original_ext
         dest_path = dest_dir / f"{base_name}{final_ext}"
-
         _process_image_logic(src_path, dest_path, final_ext, config)
         return src_path.name, "success", str(dest_path)
     except Exception as e:
         logger.error(f"Failed to process {src_path.name}: {e}", exc_info=True)
         return src_path.name, "error", f"{type(e).__name__}: {e}"
-
 def _process_image_logic(src_path: Path, dest_path: Path, target_ext: str, config: ProcessConfig):
     with Image.open(src_path) as img:
         img = img.convert("RGB") if img.mode in ('CMYK', 'P') else img
-
         exif_data = img.info.get("exif") if config.preserve_metadata and "exif" in img.info else None
-        
         # 按顺序应用各种处理，传递更精确的配置对象
         if config.crop_config and config.crop_config.w > 0:
             img = _apply_crop_logic(img, config.crop_config)
@@ -193,39 +160,29 @@ def _process_image_logic(src_path: Path, dest_path: Path, target_ext: str, confi
             img = _apply_filter_logic(img, config.filter_config)
         if config.watermark_config:
             img = _apply_watermark_logic(img, config.watermark_config)
-        
         quality = config.convert_config.quality if config.convert_config else 85
         _save_image_logic(img, dest_path, target_ext, exif_data, quality)
-
 def _save_image_logic(img: Image.Image, dest_path: Path, target_ext: str, exif_data: Optional[bytes], quality: int):
     ext = target_ext.lower().lstrip('.')
     save_params = {"format": FORMAT_MAPPING.get(ext, "JPEG")}
-
     quality = int(max(1, min(100, quality)))
     if ext in ("jpg", "jpeg", "webp"):
         save_params["quality"] = quality
     elif ext == "png":
         save_params["compress_level"] = int(max(0, min(9, (100 - quality) // 10)))
-    
     if exif_data: save_params["exif"] = exif_data
-        
     if ext in ["jpg", "jpeg", "bmp"] and img.mode in ("RGBA", "LA", "P"):
         img = img.convert("RGB")
-        
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     img.save(dest_path, **save_params)
-
 def _apply_crop_logic(img: Image.Image, config: CropConfig) -> Image.Image:
     return img.crop((config.x, config.y, config.x + config.w, config.y + config.h))
-
 def _apply_rotate_logic(img: Image.Image, config: RotateConfig) -> Image.Image:
     return img.rotate(config.angle, expand=True, resample=getattr(Image, "Resampling", Image).BICUBIC)
-
 def _resize_image_logic(img: Image.Image, config: ResizeConfig) -> Image.Image:
     orig_w, orig_h = img.size
     if config.only_shrink and orig_w <= config.width and orig_h <= config.height:
         return img
-
     size = (config.width, config.height)
     resample_filter = getattr(Image, "Resampling", Image).LANCZOS
     match config.mode:
@@ -233,7 +190,6 @@ def _resize_image_logic(img: Image.Image, config: ResizeConfig) -> Image.Image:
         case ResizeMode.COVER: return ImageOps.fit(img, size, resample_filter, bleed=0.0)
         case ResizeMode.STRETCH: return img.resize(size, resample_filter)
     return img
-
 def _apply_watermark_logic(img: Image.Image, config: WatermarkConfig) -> Image.Image:
     if not config.text: return img
     base = img.convert("RGBA") if img.mode != "RGBA" else img.copy()
@@ -257,7 +213,6 @@ def _apply_watermark_logic(img: Image.Image, config: WatermarkConfig) -> Image.I
     x, y = positions.get(config.position, positions["bottom-right"])
     draw.text((x, y), config.text, font=font, fill=config.color)
     return Image.alpha_composite(base, overlay)
-
 def _apply_filter_logic(img: Image.Image, config: FilterConfig) -> Image.Image:
     if config.type == FilterType.GRAYSCALE: return img.convert("L")
     has_alpha = 'A' in img.getbands()
@@ -274,16 +229,12 @@ def _apply_filter_logic(img: Image.Image, config: FilterConfig) -> Image.Image:
     else: return img
     if alpha: filtered.putalpha(alpha)
     return filtered
-
-
 # =====================
 # 4. 主调度器 (已重构)
 # =====================
-
 class ImageProcessor:
     def __init__(self):
         self.logger = get_logger("ImageProcessor")
-
     def batch_process(
         self, files: Sequence[str], output_dir: str, config: ProcessConfig,
         progress_callback: Optional[Callable[[float, str], None]] = None
@@ -305,7 +256,6 @@ class ImageProcessor:
             results.clear()
             self._process_serial(tasks, results, config, total, progress_callback)
         return len(results), total, sorted(results)
-
     def _process_multiprocess(self, tasks, results, config, total, progress_callback):
         self.logger.info(f"Using multiprocessing with {config.num_processes} processes.")
         ctx = multiprocessing.get_context("spawn")
@@ -313,14 +263,12 @@ class ImageProcessor:
             for i, result in enumerate(pool.imap_unordered(_mp_worker, tasks)):
                 self._handle_result(result, results)
                 if progress_callback: progress_callback((i + 1) / total, result[0])
-
     def _process_serial(self, tasks, results, config, total, progress_callback):
         self.logger.info(f"Using single-threaded serial processing for {total} files.")
         for i, task in enumerate(tasks):
             result = _mp_worker(task)
             self._handle_result(result, results)
             if progress_callback: progress_callback((i + 1) / total, task[0].name)
-
     def _handle_result(self, result: Tuple[str, str, Optional[str]], results: list):
         orig, status, data = result
         if status == "success" and data:
@@ -328,26 +276,21 @@ class ImageProcessor:
             results.append(data)
         else:
             self.logger.error(f"❌ Failed: {orig}, Reason: {data}")
-
 def _mp_worker(args: Tuple[Path, Path, ProcessConfig, int]) -> Tuple[str, str, Optional[str]]:
     src, out_dir, cfg, ctr = args
     return process_image(src, out_dir, cfg, counter=ctr)
-
 # =====================
 # 5. 工具函数 (重大改进)
 # =====================
-
 class _BKTreeNode:
     def __init__(self, item: Tuple[str, imagehash.ImageHash]):
         self.item = item
         self.children: Dict[int, _BKTreeNode] = {}
-
 class _BKTree:
     """A BK-Tree for efficient approximate searching of perceptual hashes."""
     def __init__(self, dist_fn: Callable[[Any, Any], int]):
         self.dist_fn = dist_fn
         self.root: Optional[_BKTreeNode] = None
-
     def add(self, item: Tuple[str, imagehash.ImageHash]):
         if not self.root: self.root = _BKTreeNode(item); return
         node = self.root
@@ -355,7 +298,6 @@ class _BKTree:
             dist = self.dist_fn(item[1], node.item[1])
             if dist not in node.children: node.children[dist] = _BKTreeNode(item); break
             node = node.children[dist]
-            
     def search(self, item: Tuple[str, imagehash.ImageHash], threshold: int) -> List[Tuple[str, imagehash.ImageHash]]:
         if not self.root: return []
         candidates, found = [self.root], []
@@ -366,7 +308,6 @@ class _BKTree:
             low, high = dist - threshold, dist + threshold
             candidates.extend(child for d, child in node.children.items() if low <= d <= high)
         return found
-
 def find_duplicate_images(file_paths: List[str], threshold: int = 8) -> List[List[str]]:
     """使用BK-Tree高效查找相似图片，避免O(n^2)的暴力比较。"""
     logger.info("Hashing images for duplicate search...")
@@ -389,7 +330,6 @@ def find_duplicate_images(file_paths: List[str], threshold: int = 8) -> List[Lis
             groups.append(group_paths)
             visited.update(group_paths)
     return groups
-
 def get_exif_data(image_path: str) -> Dict[str, Any]:
     try:
         exif_dict = piexif.load(image_path)
@@ -407,14 +347,12 @@ def get_exif_data(image_path: str) -> Dict[str, Any]:
         return exif_data
     except (FileNotFoundError, piexif.InvalidImageDataError, ValueError) as e:
         logger.warning(f"Could not read EXIF from {image_path}: {e}"); return {}
-
 def get_image_main_color(image_path: str) -> Tuple[Optional[Tuple[int, int, int]], List[Tuple[int, int, int]]]:
     try:
         ct = ColorThief(image_path)
         return ct.get_color(quality=1), ct.get_palette(color_count=6, quality=1)
     except Exception as e:
         logger.warning(f"Color analysis failed for {image_path}: {e}"); return None, []
-
 def plot_image_histogram(image_path: str) -> Optional[io.BytesIO]:
     fig = None
     try:
@@ -433,7 +371,6 @@ def plot_image_histogram(image_path: str) -> Optional[io.BytesIO]:
         logger.warning(f"Histogram creation failed for {image_path}: {e}"); return None
     finally:
         if fig: plt.close(fig)
-
 def ocr_image(image_path: str, lang: str = "eng", tesseract_cmd: Optional[str] = None) -> str:
     """改进：lang参数不再硬编码，并提供更友好的错误信息。"""
     cmd = tesseract_cmd or os.environ.get("TESSERACT_CMD")
@@ -446,16 +383,6 @@ def ocr_image(image_path: str, lang: str = "eng", tesseract_cmd: Optional[str] =
         logger.error(msg); return f"OCR Config Error: {msg}"
     except Exception as e:
         logger.error(f"OCR error for {image_path}: {e}", exc_info=True); return f"OCR Error: {e}"
-
-def remove_background(image_path: str, output_path: Optional[str] = None) -> Optional[Image.Image]:
-    try:
-        with open(image_path, 'rb') as i: output_data = remove(i.read())
-        out_img = Image.open(io.BytesIO(output_data))
-        if output_path: out_img.save(output_path)
-        return out_img
-    except FileNotFoundError: logger.error(f"BG removal failed: File not found: {image_path}"); return None
-    except Exception as e: logger.error(f"BG removal failed: {image_path}: {e}", exc_info=True); return None
-
 def select_best_image_in_group(group_paths: List[str]) -> Optional[str]:
     best_path, max_res, max_size = None, -1, -1
     for path_str in group_paths:
@@ -467,7 +394,6 @@ def select_best_image_in_group(group_paths: List[str]) -> Optional[str]:
         except (FileNotFoundError, UnidentifiedImageError):
             logger.warning(f"Could not read image for best selection: {path_str}")
     return best_path
-
 def _get_bundled_font_path(font_name: str = "DejaVuSans.ttf") -> Optional[str]:
     """重大改进：使用 importlib.resources 来安全、可移植地加载项目内的字体文件。"""
     try:
@@ -477,7 +403,6 @@ def _get_bundled_font_path(font_name: str = "DejaVuSans.ttf") -> Optional[str]:
     except (ModuleNotFoundError, FileNotFoundError):
         logger.debug(f"Bundled font package 'assets.fonts' not found. Pillow's default font will be used.")
         return None
-
 # =====================
 # 6. 示例用法 (作为脚本运行时)
 # =====================
@@ -486,11 +411,9 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s [%(levelname)s] [%(name)s] - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
-    
     logger.info("Image Processor V2 - Example Usage")
     INPUT_DIR, OUTPUT_DIR = Path("demo_input"), Path("demo_output")
     INPUT_DIR.mkdir(exist_ok=True); OUTPUT_DIR.mkdir(exist_ok=True)
-    
     # 2. 创建演示文件
     dummy_files = []
     for i in range(5):
@@ -498,7 +421,6 @@ if __name__ == '__main__':
             f = INPUT_DIR / f"test_{i}.png"; dummy_files.append(str(f))
             Image.new('RGB', (200 + i*20, 150 + i*20), (i*10, i*20, i*30)).save(f)
         except Exception as e: logger.error(f"Failed to create dummy file: {e}")
-
     # 3. 使用新的分层配置
     if dummy_files:
         p_config = ProcessConfig(
@@ -508,12 +430,10 @@ if __name__ == '__main__':
             watermark_config=WatermarkConfig(text="© Upgraded", size=16),
             filter_config=FilterConfig(type=FilterType.SHARPEN)
         )
-        
         # 4. 运行批处理
         processor = ImageProcessor()
         s, t, res = processor.batch_process(dummy_files, str(OUTPUT_DIR), p_config)
         logger.info(f"Batch processing complete. {s}/{t} files processed into {OUTPUT_DIR.resolve()}")
-
         # 5. 演示高效的重复查找
         dummy_files.append(dummy_files[0]) # 添加一个重复项
         logger.info("\n--- Demonstrating efficient duplicate search ---")
