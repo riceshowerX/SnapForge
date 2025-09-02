@@ -2,7 +2,7 @@
 
   <!-- Logo -->
   <a href="https://snapforge.streamlit.app/" target="_blank">
-    <img src="https://github.com/riceshowerX/picx-images-hosting/raw/master/%E7%BD%91%E7%AB%99/android-chrome-192x192-1.6wqw9el8i6.webp" alt="SnapForge Logo" width="90" height="90">
+    <img src="https://github.com/riceshowerX/picx-images-hosting/raw/master/%E7%BD%91%E极速%AB%99/android-chrome-192x192-1.6wqw9el8i6.webp" alt="SnapForge Logo" width="90" height="90">
   </a>
 
   <h1>SnapForge</h1>
@@ -13,10 +13,10 @@
 
   <!-- Badges -->
   <p>
-    <a href="https://snapforge.streamlit.app/" target="_blank"><img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg" alt="Streamlit App"></a>
+    <a href="https://snapforge.streamlit.app/" target="_blank"><img src="https://static.streamlit极速.io/badges/streamlit_badge_black_white.svg" alt="Streamlit App"></a>
     <a href="https://github.com/riceshowerX/SnapForge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/riceshowerX/SnapForge?style=for-the-badge&color=007EC6" alt="License"></a>
     <a href="https://github.com/riceshowerX/SnapForge/stargazers"><img src="https://img.shields.io/github/stars/riceshowerX/SnapForge?style=for-the-badge&color=FE7D37" alt="Stars"></a>
-    <a href="https://github.com/riceshowerX/SnapForge/issues"><img src="https://img.shields.io/github/issues/riceshowerX/SnapForge?style=for-the-badge&color=brightgreen" alt="Issues"></a>
+    <a href="https://github.com/riceshowerX/Snap极速orge/issues"><img src="https://img.shields.io/github/issues/riceshowerX/SnapForge?style=for-the-badge&color=b极速rightgreen" alt="Issues"></a>
     <img src="https://img.shields.io/badge/Python-3.8+-blue?style=for-the-badge&logo=python" alt="Python Version">
   </p>
 
@@ -29,9 +29,9 @@
 - [✨ 在线体验 (Live Demo)](#-在线体验-live-demo)
 - [🛡️ 隐私声明与使用建议](#️-隐私声明与使用建议)
 - [🌟 核心功能](#-核心功能)
+- [🏗️ 技术架构](#️-技术架构)
 - [📸 软件界面预览](#-软件界面预览)
 - [🔧 本地安装与运行](#-本地安装与运行)
-- [🧠 技术栈与鸣谢](#-技术栈与鸣谢)
 - [🛣️ 开发路线图](#️-开发路线图)
 - [🤝 如何贡献](#-如何贡献)
 - [📄 许可证](#-许可证)
@@ -44,7 +44,7 @@
 无需任何安装，立即在浏览器中体验SnapForge的全部功能！
 
 <div align="center" style="margin: 30px;">
-  <a href="https://snapforge.streamlit.app/" target="_blank" style="display: inline-block; padding: 14px 28px; background-color: #406aff; color: white; text-align: center; text-decoration: none; font-size: 18px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); transition: all 0.2s ease;">
+  <a href="https://snapforge.streamlit.app/" target="_blank" style="display: inline-block; padding: 14px 28px; background-color: #406aff; color: white; text-align: center; text-decoration: none; font-size: 18px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 极速0.2); transition: all 0.2s ease;">
     🚀 点击这里，立即体验 🚀
   </a>
 </div>
@@ -67,16 +67,43 @@
 | :--- | :--- |
 | **🚀 高性能批量处理** | 利用多核并行处理，大幅提升**格式转换**、**尺寸调整**、**压缩**、**水印添加**、**旋转**和**滤镜**等操作的速度。 |
 | **✍️ 高级命名模板** | 使用 `{prefix}`, `{counter}`, `{original_name}`, `{width}`, `{height}` 等动态占位符，实现专业级的文件命名自定义。 |
-| **💡 交互式去重** | 革命性的去重工具！**智能预选**最佳图片，让您**交互式审查**并一键**打包下载**需要保留或多余的副本，安全高效。|
+| **💡 智能去重检测** | 采用先进的BK-Tree算法，支持可配置的相似度阈值，高效识别重复图片。 |
 | **🛠️ 智能AI工具** | 提供 **AI一键去背景** (基于`rembg`)、**OCR文字识别** (`pytesseract`)、以及**智能分类** (按尺寸/主色调) 等高级功能。 |
 | **📊 全方位信息查看** | 一键查看图片的详细信息，包括**尺寸**、**大小**、**EXIF元数据**、**主色调**、**调色板**以及**RGB颜色直方图**。 |
 | **🌐 现代化UI** | 基于 Streamlit 构建，界面美观、响应迅速，支持**中/英**一键切换，并提供清晰的**处理日志**和进度反馈。 |
 
 ---
 
-### 📸 软件界面预览
+### 🏗️ 技术架构
 
-![SnapForge Interface Preview](https://github.com/user-attachments/assets/56c1b4c5-8be9-4490-9d86-a09bb48776b7)
+#### 前端 (UI层)
+- **Streamlit** - 现代化Web界面框架
+- **自定义CSS** - 专业渐变UI设计
+- **多语言支持** - 动态翻译系统
+
+#### 后端 (逻辑层)
+- **模块化架构** - UI、状态管理和业务逻辑清晰分离
+- **多进程处理** - 自动利用CPU核心实现最大性能
+- **先进算法** - BK-Tree算法高效处理图片去重
+
+#### 核心特性
+```python
+# 配置系统
+ProcessConfig(
+    rename_config=RenameConfig(prefix="demo"),
+    convert_config=ConvertConfig(format="jpeg", quality=80),
+    resize_config=ResizeConfig(width=150, height=150),
+    # ... 其他配置
+)
+
+# 多进程处理
+processor.batch_process(files, output_dir, config, progress_callback)
+```
+
+#### 关键优化
+- **资源管理** - 自动临时目录清理，UUID文件名避免冲突
+- **错误处理** - 全面的异常处理和详细日志记录
+- **性能优化** - 多核并行处理，支持优雅降级
 
 ---
 
@@ -91,7 +118,7 @@ cd SnapForge
 **2. 创建并激活虚拟环境 (推荐)**
 ```bash
 # Windows
-python -m venv venv
+python -m ven极速v venv
 venv\Scripts\activate
 
 # macOS / Linux
@@ -120,19 +147,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 应用启动后，浏览器将自动打开 `http://localhost:8501`。
-> **提示**: 首次使用“AI去背景”功能时，程序会自动下载所需的模型文件 (约176MB)，请耐心等待。
-
----
-
-### 🧠 技术栈与鸣谢
-
-- **核心框架**: [Streamlit](https://streamlit.io/) - 构建美观数据应用的快速方式。
-- **AI去背景**: [rembg](https://github.com/danielgatis/rembg) - 强大且易用的图片背景移除库。
-  - **核心模型**: [U²-Net](https://github.com/xuebinqin/U-2-Net) (仅限非商业研究用途)。模型文件将自动下载至用户目录 (`~/.u2net/u2net.onnx`)。
-- **OCR**: [pytesseract](https://github.com/madmaze/pytesseract) - Google Tesseract OCR 引擎的Python封装。
-- **图像处理**: [Pillow](https://python-pillow.org/) - Python图像处理库的瑞士军刀。
-
-SnapForge 仅为学术和技术研究目的调用这些模型和库，项目本身不分发、不修改、也不存储模型文件。所有第三方库的版权归其原作者所有。
+> **提示**: 首次使用"AI去背景"功能时，程序会自动下载所需的模型文件 (约176MB)，请耐心等待。
 
 ---
 
@@ -143,12 +158,12 @@ SnapForge 仅为学术和技术研究目的调用这些模型和库，项目本�
 - [x] **高级处理**: 批量添加水印、旋转、滤镜
 - [x] **命名系统**: 高级、可自定义的命名模板
 - [x] **性能优化**: 基于多进程的并行处理引擎
-- [x] **智能工具**: 交互式图片去重（智能预选+直接下载）
 - [x] **智能工具**: AI一键去背景 (支持批量)
 - [x] **智能工具**: OCR文字识别 & 智能分类
 - [x] **信息查看**: EXIF、主色调、直方图展示
-- [ ] **工作流**: 保存和加载处理预设，实现一键化操作。
-- [ ] **可移植性**: 提供一键打包的桌面版（如使用 PyInstaller 或 Nuitka）。
+- [x] **去重检测**: 先进的BK-Tree算法，支持可配置阈值
+- [ ] **工作流**: 保存和加载处理预设，实现一键化操作
+- [ ] **可移植性**: 提供一键打包的桌面版
 
 ---
 
@@ -173,4 +188,4 @@ SnapForge 仅为学术和技术研究目的调用这些模型和库，项目本�
 
 ### ⚠️ 免责声明
 
-本项目按“原样”提供，不附带任何明示或暗示的保证。对于因使用本软件（或其任何部分）而导致的任何直接或间接的损害、数据丢失或业务中断，开发者和贡献者概不负责。所有风险均由用户自行承担。
+本项目按"原样"提供，不附带任何明示或暗示的保证。对于因使用本软件（或其任何部分）而导致的任何直接或间接的损害、数据丢失或业务中断，开发者和贡献者概不负责。所有风险均由用户自行承担。
