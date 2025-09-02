@@ -182,6 +182,30 @@ Third-party libraries relied upon by this project (such as `streamlit`.) are sub
 
 ---
 
-### ⚠️ Disclaimer
+### ⚠️ Disclaimer & Legal Notice
 
-This project is provided "as is," without any express or implied warranty. In no event shall the developers or contributors be liable for any direct or indirect damages, data loss, or business interruption arising from the use of this software (or any part thereof). All risks are assumed by the user.
+**IMPORTANT: PLEASE READ THIS DISCLAIMER CAREFULLY BEFORE USING SNAPFORGE**
+
+#### 1. No Warranty
+SnapForge is provided **"AS IS"** and **"AS AVAILABLE"**, without any warranties of any kind, either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement.
+
+#### 2. No Liability
+In no event shall the author, contributors, or any affiliated parties be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.
+
+#### 3. User Responsibility
+- You are solely responsible for **backing up your data** before using SnapForge
+- You assume all risks associated with the use of this software
+- You are responsible for ensuring that your use complies with all applicable laws and regulations
+- You are responsible for obtaining proper licenses for any copyrighted materials you process
+
+#### 4. Data Protection Warning
+- Always process sensitive or important images **locally on your own machine**
+- The online demo processes images on remote servers - use only for non-sensitive content
+- We cannot guarantee the security of images processed through the online demo
+
+#### 5. Technical Limitations
+- Some image formats may not be fully supported
+- Processing very large images may require significant system resources
+- The software may contain bugs that could affect image quality or metadata
+
+**By using SnapForge, you acknowledge that you have read this disclaimer, understand it, and agree to be bound by its terms and conditions. If you do not agree to these terms, do not use this software.**
