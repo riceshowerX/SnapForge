@@ -138,16 +138,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-<details>
-<summary><strong>👉 IMPORTANT: Install Tesseract OCR Engine (Required for OCR)</strong></summary>
 
-The `pytesseract` library requires a system-level installation of the **Tesseract OCR engine**. Please install it according to your OS:
-
--   **Windows**: Download and install from [Tesseract at UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki). **Ensure you check "Add Tesseract to system PATH" during installation**.
--   **macOS**: `brew install tesseract tesseract-lang`
--   **Linux (Debian/Ubuntu)**: `sudo apt update && sudo apt install tesseract-ocr`
-
-</details>
 
 **4. Run the Application**
 ```bash
@@ -155,7 +146,7 @@ streamlit run app.py
 ```
 The application will automatically open at `http://localhost:8501` in your browser.
 
-> **Note**: The first time you use the "AI Background Removal" feature, the required model file (approx. 176MB) will be downloaded automatically. Please be patient.
+> **Note**: The application provides high-performance image processing with multi-core support.
 
 ---
 

@@ -131,16 +131,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-<details>
-<summary><strong>👉 重要：安装 Tesseract OCR 引擎 (OCR功能必需)</strong></summary>
 
-`pytesseract` 库需要系统级的 **Tesseract OCR 引擎** 支持，请根据您的操作系统安装：
-
--   **Windows**: 从 [Tesseract at UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki) 下载并安装。**务必在安装时勾选 "Add Tesseract to system PATH"**。
--   **macOS**: `brew install tesseract tesseract-lang`
--   **Linux (Debian/Ubuntu)**: `sudo apt update && sudo apt install tesseract-ocr tesseract-ocr-chi-sim`
-
-</details>
 
 **4. 运行应用**
 ```bash
