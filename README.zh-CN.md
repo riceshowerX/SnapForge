@@ -13,6 +13,7 @@
 
   <!-- Badges -->
   <p>
+    <a href="https://snapforge.streamlit.app/" target="_blank"><img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg" alt="Streamlit App"></a>
     <a href="https://github.com/riceshowerX/SnapForge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/riceshowerX/SnapForge?style=for-the-badge&color=007EC6" alt="License"></a>
     <a href="https://github.com/riceshowerX/SnapForge/stargazers"><img src="https://img.shields.io/github/stars/riceshowerX/SnapForge?style=for-the-badge&color=FE7D37" alt="Stars"></a>
     <a href="https://github.com/riceshowerX/SnapForge/issues"><img src="https://img.shields.io/github/issues/riceshowerX/SnapForge?style=for-the-badge&color=brightgreen" alt="Issues"></a>
@@ -36,6 +37,29 @@
 - [📄 许可证](#-许可证)
 - [⚠️ 免责声明](#️-免责声明)
 
+---
+
+### ✨ 在线体验 (Live Demo)
+
+无需任何安装，立即在浏览器中体验SnapForge的全部功能！
+
+<div align="center" style="margin: 30px;">
+  <a href="https://snapforge.streamlit.app/" target="_blank" style="display: inline-block; padding: 14px 28px; background-color: #406aff; color: white; text-align: center; text-decoration: none; font-size: 18px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); transition: all 0.2s ease;">
+    🚀 点击这里，立即体验 🚀
+  </a>
+</div>
+
+---
+
+### 🛡️ 隐私声明与使用建议
+
+我们强烈建议您将 **在线体验版** 用于功能评估和处理非敏感图片。
+
+为了 **100%保障您的数据隐私和安全**，并获得 **最佳处理性能**（充分利用您本地机器的所有CPU核心），我们推荐您在处理任何私人、重要或商业图片时，**在您自己的计算机上进行本地部署**。
+
+本地部署意味着所有图片文件始终保留在您的电脑上，绝不会上传到任何服务器，让您完全掌控自己的数据。
+
+---
 
 ### 🌟 核心功能
 

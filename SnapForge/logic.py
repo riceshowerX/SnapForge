@@ -2,18 +2,14 @@ import os
 import io
 import logging
 import multiprocessing
-import threading
-import queue
 import importlib.resources
-import uuid
-import shutil
-import tempfile
 from pathlib import Path
 from dataclasses import dataclass, field
 from enum import StrEnum, auto
 from typing import (
     Optional, Dict, Any, Tuple, List, Set, Callable, Sequence
 )
+
 # Pillow and external libraries
 from PIL import (
     Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps, UnidentifiedImageError
@@ -23,56 +19,12 @@ import piexif
 from colorthief import ColorThief
 import matplotlib.pyplot as plt
 import pytesseract
+from rembg import remove
 
 # =====================
-# 1. 资源管理器 (新增)
+# 1. 类型与配置 (已重构)
 # =====================
-class ResourceManager:
-    """统一管理临时资源，确保安全清理"""
-    def __init__(self):
-        self.temp_files = []
-        self.temp_dirs = []
-        
-    def create_temp_file(self, prefix="snapforge_", suffix=""):
-        """创建临时文件并注册管理"""
-        fd, path = tempfile.mkstemp(prefix=prefix, suffix=suffix)
-        os.close(fd)
-        self.temp_files.append(path)
-        return path
-        
-    def create_temp_dir(self, prefix="snapforge_"):
-        """创建临时目录并注册管理"""
-        path = tempfile.mkdtemp(prefix=prefix)
-        self.temp_dirs.append(path)
-        return path
-        
-    def cleanup(self):
-        """安全清理所有临时资源"""
-        for f in self.temp_files:
-            try:
-                if os.path.exists(f):
-                    os.unlink(f)
-            except Exception as e:
-                logger.debug(f"清理临时文件 {f} 时出错: {e}")
-        self.temp_files = []
-        
-        for d in self.temp_dirs:
-            try:
-                if os.path.exists(d):
-                    shutil.rmtree(d, ignore_errors=True)
-            except Exception as e:
-                logger.debug(f"清理临时目录 {d} 时出错: {e}")
-        self.temp_dirs = []
-        
-    def __enter__(self):
-        return self
-        
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.cleanup()
 
-# =====================
-# 2. 类型与配置 (已重构)
-# =====================
 class ResizeMode(StrEnum):
     CONTAIN = auto()
     COVER = auto()
@@ -88,13 +40,14 @@ class FilterType(StrEnum):
     ENHANCE = auto()
 
 # --- 分解后的配置类，职责更单一 ---
+
 @dataclass(slots=True)
 class RenameConfig:
     """重命名相关配置"""
     prefix: str = "image"
     start_number: int = 1
     naming_template: str = "{prefix}_{counter:04d}"
-    
+
     def __post_init__(self):
         if self.start_number < 0:
             raise ValueError("start_number must be non-negative")
@@ -104,12 +57,9 @@ class ConvertConfig:
     """格式转换相关配置"""
     format: str
     quality: int = 85
-    
+
     def __post_init__(self):
         self.format = self.format.lower().lstrip('.')
-        # 添加格式验证
-        if self.format not in FORMAT_MAPPING:
-            raise ValueError(f"不支持的格式: {self.format}. 支持的格式: {list(FORMAT_MAPPING.keys())}")
         if not (0 <= self.quality <= 100):
             raise ValueError("quality must be between 0 and 100")
 
@@ -139,7 +89,7 @@ class FilterConfig:
     """滤镜相关配置"""
     type: FilterType
     enhance_factor: float = 1.5
-    
+
     def __post_init__(self):
         if self.enhance_factor <= 0:
             raise ValueError("enhance_factor must be positive")
@@ -164,16 +114,18 @@ class ProcessConfig:
     rotate_config: Optional[RotateConfig] = None
     filter_config: Optional[FilterConfig] = None
     watermark_config: Optional[WatermarkConfig] = None
+
     preserve_metadata: bool = True
     num_processes: int = field(default_factory=lambda: max(1, (os.cpu_count() or 2) - 1))
     tesseract_cmd: Optional[str] = None
-    
+
     def __post_init__(self):
         if self.num_processes < 1:
             raise ValueError("num_processes must be >= 1")
 
+
 # =====================
-# 3. 日志与常量 (已改进)
+# 2. 日志与常量 (已改进)
 # =====================
 FORMAT_MAPPING = {
     "jpg": "JPEG", "jpeg": "JPEG", "png": "PNG", "bmp": "BMP",
@@ -188,9 +140,11 @@ def get_logger(name: str = "image_processor"):
 
 logger = get_logger(__name__)
 
+
 # =====================
-# 4. 核心处理逻辑 (已重构)
+# 3. 核心处理逻辑 (已重构)
 # =====================
+
 def process_image(
     src_path: Path, dest_dir: Path, config: ProcessConfig, *, counter: int
 ) -> Tuple[str, str, Optional[str]]:
@@ -198,9 +152,11 @@ def process_image(
     try:
         with Image.open(src_path) as temp_img:
             width, height = temp_img.size
+
         # --- 文件名处理 ---
         original_stem = src_path.stem
         original_ext = src_path.suffix.lower()
+
         if config.rename_config:
             rc = config.rename_config
             naming_context = {
@@ -210,8 +166,10 @@ def process_image(
             base_name = rc.naming_template.format(**naming_context)
         else:
             base_name = original_stem
+        
         final_ext = f".{config.convert_config.format}" if config.convert_config else original_ext
         dest_path = dest_dir / f"{base_name}{final_ext}"
+
         _process_image_logic(src_path, dest_path, final_ext, config)
         return src_path.name, "success", str(dest_path)
     except Exception as e:
@@ -221,7 +179,9 @@ def process_image(
 def _process_image_logic(src_path: Path, dest_path: Path, target_ext: str, config: ProcessConfig):
     with Image.open(src_path) as img:
         img = img.convert("RGB") if img.mode in ('CMYK', 'P') else img
+
         exif_data = img.info.get("exif") if config.preserve_metadata and "exif" in img.info else None
+        
         # 按顺序应用各种处理，传递更精确的配置对象
         if config.crop_config and config.crop_config.w > 0:
             img = _apply_crop_logic(img, config.crop_config)
@@ -233,20 +193,25 @@ def _process_image_logic(src_path: Path, dest_path: Path, target_ext: str, confi
             img = _apply_filter_logic(img, config.filter_config)
         if config.watermark_config:
             img = _apply_watermark_logic(img, config.watermark_config)
+        
         quality = config.convert_config.quality if config.convert_config else 85
         _save_image_logic(img, dest_path, target_ext, exif_data, quality)
 
 def _save_image_logic(img: Image.Image, dest_path: Path, target_ext: str, exif_data: Optional[bytes], quality: int):
     ext = target_ext.lower().lstrip('.')
     save_params = {"format": FORMAT_MAPPING.get(ext, "JPEG")}
+
     quality = int(max(1, min(100, quality)))
     if ext in ("jpg", "jpeg", "webp"):
         save_params["quality"] = quality
     elif ext == "png":
         save_params["compress_level"] = int(max(0, min(9, (100 - quality) // 10)))
+    
     if exif_data: save_params["exif"] = exif_data
+        
     if ext in ["jpg", "jpeg", "bmp"] and img.mode in ("RGBA", "LA", "P"):
         img = img.convert("RGB")
+        
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     img.save(dest_path, **save_params)
 
@@ -260,6 +225,7 @@ def _resize_image_logic(img: Image.Image, config: ResizeConfig) -> Image.Image:
     orig_w, orig_h = img.size
     if config.only_shrink and orig_w <= config.width and orig_h <= config.height:
         return img
+
     size = (config.width, config.height)
     resample_filter = getattr(Image, "Resampling", Image).LANCZOS
     match config.mode:
@@ -309,113 +275,68 @@ def _apply_filter_logic(img: Image.Image, config: FilterConfig) -> Image.Image:
     if alpha: filtered.putalpha(alpha)
     return filtered
 
+
 # =====================
-# 5. 主调度器 (已重构)
+# 4. 主调度器 (已重构)
 # =====================
+
 class ImageProcessor:
     def __init__(self):
         self.logger = get_logger("ImageProcessor")
-        self.progress_queue = multiprocessing.Queue()
-        self.progress_thread = None
-        
-    def start_progress_monitor(self, total, progress_callback):
-        """启动进度监控线程，确保线程安全"""
-        def monitor():
-            processed = 0
-            while processed < total:
-                try:
-                    item = self.progress_queue.get(timeout=0.5)
-                    if item == "DONE":
-                        break
-                    processed += 1
-                    if progress_callback:
-                        progress_callback(processed / total, item)
-                except queue.Empty:
-                    continue
-            if progress_callback and processed < total:
-                progress_callback(1.0, "完成")
-                
-        self.progress_thread = threading.Thread(target=monitor, daemon=True)
-        self.progress_thread.start()
-        
-    def stop_progress_monitor(self):
-        """停止进度监控"""
-        if self.progress_queue:
-            self.progress_queue.put("DONE")
-        if self.progress_thread:
-            self.progress_thread.join(timeout=1.0)
-            self.progress_thread = None
 
     def batch_process(
         self, files: Sequence[str], output_dir: str, config: ProcessConfig,
         progress_callback: Optional[Callable[[float, str], None]] = None
-    ) -> Tuple[int, int, List[str], Dict[str, str]]:
-        """返回更完整的处理结果，包括输入-输出映射"""
+    ) -> Tuple[int, int, List[str]]:
         if not files:
             self.logger.info("No files to process.")
             if progress_callback: progress_callback(1.0, "No files to process")
-            return 0, 0, [], {}
-            
+            return 0, 0, []
         output_path = Path(output_dir); output_path.mkdir(parents=True, exist_ok=True)
         start_num = config.rename_config.start_number if config.rename_config else 1
         tasks = [(Path(file), output_path, config, start_num + i) for i, file in enumerate(files)]
-        total = len(tasks)
-        results: List[str] = []
-        file_mapping = {}  # 添加输入-输出映射
-        
-        # 启动进度监控
-        self.start_progress_monitor(total, progress_callback)
-        
+        total = len(tasks); results: List[str] = []
         use_mp = (config.num_processes > 1 and total > 1)
         processor = self._process_multiprocess if use_mp else self._process_serial
         try:
-            processor(tasks, results, file_mapping, config, total)
+            processor(tasks, results, config, total, progress_callback)
         except Exception as e:
             self.logger.error(f"Processing failed: {e}, falling back to serial mode.", exc_info=True)
             results.clear()
-            file_mapping.clear()
-            self._process_serial(tasks, results, file_mapping, config, total)
-        finally:
-            self.stop_progress_monitor()
-            
-        return len(results), total, sorted(results), file_mapping
-        
-    def _process_multiprocess(self, tasks, results, file_mapping, config, total):
+            self._process_serial(tasks, results, config, total, progress_callback)
+        return len(results), total, sorted(results)
+
+    def _process_multiprocess(self, tasks, results, config, total, progress_callback):
         self.logger.info(f"Using multiprocessing with {config.num_processes} processes.")
         ctx = multiprocessing.get_context("spawn")
         with ctx.Pool(processes=config.num_processes) as pool:
-            # 使用imap代替imap_unordered确保顺序
-            for result in pool.imap(_mp_worker, tasks):
-                self._handle_result(result, results, file_mapping)
-                
-    def _process_serial(self, tasks, results, file_mapping, config, total):
+            for i, result in enumerate(pool.imap_unordered(_mp_worker, tasks)):
+                self._handle_result(result, results)
+                if progress_callback: progress_callback((i + 1) / total, result[0])
+
+    def _process_serial(self, tasks, results, config, total, progress_callback):
         self.logger.info(f"Using single-threaded serial processing for {total} files.")
-        for task in tasks:
+        for i, task in enumerate(tasks):
             result = _mp_worker(task)
-            self._handle_result(result, results, file_mapping)
-            
-    def _handle_result(self, result: Tuple[str, str, Optional[str]], results: list, file_mapping: dict):
+            self._handle_result(result, results)
+            if progress_callback: progress_callback((i + 1) / total, task[0].name)
+
+    def _handle_result(self, result: Tuple[str, str, Optional[str]], results: list):
         orig, status, data = result
         if status == "success" and data:
             self.logger.info(f"✅ Success: {orig} -> {Path(data).name}")
             results.append(data)
-            file_mapping[orig] = data
-            # 通过队列发送进度更新
-            if hasattr(self, 'progress_queue') and self.progress_queue:
-                self.progress_queue.put(Path(orig).name)
         else:
             self.logger.error(f"❌ Failed: {orig}, Reason: {data}")
-            # 仍然发送进度更新，但标记为失败
-            if hasattr(self, 'progress_queue') and self.progress_queue:
-                self.progress_queue.put(f"[失败] {Path(orig).name}")
 
 def _mp_worker(args: Tuple[Path, Path, ProcessConfig, int]) -> Tuple[str, str, Optional[str]]:
     src, out_dir, cfg, ctr = args
     return process_image(src, out_dir, cfg, counter=ctr)
 
 # =====================
-# 6. 工具函数 (重大改进)
+# 5. 工具函数 (重大改进)
 # =====================
+
 class _BKTreeNode:
     def __init__(self, item: Tuple[str, imagehash.ImageHash]):
         self.item = item
@@ -434,7 +355,7 @@ class _BKTree:
             dist = self.dist_fn(item[1], node.item[1])
             if dist not in node.children: node.children[dist] = _BKTreeNode(item); break
             node = node.children[dist]
-
+            
     def search(self, item: Tuple[str, imagehash.ImageHash], threshold: int) -> List[Tuple[str, imagehash.ImageHash]]:
         if not self.root: return []
         candidates, found = [self.root], []
@@ -495,38 +416,23 @@ def get_image_main_color(image_path: str) -> Tuple[Optional[Tuple[int, int, int]
         logger.warning(f"Color analysis failed for {image_path}: {e}"); return None, []
 
 def plot_image_histogram(image_path: str) -> Optional[io.BytesIO]:
-    """修复内存泄漏问题，使用上下文管理确保资源清理"""
     fig = None
     try:
-        with Image.open(image_path) as img:
-            rgb_img = img.convert('RGB')
-            
+        with Image.open(image_path) as img: rgb_img = img.convert('RGB')
         plt.style.use('seaborn-v0_8-whitegrid')
         fig, ax = plt.subplots(figsize=(4, 2.5), dpi=100)
-        
-        # 修复：使用上下文管理器确保图表正确关闭
-        with plt.ioff():  # 禁止交互式显示
-            colors, names = ('r', 'g', 'b'), ('Red', 'Green', 'Blue')
-            for i, color in enumerate(colors):
-                ax.plot(rgb_img.getchannel(i).histogram(), color=color, alpha=0.8, label=names[i])
-            ax.set_title("RGB Histogram", fontsize=10)
-            ax.set_xlim([0, 256])
-            ax.set_xlabel("Pixel Intensity")
-            ax.set_ylabel("Frequency")
-            ax.legend(fontsize='small')
-            ax.grid(True)
-            fig.tight_layout()
-            
-            buf = io.BytesIO()
-            fig.savefig(buf, format='png', dpi=100, bbox_inches='tight')
-            buf.seek(0)
-            return buf
+        colors, names = ('r', 'g', 'b'), ('Red', 'Green', 'Blue')
+        for i, color in enumerate(colors):
+            ax.plot(rgb_img.getchannel(i).histogram(), color=color, alpha=0.8, label=names[i])
+        ax.set_title("RGB Histogram", fontsize=10); ax.set_xlim([0, 256])
+        ax.set_xlabel("Pixel Intensity"); ax.set_ylabel("Frequency")
+        ax.legend(fontsize='small'); ax.grid(True); fig.tight_layout()
+        buf = io.BytesIO(); fig.savefig(buf, format='png'); buf.seek(0)
+        return buf
     except (FileNotFoundError, UnidentifiedImageError) as e:
-        logger.warning(f"Histogram creation failed for {image_path}: {e}")
-        return None
+        logger.warning(f"Histogram creation failed for {image_path}: {e}"); return None
     finally:
-        if fig:
-            plt.close(fig)  # 确保图表资源释放
+        if fig: plt.close(fig)
 
 def ocr_image(image_path: str, lang: str = "eng", tesseract_cmd: Optional[str] = None) -> str:
     """改进：lang参数不再硬编码，并提供更友好的错误信息。"""
@@ -540,6 +446,15 @@ def ocr_image(image_path: str, lang: str = "eng", tesseract_cmd: Optional[str] =
         logger.error(msg); return f"OCR Config Error: {msg}"
     except Exception as e:
         logger.error(f"OCR error for {image_path}: {e}", exc_info=True); return f"OCR Error: {e}"
+
+def remove_background(image_path: str, output_path: Optional[str] = None) -> Optional[Image.Image]:
+    try:
+        with open(image_path, 'rb') as i: output_data = remove(i.read())
+        out_img = Image.open(io.BytesIO(output_data))
+        if output_path: out_img.save(output_path)
+        return out_img
+    except FileNotFoundError: logger.error(f"BG removal failed: File not found: {image_path}"); return None
+    except Exception as e: logger.error(f"BG removal failed: {image_path}: {e}", exc_info=True); return None
 
 def select_best_image_in_group(group_paths: List[str]) -> Optional[str]:
     best_path, max_res, max_size = None, -1, -1
@@ -564,33 +479,18 @@ def _get_bundled_font_path(font_name: str = "DejaVuSans.ttf") -> Optional[str]:
         return None
 
 # =====================
-# 7. 自定义异常 (新增)
-# =====================
-class ImageProcessingError(Exception):
-    """基础图像处理异常"""
-    def __init__(self, message: str, original_error: Optional[Exception] = None):
-        super().__init__(message)
-        self.original_error = original_error
-
-class InvalidConfigError(ImageProcessingError):
-    """配置无效异常"""
-    pass
-
-class FileProcessingError(ImageProcessingError):
-    """文件处理异常"""
-    pass
-
-# =====================
-# 8. 示例用法 (作为脚本运行时)
+# 6. 示例用法 (作为脚本运行时)
 # =====================
 if __name__ == '__main__':
     # 1. 配置日志记录 (这是应用程序的责任，而不是库的责任)
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s [%(levelname)s] [%(name)s] - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
+    
     logger.info("Image Processor V2 - Example Usage")
     INPUT_DIR, OUTPUT_DIR = Path("demo_input"), Path("demo_output")
     INPUT_DIR.mkdir(exist_ok=True); OUTPUT_DIR.mkdir(exist_ok=True)
+    
     # 2. 创建演示文件
     dummy_files = []
     for i in range(5):
@@ -598,6 +498,7 @@ if __name__ == '__main__':
             f = INPUT_DIR / f"test_{i}.png"; dummy_files.append(str(f))
             Image.new('RGB', (200 + i*20, 150 + i*20), (i*10, i*20, i*30)).save(f)
         except Exception as e: logger.error(f"Failed to create dummy file: {e}")
+
     # 3. 使用新的分层配置
     if dummy_files:
         p_config = ProcessConfig(
@@ -607,10 +508,12 @@ if __name__ == '__main__':
             watermark_config=WatermarkConfig(text="© Upgraded", size=16),
             filter_config=FilterConfig(type=FilterType.SHARPEN)
         )
+        
         # 4. 运行批处理
         processor = ImageProcessor()
-        s, t, res, file_map = processor.batch_process(dummy_files, str(OUTPUT_DIR), p_config)
+        s, t, res = processor.batch_process(dummy_files, str(OUTPUT_DIR), p_config)
         logger.info(f"Batch processing complete. {s}/{t} files processed into {OUTPUT_DIR.resolve()}")
+
         # 5. 演示高效的重复查找
         dummy_files.append(dummy_files[0]) # 添加一个重复项
         logger.info("\n--- Demonstrating efficient duplicate search ---")

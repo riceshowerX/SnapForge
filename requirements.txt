@@ -5,3 +5,5 @@ piexif
 colorthief
 matplotlib
 pytesseract
+rembg
+onnxruntime
