@@ -34,10 +34,9 @@ class I18NManager:
             "反馈建议": "反馈建议",
 
             # 主标签页标题
-            "批量处理": "批量处理", 
+            "批量极速处理": "批量处理", 
             "信息查看": "信息查看", 
             "图片去重": "图片去重",
-            "智能工具": "智能工具",
             "处理记录": "处理记录",
 
             # 批量处理选项卡
@@ -102,18 +101,7 @@ class I18NManager:
             "✅ 未检测到重复图片。": "✅ 未检测到重复图片。",
             "检测到 {} 组重复图片。": "检测到 {} 组重复图片。",
 
-            # 智能工具选项卡
-            "🔍 智能工具": "🔍 智能工具",
-            "🪄 智能去背景": "🪄 智能去背景",
-            "上传图片去除背景": "上传图片去除背景",
-            "开始去背景": "开始去背景", 
-            "处理中 {}...": "处理中 {}...",
-            "失败": "失败",
-            "⬇️ 下载结果": "⬇️ 下载结果",
-            "✍️ OCR文字识别": "✍️ OCR文字识别",
-            "上传图片进行OCR": "上传图片进行OCR", 
-            "开始OCR": "开始OCR",
-            "结果": "结果", 
+
 
             # 处理记录选项卡
             "结果预览": "结果预览",
@@ -143,7 +131,6 @@ class I18NManager:
             "批量处理": "Batch Process", 
             "信息查看": "Image Info", 
             "图片去重": "Find Duplicates",
-            "智能工具": "Smart Tools",
             "处理记录": "History",
 
             # Batch processing tab
@@ -208,18 +195,7 @@ class I18NManager:
             "✅ 未检测到重复图片。": "✅ No duplicates found.",
             "检测到 {} 组重复图片。": "Found {} duplicate groups.",
 
-            # Smart tools tab
-            "🔍 智能工具": "🔍 Smart Tools",
-            "🪄 智能去背景": "🪄 Background Removal",
-            "上传图片去除背景": "Upload images to remove background",
-            "开始去背景": "Remove Background", 
-            "处理中 {}...": "Processing {}...",
-            "失败": "failed",
-            "⬇️ 下载结果": "⬇️ Download Results",
-            "✍️ OCR文字识别": "✍️ OCR Text Recognition",
-            "上传图片进行OCR": "Upload images for OCR", 
-            "开始OCR": "Start OCR",
-            "结果": "Result", 
+
 
             # History tab
             "结果预览": "Result Preview",

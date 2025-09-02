@@ -18,8 +18,6 @@ import imagehash
 import piexif
 from colorthief import ColorThief
 import matplotlib.pyplot as plt
-import pytesseract
-from rembg import remove
 
 # =====================
 # 1. 类型与配置 (已重构)
@@ -123,7 +121,6 @@ class ProcessConfig:
 
     preserve_metadata: bool = True
     num_processes: int = field(default_factory=lambda: 2)
-    tesseract_cmd: Optional[str] = None
 
     def __post_init__(self):
         if self.num_processes < 1:
@@ -448,39 +445,7 @@ def plot_image_histogram(image_path: str) -> Optional[io.BytesIO]:
     finally:
         if fig: plt.close(fig)
 
-def ocr_image(image_path: str, lang: str = "eng", tesseract_cmd: Optional[str] = None) -> str:
-    """改进：lang参数不再硬编码，并提供更友好的错误信息。"""
-    cmd = tesseract_cmd or os.environ.get("TESSERACT_CMD")
-    if cmd: pytesseract.pytesseract.tesseract_cmd = cmd
-    try:
-        with Image.open(image_path) as img: return pytesseract.image_to_string(img, lang=lang).strip()
-    except pytesseract.TesseractNotFoundError:
-        msg = ("Tesseract not found. Please install Tesseract-OCR and ensure "
-               "'tesseract' is in your PATH or set TESSERACT_CMD environment variable.")
-        logger.error(msg); return f"OCR Config Error: {msg}"
-    except Exception as e:
-        logger.error(f"OCR error for {image_path}: {e}", exc_info=True); return f"OCR Error: {e}"
 
-def remove_background(image_path: str, output_path: Optional[str] = None) -> Optional[Image.Image]:
-    try:
-        # 分离文件读取和处理，避免资源泄露
-        with open(image_path, 'rb') as input_file:
-            input_data = input_file.read()
-        output_data = remove(input_data)
-        
-        # 确保及时关闭图像资源
-        with io.BytesIO(output_data) as buffer:
-            out_img = Image.open(buffer)
-            if output_path:
-                out_img.save(output_path)
-            return out_img.copy()  # 返回副本避免原始图像被关闭影响
-            
-    except FileNotFoundError:
-        logger.error(f"BG removal failed: File not found: {image_path}")
-        return None
-    except Exception as e:
-        logger.error(f"BG removal failed: {image_path}: {e}", exc_info=True)
-        return None
 
 def select_best_image_in_group(group_paths: List[str]) -> Optional[str]:
     best_path, max_res, max_size = None, -1, -1
