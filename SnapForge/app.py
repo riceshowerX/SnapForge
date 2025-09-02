@@ -166,7 +166,7 @@ class UIManager:
 
 def save_uploaded_files(uploaded_files, output_dir: Path) -> List[Path]:
     """
-    【修复缺陷2】将上传文件保存到临时目录。
+    将上传文件保存到临时目录。
     使用UUID确保即使原始文件名相同或清理后相同，也不会发生文件覆盖。
     """
     file_paths = []
@@ -215,28 +215,54 @@ def render_processing_options(_: Callable[[str], str]) -> ProcessConfig:
     
     with st.expander(_("重命名、格式转换与压缩"), expanded=True):
         enable_rename = st.checkbox(_("启用重命名"), value=True)
-        c1,c2=st.columns(2); prefix=c1.text_input(_("前缀"), "image", disabled=not enable_rename); start_num=c2.number_input(_("起始编号"), 1, disabled=not enable_rename)
+        c1, c2 = st.columns(2)
+        prefix = c1.text_input(_("前缀"), "image", disabled=not enable_rename)
+        start_num = c2.number_input(_("起始编号"), 1, 10000, 1, disabled=not enable_rename)
         naming_template = st.text_input(_("命名模板"), "{prefix}_{counter:04d}", disabled=not enable_rename)
         
-        c1,c2=st.columns(2); enable_convert = c1.checkbox(_("启用格式转换")); target_ext=c1.selectbox(_("目标格式"), [".png", ".jpg", ".webp"], disabled=not enable_convert)
-        enable_compress = c2.checkbox(_("启用质量压缩"), True); quality = c2.slider(_("压缩质量"), 1, 100, 85, disabled=not enable_compress)
+        c1, c2 = st.columns(2)
+        enable_convert = c1.checkbox(_("启用格式转换"))
+        target_ext = c1.selectbox(_("目标格式"), [".png", ".jpg", ".webp"], disabled=not enable_convert)
+        enable_compress = c2.checkbox(_("启用质量压缩"), True)
+        quality = c2.slider(_("压缩质量"), 1, 100, 85, disabled=not enable_compress or not enable_convert)
 
     with st.expander(_("尺寸、水印与高级调整")):
-        enable_resize=st.checkbox(_("启用尺寸调整"))
-        c1,c2=st.columns(2); w=c1.number_input(_("宽"),1,8000,800,disabled=not enable_resize); h=c2.number_input(_("高"),1,8000,600,disabled=not enable_resize)
-        resize_map={_("适应边界"):ResizeMode.CONTAIN,_("裁剪填充"):ResizeMode.COVER,_("拉伸"):ResizeMode.STRETCH}; mode_disp=st.selectbox(_("模式"), list(resize_map.keys()), disabled=not enable_resize)
+        enable_resize = st.checkbox(_("启用尺寸调整"))
+        c1, c2 = st.columns(2)
+        w = c1.number_input(_("宽"), 1, 8000, 800, disabled=not enable_resize)
+        h = c2.number_input(_("高"), 1, 8000, 600, disabled=not enable_resize)
+        resize_map = {_("适应边界"): ResizeMode.CONTAIN, _("裁剪填充"): ResizeMode.COVER, _("拉伸"): ResizeMode.STRETCH}
+        mode_disp = st.selectbox(_("模式"), list(resize_map.keys()), disabled=not enable_resize)
         only_shrink = st.checkbox(_("仅缩小"), True, disabled=not enable_resize)
         st.markdown("---")
-        c1,c2=st.columns(2); preserve_meta=c1.checkbox(_("保留EXIF"),True); cpus=os.cpu_count() or 1; num_proc=c2.number_input(_("核心数"),1,cpus,max(1,cpus-1))
+        c1, c2 = st.columns(2)
+        preserve_meta = c1.checkbox(_("保留EXIF"), True)
+        cpus = os.cpu_count() or 1
+        num_proc = c2.number_input(_("核心数"), 1, cpus, max(1, cpus-1))
         
-        enable_wm=st.checkbox(_("启用水印")); wm_cfg=None
-        if enable_wm: c1,c2,c3=st.columns(3); wm_txt=c1.text_input(_("内容"),"SnapForge"); wm_pos=c2.selectbox(_("位置"), ["bottom-right", "center"]); wm_size=c3.slider(_("字号"), 10, 200, 36); wm_cfg=WatermarkConfig(wm_txt,size=wm_size,position=wm_pos)
+        enable_wm = st.checkbox(_("启用水印"))
+        wm_cfg = None
+        if enable_wm: 
+            c1, c2, c3 = st.columns(3)
+            wm_txt = c1.text_input(_("内容"), "SnapForge")
+            wm_pos = c2.selectbox(_("位置"), ["bottom-right", "center"])
+            wm_size = c3.slider(_("字号"), 10, 200, 36)
+            wm_cfg = WatermarkConfig(wm_txt, size=wm_size, position=wm_pos)
 
-        enable_crop=st.checkbox(_("启用裁剪")); crop_cfg=None
-        if enable_crop: c1,c2,c3,c4=st.columns(4); x,y=c1.number_input("X",0),c2.number_input("Y",0); cw,ch=c3.number_input(_("裁剪宽"),0),c4.number_input(_("裁剪高"),0); crop_cfg=CropConfig(x,y,cw,ch)
+        enable_crop = st.checkbox(_("启用裁剪"))
+        crop_cfg = None
+        if enable_crop: 
+            c1, c2, c3, c4 = st.columns(4)
+            x = c1.number_input("X", 0, 10000, 0)
+            y = c2.number_input("Y", 0, 10000, 0)
+            cw = c3.number_input(_("裁剪宽"), 1, 10000, 100)
+            ch = c4.number_input(_("裁剪高"), 1, 10000, 100)
+            crop_cfg = CropConfig(x, y, cw, ch)
         
-        c1,c2=st.columns(2); rot=c1.number_input(_("旋转角度"),-360,360,0,1)
-        flt_map={"":None,**{f.value:f for f in FilterType}}; flt_disp=c2.selectbox(_("滤镜"),list(flt_map.keys()))
+        c1, c2 = st.columns(2)
+        rot = c1.number_input(_("旋转角度"), -360, 360, 0, 1)
+        flt_map = {"": None, **{f.value: f for f in FilterType}}
+        flt_disp = c2.selectbox(_("滤镜"), list(flt_map.keys()))
 
     return ProcessConfig(
         rename_config=RenameConfig(prefix, start_num, naming_template) if enable_rename else None,
@@ -259,7 +285,11 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
     with tabs[0]: # 批量处理
         processor = ImageProcessor()
         st.markdown(f'<h3>{_("📂 上传文件")}</h3>', unsafe_allow_html=True)
-        uploaded_files = st.file_uploader(_("上传图片"), type=["jpg","png","bmp","webp"], accept_multiple_files=True, key="batch_upload")
+        def on_batch_upload_change():
+            app_state.result_file_paths.clear()
+            app_state.log_messages.clear()
+        
+        uploaded_files = st.file_uploader(_("上传图片"), type=["jpg","png","bmp","webp"], accept_multiple_files=True, key="batch_upload", on_change=on_batch_upload_change)
         config = render_processing_options(_)
         if st.button(_("🚀 开始处理图片"), type="primary", use_container_width=True, disabled=not uploaded_files):
             app_state.result_file_paths.clear(); app_state.log_messages=[_("任务开始...")]
@@ -278,7 +308,11 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                 except Exception as e: st.error(_("处理中发生严重错误: {}").format(e), icon="❗")
 
     with tabs[1]: # 信息查看
-        uploaded_info = st.file_uploader(_("上传图片以查看信息"), type=["jpg","png","bmp"], key="info_upload")
+        def on_info_upload_change():
+            # 清空信息查看相关的状态
+            pass  # 信息查看是实时显示的，不需要持久化状态
+        
+        uploaded_info = st.file_uploader(_("上传图片以查看信息"), type=["jpg","png","bmp"], key="info_upload", on_change=on_info_upload_change)
         if uploaded_info:
             p = save_uploaded_files([uploaded_info], TEMP_DIR)[0]; img=Image.open(p)
             st.image(img, use_container_width=True)
@@ -286,43 +320,71 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
     
     with tabs[2]: # 图片去重
         st.markdown(f'<h3>{_("👯‍♀️ 图片去重")}</h3>', unsafe_allow_html=True)
-        #【修复缺陷4】让阈值可配置
+        # 让阈值可配置
         threshold = st.slider(_("相似度阈值 (值越小越严格)"), 0, 20, 8)
-        files = st.file_uploader(_("上传需要去重的图片(至少2张)"), type=["jpg","png","bmp"], accept_multiple_files=True, key="dedup_upload")
+        
+        def on_dedup_change():
+            app_state.run_dedup = False
+            app_state.duplicate_groups.clear()
+        
+        files = st.file_uploader(_("上传需要去重的图片(至少2张)"), type=["jpg","png","bmp"], accept_multiple_files=True, key="dedup_upload", on_change=on_dedup_change)
         if st.button(_("查找重复图片"), use_container_width=True, disabled=len(files)<2):
-            app_state.run_dedup = True; file_paths = save_uploaded_files(files, TEMP_DIR)
-            with st.spinner(_("正在查找...")): app_state.duplicate_groups = find_duplicate_images([str(p) for p in file_paths], threshold)
+            app_state.run_dedup = True
+            file_paths = save_uploaded_files(files, TEMP_DIR)
+            with st.spinner(_("正在查找...")):
+                app_state.duplicate_groups = find_duplicate_images([str(p) for p in file_paths], threshold)
         if app_state.run_dedup:
-            if not app_state.duplicate_groups: st.success(_("✅ 未检测到重复图片。"))
-            else: st.warning(_("检测到 {} 组重复图片。").format(len(app_state.duplicate_groups)))
+            if not app_state.duplicate_groups:
+                st.success(_("✅ 未检测到重复图片。"))
+            else:
+                st.warning(_("检测到 {} 组重复图片。").format(len(app_state.duplicate_groups)))
+                # 显示重复图片组
+                for i, group in enumerate(app_state.duplicate_groups):
+                    st.write(f"第{i+1}组重复图片 ({len(group)}张):")
+                    cols = st.columns(min(4, len(group)))
+                    for j, img_path in enumerate(group):
+                        if j < len(cols):
+                            cols[j].image(img_path, use_container_width=True)
     
     with tabs[3]: # 智能工具
-        #【修复缺陷6】上传新文件时清空旧结果
-        def on_bg_change(): app_state.bg_removed_files.clear()
-        def on_ocr_change(): app_state.ocr_results.clear()
+        # 上传新文件时清空旧结果
+        def on_bg_change(): 
+            app_state.bg_removed_files.clear()
+        def on_ocr_change(): 
+            app_state.ocr_results.clear()
 
         st.markdown(f'<h3>{_("🔍 智能工具")}</h3>', unsafe_allow_html=True)
         with st.expander(_("🪄 智能去背景"), expanded=True):
             files = st.file_uploader(_("上传图片去除背景"), accept_multiple_files=True, key="bg_upload", on_change=on_bg_change)
             if st.button(_("开始去背景"), disabled=not files):
-                paths = save_uploaded_files(files, TEMP_DIR); results = []
+                paths = save_uploaded_files(files, TEMP_DIR)
+                results = []
                 bar = st.progress(0, _("准备中..."))
-                for i,p in enumerate(paths):
+                for i, p in enumerate(paths):
                     bar.progress((i+1)/len(paths), f"{_('处理中')} {p.name}...")
-                    try: out=p.with_name(f"{p.stem}_nobg.png"); remove_background(str(p),str(out)); results.append(out)
-                    except Exception as e: st.error(f"{p.name} {_('失败')}: {e}")
+                    try: 
+                        out = p.with_name(f"{p.stem}_nobg.png")
+                        remove_background(str(p), str(out))
+                        results.append(out)
+                    except Exception as e: 
+                        st.error(f"{p.name} {_('失败')}: {e}")
                 app_state.bg_removed_files = results
-            if app_state.bg_removed_files: st.download_button(_("⬇️ 下载结果"), pack_files_to_zip(app_state.bg_removed_files), "bg_removed.zip", use_container_width=True); display_results_grid(app_state.bg_removed_files,_)
+            if app_state.bg_removed_files: 
+                st.download_button(_("⬇️ 下载结果"), pack_files_to_zip(app_state.bg_removed_files), "bg_removed.zip", use_container_width=True)
+                display_results_grid(app_state.bg_removed_files, _)
 
         with st.expander(_("✍️ OCR文字识别")):
-            files=st.file_uploader(_("上传图片进行OCR"),accept_multiple_files=True,key="ocr_upload",on_change=on_ocr_change)
-            if st.button(_("开始OCR"),disabled=not files):
-                paths = save_uploaded_files(files,TEMP_DIR)
+            files = st.file_uploader(_("上传图片进行OCR"), accept_multiple_files=True, key="ocr_upload", on_change=on_ocr_change)
+            if st.button(_("开始OCR"), disabled=not files):
+                paths = save_uploaded_files(files, TEMP_DIR)
                 with st.spinner(_("识别中...")):
-                    for p in paths: app_state.ocr_results[p.name] = (str(p), ocr_image(str(p)))
+                    for p in paths: 
+                        app_state.ocr_results[p.name] = (str(p), ocr_image(str(p)))
             if app_state.ocr_results:
-                for name,(path,text) in app_state.ocr_results.items():
-                    c1,c2=st.columns([1,2]); c1.image(path); c2.text_area(_("结果"),text,height=150,key=f"ocr_{name}")
+                for name, (path, text) in app_state.ocr_results.items():
+                    c1, c2 = st.columns([1, 2])
+                    c1.image(path)
+                    c2.text_area(_("结果"), text, height=150, key=f"ocr_{name}")
 
     with tabs[4]: # 处理记录
         if app_state.result_file_paths: display_results_grid(app_state.result_file_paths, _, num_columns=4)

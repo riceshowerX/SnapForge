@@ -79,6 +79,12 @@ class CropConfig:
     w: int
     h: int
 
+    def __post_init__(self):
+        if self.w <= 0 or self.h <= 0:
+            raise ValueError("Crop dimensions must be positive")
+        if self.x < 0 or self.y < 0:
+            raise ValueError("Crop coordinates cannot be negative")
+
 @dataclass(slots=True)
 class RotateConfig:
     """旋转相关配置"""
@@ -310,9 +316,12 @@ class ImageProcessor:
         self.logger.info(f"Using multiprocessing with {config.num_processes} processes.")
         ctx = multiprocessing.get_context("spawn")
         with ctx.Pool(processes=config.num_processes) as pool:
-            for i, result in enumerate(pool.imap_unordered(_mp_worker, tasks)):
+            # 先收集所有结果，再在主进程中统一处理，避免并发问题
+            process_results = list(pool.imap_unordered(_mp_worker, tasks))
+            for i, result in enumerate(process_results):
                 self._handle_result(result, results)
-                if progress_callback: progress_callback((i + 1) / total, result[0])
+                if progress_callback: 
+                    progress_callback((i + 1) / total, result[0])
 
     def _process_serial(self, tasks, results, config, total, progress_callback):
         self.logger.info(f"Using single-threaded serial processing for {total} files.")
@@ -412,8 +421,13 @@ def get_image_main_color(image_path: str) -> Tuple[Optional[Tuple[int, int, int]
     try:
         ct = ColorThief(image_path)
         return ct.get_color(quality=1), ct.get_palette(color_count=6, quality=1)
+    except (FileNotFoundError, IOError, ValueError, OSError) as e:
+        # 只捕获预期的异常类型，避免隐藏未知错误
+        logger.warning(f"Color analysis failed for {image_path}: {e}")
+        return None, []
     except Exception as e:
-        logger.warning(f"Color analysis failed for {image_path}: {e}"); return None, []
+        logger.error(f"Unexpected error in color analysis for {image_path}: {e}", exc_info=True)
+        return None, []
 
 def plot_image_histogram(image_path: str) -> Optional[io.BytesIO]:
     fig = None
@@ -449,12 +463,24 @@ def ocr_image(image_path: str, lang: str = "eng", tesseract_cmd: Optional[str] =
 
 def remove_background(image_path: str, output_path: Optional[str] = None) -> Optional[Image.Image]:
     try:
-        with open(image_path, 'rb') as i: output_data = remove(i.read())
-        out_img = Image.open(io.BytesIO(output_data))
-        if output_path: out_img.save(output_path)
-        return out_img
-    except FileNotFoundError: logger.error(f"BG removal failed: File not found: {image_path}"); return None
-    except Exception as e: logger.error(f"BG removal failed: {image_path}: {e}", exc_info=True); return None
+        # 分离文件读取和处理，避免资源泄露
+        with open(image_path, 'rb') as input_file:
+            input_data = input_file.read()
+        output_data = remove(input_data)
+        
+        # 确保及时关闭图像资源
+        with io.BytesIO(output_data) as buffer:
+            out_img = Image.open(buffer)
+            if output_path:
+                out_img.save(output_path)
+            return out_img.copy()  # 返回副本避免原始图像被关闭影响
+            
+    except FileNotFoundError:
+        logger.error(f"BG removal failed: File not found: {image_path}")
+        return None
+    except Exception as e:
+        logger.error(f"BG removal failed: {image_path}: {e}", exc_info=True)
+        return None
 
 def select_best_image_in_group(group_paths: List[str]) -> Optional[str]:
     best_path, max_res, max_size = None, -1, -1

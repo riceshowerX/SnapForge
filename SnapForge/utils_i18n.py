@@ -1,136 +1,244 @@
-# utils_i18n.py (Updated and Synced with the latest app.py)
+# utils_i18n.py - Enhanced for SnapForge UI
 
-lang_dict = {
-    # 核心描述
-    "高效、专业、美观的批量图片处理平台": "An efficient, professional, and beautiful platform for image processing.",
+from typing import Dict, Callable, Optional
+
+class I18NManager:
+    """多语言管理器，支持动态翻译和UI一致性"""
     
-    # 侧边栏与页脚
-    "⚙️ 设置": "⚙️ Settings",
-    "清理缓存和重置状态": "Clear Cache & Reset State",
-    "缓存已清理！页面将刷新。": "Cache cleared! The page will now refresh.",
-    "由": "by", 
-    "设计与开发": "Designed & Developed",
+    def __init__(self):
+        self.translations = self._build_translation_dict()
+        
+    def _build_translation_dict(self) -> Dict[str, Dict[str, str]]:
+        """构建完整的翻译字典"""
+        return {
+            "zh": self._chinese_translations(),
+            "en": self._english_translations()
+        }
     
-    # 顶部横幅与链接
-    "前往GitHub仓库": "Go to GitHub Repository", 
-    "反馈建议/提Issue": "Feedback & Issues",
-    "反馈建议": "Feedback",
+    def _chinese_translations(self) -> Dict[str, str]:
+        """中文翻译"""
+        return {
+            # 核心描述
+            "高效、专业、美观的批量图片处理平台": "高效、专业、美观的批量图片处理平台",
+            
+            # 侧边栏与页脚
+            "⚙️ 设置": "⚙️ 设置",
+            "清理会话状态": "清理会话状态",
+            "会话已重置！页面将刷新。": "会话已重置！页面将刷新。",
+            "由": "由", 
+            "设计与开发": "设计与开发",
+            
+            # 顶部横幅与链接
+            "前往GitHub仓库": "前往GitHub仓库", 
+            "反馈建议/提Issue": "反馈建议/提Issue",
+            "反馈建议": "反馈建议",
 
-    # 主标签页标题
-    "批量处理": "Batch Process", 
-    "信息查看": "Image Info", 
-    "图片去重": "Find Duplicates",
-    "智能工具": "Smart Tools", # 更新：合并了OCR和去背景
-    "处理记录": "History",
+            # 主标签页标题
+            "批量处理": "批量处理", 
+            "信息查看": "信息查看", 
+            "图片去重": "图片去重",
+            "智能工具": "智能工具",
+            "处理记录": "处理记录",
 
-    # --- 批量处理选项卡 ---
-    # 上传区
-    "📂 上传文件": "1. Upload Files",
-    "上传图片文件（可混合格式）": "Upload Image Files (Mixed Formats Supported)",
+            # 批量处理选项卡
+            "📂 上传文件": "📂 上传文件",
+            "上传图片": "上传图片",
+            "🛠️ 图片处理参数": "🛠️ 图片处理参数",
+            "重命名、格式转换与压缩": "重命名、格式转换与压缩",
+            "启用重命名": "启用重命名",
+            "前缀": "前缀", 
+            "起始编号": "起始编号",
+            "命名模板": "命名模板",
+            "启用格式转换": "启用格式转换", 
+            "目标格式": "目标格式",
+            "启用质量压缩": "启用质量压缩", 
+            "压缩质量": "压缩质量",
+            
+            # 高级参数
+            "尺寸、水印与高级调整": "尺寸、水印与高级调整",
+            "启用尺寸调整": "启用尺寸调整",
+            "宽": "宽", 
+            "高": "高",
+            "模式": "模式",
+            "适应边界": "适应边界",
+            "裁剪填充": "裁剪填充",
+            "拉伸": "拉伸",
+            "仅缩小": "仅缩小", 
+            "保留EXIF": "保留EXIF",
+            "核心数": "核心数",
+            "启用水印": "启用水印", 
+            "内容": "内容", 
+            "位置": "位置", 
+            "字号": "字号",
+            "启用裁剪": "启用裁剪", 
+            "X": "X", "Y": "Y", "裁剪宽": "裁剪宽", "裁剪高": "裁剪高",
+            "旋转角度": "旋转角度", 
+            "滤镜": "滤镜",
+            
+            # 动作与状态
+            "🚀 开始处理图片": "🚀 开始处理图片",
+            "正在处理": "正在处理",
+            "准备中...": "准备中...",
+            "正在处理: {}": "正在处理: {}", 
+            "处理中...": "处理中...",
+            "图片并行处理中...": "图片并行处理中...",
+            "使用 {} 核心加速...": "使用 {} 核心加速...",
+            "处理完成！": "处理完成！",
+            "❌ 未成功处理任何图片。": "❌ 未成功处理任何图片。",
+            "✅ 处理完成：{} / {}": "✅ 处理完成：{} / {}", 
+            "⬇️ 下载全部结果": "⬇️ 下载全部结果",
+            "处理中发生严重错误: {}": "处理中发生严重错误: {}",
+
+            # 信息查看选项卡
+            "上传图片以查看信息": "上传图片以查看信息",
+            "尺寸": "尺寸", "大小": "大小",
+
+            # 图片去重选项卡
+            "👯‍♀️ 图片去重": "👯‍♀️ 图片去重",
+            "上传需要去重的图片(至少2张)": "上传需要去重的图片(至少2张)",
+            "相似度阈值 (值越小越严格)": "相似度阈值 (值越小越严格)",
+            "查找重复图片": "查找重复图片", 
+            "正在查找...": "正在查找...",
+            "✅ 未检测到重复图片。": "✅ 未检测到重复图片。",
+            "检测到 {} 组重复图片。": "检测到 {} 组重复图片。",
+
+            # 智能工具选项卡
+            "🔍 智能工具": "🔍 智能工具",
+            "🪄 智能去背景": "🪄 智能去背景",
+            "上传图片去除背景": "上传图片去除背景",
+            "开始去背景": "开始去背景", 
+            "处理中 {}...": "处理中 {}...",
+            "失败": "失败",
+            "⬇️ 下载结果": "⬇️ 下载结果",
+            "✍️ OCR文字识别": "✍️ OCR文字识别",
+            "上传图片进行OCR": "上传图片进行OCR", 
+            "开始OCR": "开始OCR",
+            "结果": "结果", 
+
+            # 处理记录选项卡
+            "结果预览": "结果预览",
+            "文件不存在": "文件不存在",
+            "暂无最近处理结果。": "暂无最近处理结果。",
+        }
     
-    # 参数配置区
-    "🛠️ 图片处理参数": "2. Configure Parameters",
-    "重命名、格式转换与压缩": "Rename, Convert & Compress",
-    "启用重命名": "Enable Renaming",
-    "文件名前缀": "Filename Prefix", 
-    "起始编号": "Start Number",
-    "高级命名模板": "Advanced Naming Template",
-    "可用占位符: {prefix}, {counter}, {original_filename}, {width}, {height}": "Placeholders: {prefix}, {counter}, {original_filename}, {width}, {height}",
-    "启用格式转换": "Enable Format Conversion", 
-    "目标格式": "Target Format",
-    "启用质量压缩": "Enable Quality Compression", 
-    "压缩质量": "Quality",
-    "对JPG/WEBP生效，PNG会转换为压缩等级。": "For JPG/WEBP. For PNG, this is converted to compression level.",
+    def _english_translations(self) -> Dict[str, str]:
+        """英文翻译"""
+        return {
+            # Core description
+            "高效、专业、美观的批量图片处理平台": "An efficient, professional, and beautiful platform for image processing.",
+            
+            # Sidebar & footer
+            "⚙️ 设置": "⚙️ Settings",
+            "清理会话状态": "Clear Session State",
+            "会话已重置！页面将刷新。": "Session reset! Page will refresh.",
+            "由": "by", 
+            "设计与开发": "Designed & Developed",
+            
+            # Header banner & links
+            "前往GitHub仓库": "Go to GitHub Repository", 
+            "反馈建议/极速提Issue": "Feedback & Issues",
+            "反馈建议": "Feedback",
 
-    # 高级参数
-    "尺寸、水印与高级调整": "Resize, Watermark & Advanced", # 更新
-    "启用尺寸调整": "Enable Resizing",
-    "目标宽度(px)": "Target Width (px)", 
-    "目标高度(px)": "Target Height (px)",
-    "缩放模式": "Resizing Mode",
-    "保持比例适应边界 (Contain)": "Keep Ratio & Fit (Contain)", # 更新
-    "保持比例裁剪填充 (Cover)": "Keep Ratio & Crop (Cover)", # 更新
-    "拉伸至指定尺寸 (Stretch)": "Stretch to Fill", # 更新
-    "仅缩小不放大": "Downscale Only (No Enlarge)", 
-    "保留元数据 (EXIF)": "Keep EXIF Metadata",
-    "并行处理核心数": "Parallel Processing Cores", # 新增
-    "启用批量水印": "Enable Watermark", 
-    "水印内容": "Watermark Text", 
-    "水印位置": "Position", 
-    "水印字号": "Font Size",
-    "启用批量裁剪": "Enable Cropping", 
-    "从左上角(x,y)开始裁剪一个(w,h)大小的区域": "Crops a (w,h) area starting from the top-left (x,y) corner.", # 新增
-    "裁剪X": "Crop X", "裁剪Y": "Crop Y", "裁剪宽 W": "Width W", "裁剪高 H": "Height H",
-    "批量旋转角度": "Rotation Angle", 
-    "批量滤镜": "Filter", 
+            # Main tab titles
+            "批量处理": "Batch Process", 
+            "信息查看": "Image Info", 
+            "图片去重": "Find Duplicates",
+            "智能工具": "Smart Tools",
+            "处理记录": "History",
+
+            # Batch processing tab
+            "📂 上传文件": "📂 Upload Files",
+            "上传极速图片": "Upload Images",
+            "🛠️ 图片处理参数": "🛠️ Processing Parameters",
+            "重命名、格式转换与压缩": "Rename, Convert & Compress",
+            "启用重命名": "Enable Renaming",
+            "前缀": "Prefix", 
+            "起始编号": "Start Number",
+            "命名模板": "Naming Template",
+            "启用格式转换": "Enable Format Conversion", 
+            "目标格式": "Target Format",
+            "启用质量压缩": "Enable Quality Compression", 
+            "压缩质量": "Quality",
+            
+            # Advanced parameters
+            "尺寸、水印与高级调整": "Resize, Watermark & Advanced",
+            "启用尺寸调整": "Enable Resizing",
+            "宽": "Width", 
+            "高": "Height",
+            "模式": "Mode",
+            "适应边界": "Contain",
+            "裁剪填充": "Cover",
+            "拉伸": "Stretch",
+            "仅缩小": "Downscale Only", 
+            "保留EXIF": "Keep EXIF",
+            "核心数": "Cores",
+            "启用水印": "Enable Watermark", 
+            "内容": "Text", 
+            "位置": "Position", 
+            "字号": "Font Size",
+            "启用裁剪": "Enable Cropping", 
+            "X": "X", "Y": "Y", "裁剪宽": "Crop Width", "裁剪高": "Crop Height",
+            "旋转角度": "Rotation Angle", 
+            "滤镜": "Filter",
+            
+            # Actions & status
+            "🚀 开始处理图片": "🚀 Process Images",
+            "正在处理": "Processing",
+            "准备中...": "Preparing...",
+            "正在处理: {}": "Processing: {}", 
+            "处理中...": "Processing...",
+            "图片并行处理中...": "Parallel processing images...",
+            "使用 {} 核心加速...": "Using {} cores...",
+            "处理完成！": "Processing Complete!",
+            "❌ 未成功处理任何图片。": "❌ Failed to process any images.",
+            "✅ 处理完成：{} / {}": "✅ Processed {} / {}", 
+            "⬇️ 下载全部结果": "⬇️ Download All Results",
+            "处理中发生严重错误: {}": "Critical error: {}",
+
+            # Image info tab
+            "上传图片以查看信息": "Upload image to view info",
+            "尺寸": "Dimensions", "大小": "Size",
+
+            # Duplicate finder tab
+            "👯‍♀️ 图片去重": "👯‍♀️ Find Duplicates",
+            "上传需要去重的图片(至少2张)": "Upload images to find duplicates (min 2)",
+            "相似度阈值 (值越小越严格)": "Similarity Threshold (lower = stricter)",
+            "查找重复图片": "Find Duplicates", 
+            "正在查找...": "Searching...",
+            "✅ 未检测到重复图片。": "✅ No duplicates found.",
+            "检测到 {} 组重复图片。": "Found {} duplicate groups.",
+
+            # Smart tools tab
+            "🔍 智能工具": "🔍 Smart Tools",
+            "🪄 智能去背景": "🪄 Background Removal",
+            "上传图片去除背景": "Upload images to remove background",
+            "开始去背景": "Remove Background", 
+            "处理中 {}...": "Processing {}...",
+            "失败": "failed",
+            "⬇️ 下载结果": "⬇️ Download Results",
+            "✍️ OCR文字识别": "✍️ OCR Text Recognition",
+            "上传图片进行OCR": "Upload images for OCR", 
+            "开始OCR": "Start OCR",
+            "结果": "Result", 
+
+            # History tab
+            "结果预览": "Result Preview",
+            "文件不存在": "File not found",
+            "暂无最近处理结果。": "No recent results.",
+        }
     
-    # 动作与状态
-    "🚀 开始处理图片": "🚀 Process Images",
-    "正在处理": "Processing", # 新增
-    "准备中...": "Preparing...", # 新增
-    "正在处理: {}": "Processing: {}", 
-    "处理中...": "Processing...",
-    "请先上传图片文件！": "Please upload image files first!",
-    "图片并行处理中，请稍候...": "Parallel processing images, please wait...",
-    "正在使用 {} 核心加速处理...": "Processing with {} cores...", # 更新
-    "处理完成！": "Processing Complete!", 
-    "处理日志": "Processing Log",
-    "❌ 未成功处理任何图片，请检查日志。": "❌ Failed to process any images. Please check the log.",
-    "✅ 处理完成：{} / {}": "✅ Success: Processed {} / {} images.", 
-    "⬇️ 下载全部结果": "⬇️ Download All Results",
-    "处理中发生严重错误: {}": "A critical error occurred during processing: {}",
+    def get_translator(self, lang: str = "中文") -> Callable[[str], str]:
+        """获取翻译函数"""
+        lang_code = "zh" if lang == "中文" else "en"
+        
+        def translator(text_key: str) -> str:
+            return self.translations[lang_code].get(text_key, text_key)
+        
+        return translator
 
-    # --- 信息查看选项卡 ---
-    "🖼️ 图片信息查看": "🖼️ View Image Information",
-    "上传图片以查看详细信息": "Upload an image to view its details",
-    "图片预览": "Preview", "尺寸": "Dimensions", "文件大小": "File Size",
-    "🎨 色彩与格式信息": "🎨 Color & Format Information",
-    "模式": "Mode", "格式": "Format", "帧数": "Frame Count",
-    "主色调": "Dominant Color", "RGB直方图": "RGB Histogram", 
-    "📷 EXIF 元数据": "📷 EXIF Metadata",
-    "分析图片时出错: {}": "Error analyzing image: {}",
+# 全局实例
+_i18n_manager = I18NManager()
 
-    # --- 图片去重选项卡 ---
-    "👯‍♀️ 交互式图片去重": "👯‍♀️ Interactive Duplicate Finder",
-    "上传需要去重的图片(至少2张)": "Upload images to find duplicates (min. 2)",
-    "查找重复图片": "Find Duplicates", 
-    "正在查找重复图片...": "Searching for duplicate images...",
-    "检测到 {} 组重复图片：请检查下面的选择，然后下载您需要的结果。": "Found {} groups of duplicate images. Please review the selections below and download your desired files.",
-    "第": "Group", "组": "", 
-    "选择要保留的图片": "Select image to keep", # 更新
-    "无法读取": "Cannot Read",
-    "准备下载包": "Prepare Download Packages",
-    "⬇️ 下载保留的图片 ({})": "⬇️ Download Kept Images ({})",
-    "⬇️ 下载多余的副本 ({})": "⬇️ Download Redundant Copies ({})",
-    "✅ 经过扫描，未在您的上传中检测到重复图片。": "✅ Scan complete. No duplicate images were detected in your upload.",
-
-    # --- 智能工具选项卡 ---
-    "🔍 智能工具": "🔍 Smart Tools", # 新增
-    "🪄 智能去背景 (Smart Background Removal)": "🪄 Smart Background Removal", # 新增
-    "上传图片去除背景": "Upload images to remove background", # 更新
-    "开始去背景": "Remove Background", 
-    "正在去除背景...": "Removing backgrounds...",
-    "去背景失败": "failed to remove background",
-    "⬇️ 下载去背景结果": "⬇️ Download BG-Removed Results", # 新增
-    "✍️ 批量OCR文字识别 (Batch OCR)": "✍️ Batch OCR", # 新增
-    "上传图片进行OCR": "Upload images for OCR", 
-    "开始OCR识别": "Start OCR",
-    "识别结果": "Recognition Result", 
-
-    # --- 处理记录选项卡 ---
-    "🗂️ 最近处理结果预览": "🗂️ Preview of Last Results",
-    "这里将展示“批量处理”选项卡最近一次成功运行的结果。": "This area shows the results from the last successful run in the 'Batch Process' tab.",
-    "文件不存在": "File does not exist", # 新增
-    "暂无最近处理结果。请先在“批量处理”中运行一次任务。": "No recent results. Please run a task in the 'Batch Process' tab first.",
-}
-
-def get_translator(lang="中文"):
-    """
-    Returns a translation function based on the selected language.
-    """
-    # Fallback for empty lang or other issues
-    if lang != "English":
-        return lambda text_key: text_key
-    
-    # Return the translator function for English
-    return lambda text_key: lang_dict.get(text_key, text_key)
+def get_translator(lang: str = "中文") -> Callable[[str], str]:
+    """获取翻译函数（兼容旧接口）"""
+    return _i18n_manager.get_translator(lang)
