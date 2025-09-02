@@ -178,7 +178,7 @@ We warmly welcome contributions of all forms! Whether it's **submitting new feat
 
 The main body of this project is open-sourced under the [**MIT License**](https://github.com/riceshowerX/SnapForge/blob/main/LICENSE).
 
-Third-party libraries relied upon by this project (such as `streamlit`, `rembg`, etc.) are subject to their own separate open-source licenses. We have made every effort to comply with and respect all relevant license requirements.
+Third-party libraries relied upon by this project (such as `streamlit`etc.) are subject to their own separate open-source licenses. We have made every effort to comply with and respect all relevant license requirements.
 
 ---
 

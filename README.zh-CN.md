@@ -171,7 +171,7 @@ streamlit run app.py
 
 本项目的主体代码基于 [**MIT License**](https://github.com/riceshowerX/SnapForge/blob/main/LICENSE) 开源。
 
-本项目依赖的第三方库（如 `streamlit`, `rembg` 等）各自拥有其独立的开源许可证。我们已尽力遵守并尊重所有相关许可证的要求。
+本项目依赖的第三方库（如 `streamlit` 等）各自拥有其独立的开源许可证。我们已尽力遵守并尊重所有相关许可证的要求。
 
 ---
 
