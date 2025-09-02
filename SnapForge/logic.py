@@ -122,7 +122,7 @@ class ProcessConfig:
     watermark_config: Optional[WatermarkConfig] = None
 
     preserve_metadata: bool = True
-    num_processes: int = field(default_factory=lambda: max(1, (os.cpu_count() or 2) - 1))
+    num_processes: int = field(default_factory=lambda: 2)
     tesseract_cmd: Optional[str] = None
 
     def __post_init__(self):

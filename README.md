@@ -9,7 +9,7 @@
 
   <p><strong>A powerful, elegant, and open-source image processing platform, built for ultimate efficiency.</strong></p>
   
-  <p>SnapForge provides a modern web interface powered by Streamlit, leveraging <strong>multi-core parallel processing</strong> to make complex batch image tasks simpler and faster than ever. From format conversion and <strong>advanced template-based renaming</strong> to AI background removal, everything is at your fingertips.</p>
+  <p>SnapForge provides a modern web interface powered by Streamlit, leveraging <strong>multi-core parallel processing</strong> to make complex batch image tasks simpler and faster than ever. From format conversion and <strong>advanced template-based renaming</strong> to intelligent duplicate detection, everything is at your fingertips.</p>
 
   <!-- Badges -->
   <p>
@@ -72,7 +72,7 @@ Local deployment ensures that all image files remain on your computer and are ne
 | **🚀 High-Performance Batch Processing** | Utilizes multi-core parallel processing to significantly speed up operations like **format conversion**, **resizing**, **compression**, **watermarking**, **rotation**, and **filters**. |
 | **✍️ Advanced Renaming Templates** | Use dynamic placeholders like `{prefix}`, `{counter}`, `{original_name}`, `{width}`, and `{height}` to fully customize file naming conventions like a pro. |
 | **💡 Intelligent Deduplication** | Advanced BK-Tree algorithm for efficient duplicate detection with configurable similarity thresholds. |
-| **🛠️ Smart AI Tools** | Features **one-click AI background removal** (powered by `rembg`), **OCR text recognition** (`pytesseract`), and **smart sorting** (by dimensions/dominant color). |
+| **💡 Intelligent Deduplication** | Advanced BK-Tree algorithm for efficient duplicate detection with configurable similarity thresholds. |
 | **📊 Comprehensive Info Viewer** | Instantly view detailed image information, including **dimensions**, **file size**, **EXIF metadata**, **dominant color**, **color palette**, and an **RGB color histogram**. |
 | **🌐 Modern UI** | Built with Streamlit for a beautiful, responsive interface. Supports one-click **language switching (EN/CN)** and provides clear **processing logs** and progress feedback. |
 
@@ -102,6 +102,9 @@ ProcessConfig(
 
 # Multi-process Processing
 processor.batch_process(files, output_dir, config, progress_callback)
+
+# Duplicate Detection
+find_duplicate_images(file_paths, threshold=8)
 ```
 
 #### Key Optimizations
@@ -163,7 +166,7 @@ The application will automatically open at `http://localhost:8501` in your brows
 - [x] **Advanced Processing**: Batch watermarking, rotation, filters
 - [x] **Naming System**: Advanced, customizable renaming templates
 - [x] **Performance**: Multi-process parallel processing engine
-- [x] **Smart Tools**: AI background removal and OCR text recognition
+- [x] **Deduplication**: Advanced BK-Tree algorithm for efficient duplicate detection
 - [x] **Info Viewer**: EXIF, dominant color, histogram display
 - [x] **Deduplication**: Advanced BK-Tree algorithm for efficient duplicate detection
 - [ ] **Workflows**: Save and load processing presets for one-click operations

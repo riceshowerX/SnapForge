@@ -9,7 +9,7 @@
 
   <p><strong>一个强大、美观且开源的图片处理平台，专为极致效率而生。</strong></p>
   
-  <p>SnapForge 提供了一个基于 Streamlit 的现代化Web界面，利用<strong>多核并行处理</strong>技术，让复杂的批量图片处理任务变得前所未有的简单和快速。无论是格式转换、<strong>高级模板重命名</strong>，还是AI抠图，一切尽在掌握。</p>
+  <p>SnapForge 提供了一个基于 Streamlit 的现代化Web界面，利用<strong>多核并行处理</strong>技术，让复杂的批量图片处理任务变得前所未有的简单和快速。无论是格式转换、<strong>高级模板重命名</strong>，还是智能去重检测，一切尽在掌握。</p>
 
   <!-- Badges -->
   <p>

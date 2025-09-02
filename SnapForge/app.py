@@ -21,8 +21,7 @@ try:
         RenameConfig, ConvertConfig, ResizeConfig, CropConfig, 
         RotateConfig, FilterConfig, WatermarkConfig,
         find_duplicate_images, get_exif_data, get_image_main_color,
-        plot_image_histogram, ocr_image, remove_background,
-        select_best_image_in_group
+        plot_image_histogram, select_best_image_in_group
     )
 except ImportError:
     st.error(
@@ -48,8 +47,6 @@ class AppState:
     # 修复缺陷1：临时目录管理已移出状态类，以防止资源泄露
     result_file_paths: List[Path] = field(default_factory=list)
     duplicate_groups: List[List[str]] = field(default_factory=list)
-    ocr_results: Dict[str, tuple] = field(default_factory=dict)
-    bg_removed_files: List[Path] = field(default_factory=list)
     run_dedup: bool = False
     log_messages: List[str] = field(default_factory=list)
 
@@ -238,7 +235,7 @@ def render_processing_options(_: Callable[[str], str]) -> ProcessConfig:
         c1, c2 = st.columns(2)
         preserve_meta = c1.checkbox(_("保留EXIF"), True)
         cpus = os.cpu_count() or 1
-        num_proc = c2.number_input(_("核心数"), 1, cpus, max(1, cpus-1))
+        num_proc = c2.number_input(_("核心数"), 1, cpus, 2)
         
         enable_wm = st.checkbox(_("启用水印"))
         wm_cfg = None
@@ -279,7 +276,7 @@ def render_processing_options(_: Callable[[str], str]) -> ProcessConfig:
 # -----------------------------------------------------------------------------
 
 def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
-    tab_titles = [_("批量处理"), _("信息查看"), _("图片去重"), _("智能工具"), _("处理记录")]
+    tab_titles = [_("批量处理"), _("信息查看"), _("图片去重"), _("处理记录")]
     tabs = st.tabs(tab_titles)
 
     with tabs[0]: # 批量处理
@@ -346,47 +343,7 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                         if j < len(cols):
                             cols[j].image(img_path, use_container_width=True)
     
-    with tabs[3]: # 智能工具
-        # 上传新文件时清空旧结果
-        def on_bg_change(): 
-            app_state.bg_removed_files.clear()
-        def on_ocr_change(): 
-            app_state.ocr_results.clear()
-
-        st.markdown(f'<h3>{_("🔍 智能工具")}</h3>', unsafe_allow_html=True)
-        with st.expander(_("🪄 智能去背景"), expanded=True):
-            files = st.file_uploader(_("上传图片去除背景"), accept_multiple_files=True, key="bg_upload", on_change=on_bg_change)
-            if st.button(_("开始去背景"), disabled=not files):
-                paths = save_uploaded_files(files, TEMP_DIR)
-                results = []
-                bar = st.progress(0, _("准备中..."))
-                for i, p in enumerate(paths):
-                    bar.progress((i+1)/len(paths), f"{_('处理中')} {p.name}...")
-                    try: 
-                        out = p.with_name(f"{p.stem}_nobg.png")
-                        remove_background(str(p), str(out))
-                        results.append(out)
-                    except Exception as e: 
-                        st.error(f"{p.name} {_('失败')}: {e}")
-                app_state.bg_removed_files = results
-            if app_state.bg_removed_files: 
-                st.download_button(_("⬇️ 下载结果"), pack_files_to_zip(app_state.bg_removed_files), "bg_removed.zip", use_container_width=True)
-                display_results_grid(app_state.bg_removed_files, _)
-
-        with st.expander(_("✍️ OCR文字识别")):
-            files = st.file_uploader(_("上传图片进行OCR"), accept_multiple_files=True, key="ocr_upload", on_change=on_ocr_change)
-            if st.button(_("开始OCR"), disabled=not files):
-                paths = save_uploaded_files(files, TEMP_DIR)
-                with st.spinner(_("识别中...")):
-                    for p in paths: 
-                        app_state.ocr_results[p.name] = (str(p), ocr_image(str(p)))
-            if app_state.ocr_results:
-                for name, (path, text) in app_state.ocr_results.items():
-                    c1, c2 = st.columns([1, 2])
-                    c1.image(path)
-                    c2.text_area(_("结果"), text, height=150, key=f"ocr_{name}")
-
-    with tabs[4]: # 处理记录
+    with tabs[3]: # 处理记录
         if app_state.result_file_paths: display_results_grid(app_state.result_file_paths, _, num_columns=4)
         else: st.info(_("暂无最近处理结果。"))
 
