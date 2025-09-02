@@ -72,7 +72,6 @@ Local deployment ensures that all image files remain on your computer and are ne
 | **🚀 High-Performance Batch Processing** | Utilizes multi-core parallel processing to significantly speed up operations like **format conversion**, **resizing**, **compression**, **watermarking**, **rotation**, and **filters**. |
 | **✍️ Advanced Renaming Templates** | Use dynamic placeholders like `{prefix}`, `{counter}`, `{original_name}`, `{width}`, and `{height}` to fully customize file naming conventions like a pro. |
 | **💡 Intelligent Deduplication** | Advanced BK-Tree algorithm for efficient duplicate detection with configurable similarity thresholds. |
-| **💡 Intelligent Deduplication** | Advanced BK-Tree algorithm for efficient duplicate detection with configurable similarity thresholds. |
 | **📊 Comprehensive Info Viewer** | Instantly view detailed image information, including **dimensions**, **file size**, **EXIF metadata**, **dominant color**, **color palette**, and an **RGB color histogram**. |
 | **🌐 Modern UI** | Built with Streamlit for a beautiful, responsive interface. Supports one-click **language switching (EN/CN)** and provides clear **processing logs** and progress feedback. |
 
@@ -159,7 +158,6 @@ The application will automatically open at `http://localhost:8501` in your brows
 - [x] **Performance**: Multi-process parallel processing engine
 - [x] **Deduplication**: Advanced BK-Tree algorithm for efficient duplicate detection
 - [x] **Info Viewer**: EXIF, dominant color, histogram display
-- [x] **Deduplication**: Advanced BK-Tree algorithm for efficient duplicate detection
 - [ ] **Workflows**: Save and load processing presets for one-click operations
 - [ ] **Portability**: Provide a one-click executable desktop version
 
