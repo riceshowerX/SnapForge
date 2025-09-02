@@ -2,7 +2,7 @@
 
   <!-- Logo -->
   <a href="https://snapforge.streamlit.app/" target="_blank">
-    <img src="https://github.com/riceshowerX/picx-images-hosting/raw/master/%E7%BD%91%E极速%AB%99/android-chrome-192x192-1.6wqw9el8i6.webp" alt="SnapForge Logo" width="90" height="90">
+    <img src="https://github.com/riceshowerX/picx-images-hosting/raw/master/%E7%BD%91%E7%AB%99/android-chrome-192x192-1.6wqw9el8i6.webp" alt="SnapForge Logo" width="90" height="90">
   </a>
 
   <h1>SnapForge</h1>
