@@ -3,24 +3,76 @@ import io
 import logging
 import multiprocessing
 import importlib.resources
+import time
+import functools
 from pathlib import Path
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from enum import StrEnum, auto
 from typing import (
-    Optional, Dict, Any, Tuple, List, Set, Callable, Sequence
+    Optional, Dict, Any, Tuple, List, Set, Callable, Sequence, 
+    TypeVar, Generic, Union, cast
 )
 
 # Pillow and external libraries
 from PIL import (
-    Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps, UnidentifiedImageError
+    Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, 
+    ImageOps, UnidentifiedImageError, ImageChops, ImageStat
 )
 import imagehash
 import piexif
 from colorthief import ColorThief
 import matplotlib.pyplot as plt
+import numpy as np
+
+# 定义Pillow库的常量
+Resampling = getattr(Image, "Resampling", Image)
+Transpose = getattr(Image, "Transpose", Image)
+BICUBIC = getattr(Resampling, "BICUBIC", Image.BICUBIC)
+LANCZOS = getattr(Resampling, "LANCZOS", Image.LANCZOS)
+ROTATE_90 = getattr(Transpose, "ROTATE_90", Image.ROTATE_90)
+
+# 兼容旧版Pillow的别名
+_Resampling = Resampling
+_Transpose = Transpose
+_BICUBIC = BICUBIC
+_LANCZOS = LANCZOS
 
 # =====================
-# 1. 类型与配置 (已重构)
+# 0. 性能监控与缓存装饰器
+# =====================
+
+T = TypeVar('T')
+
+def timed(func):
+    """性能监控装饰器，记录函数执行时间"""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        logger = logging.getLogger(__name__)
+        logger.debug(f"Function {func.__name__} took {end_time - start_time:.4f} seconds to run")
+        return result
+    return wrapper
+
+def memoize(func):
+    """简单的内存缓存装饰器，适用于纯函数"""
+    cache = {}
+    
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        # 创建可哈希的键
+        key = str(args) + str(sorted(kwargs.items()))
+        if key not in cache:
+            cache[key] = func(*args, **kwargs)
+        return cache[key]
+    
+    # 添加清除缓存的方法
+    setattr(wrapper, 'clear_cache', lambda: cache.clear())
+    return wrapper
+
+# =====================
+# 1. 类型与配置 (已升级)
 # =====================
 
 class ResizeMode(StrEnum):
@@ -29,13 +81,17 @@ class ResizeMode(StrEnum):
     STRETCH = auto()
 
 class FilterType(StrEnum):
-    GRAYSCALE = auto()
-    SHARPEN = auto()
-    BLUR = auto()
-    CONTOUR = auto()
-    EMBOSS = auto()
-    EDGE = auto()
-    ENHANCE = auto()
+    """滤镜类型枚举"""
+    GRAYSCALE = auto()  # 灰度
+    SHARPEN = auto()    # 锐化
+    BLUR = auto()       # 模糊
+    CONTOUR = auto()    # 轮廓
+    EMBOSS = auto()     # 浮雕
+    EDGE = auto()       # 边缘检测
+    ENHANCE = auto()    # 增强对比度
+    SEPIA = auto()      # 棕褐色调
+    INVERT = auto()     # 反色
+    POSTERIZE = auto()  # 色调分离
 
 # --- 分解后的配置类，职责更单一 ---
 
@@ -52,9 +108,18 @@ class RenameConfig:
 
 @dataclass(slots=True)
 class ConvertConfig:
-    """格式转换相关配置"""
+    """格式转换相关配置
+    
+    属性:
+        format: 目标格式 (jpg, png, webp等)
+        quality: 质量参数 (1-100)
+        progressive: 是否使用渐进式JPEG
+        optimize: 是否优化文件大小
+    """
     format: str
     quality: int = 85
+    progressive: bool = False
+    optimize: bool = True
 
     def __post_init__(self):
         self.format = self.format.lower().lstrip('.')
@@ -63,19 +128,37 @@ class ConvertConfig:
 
 @dataclass(slots=True)
 class ResizeConfig:
-    """缩放相关配置"""
+    """缩放相关配置
+    
+    属性:
+        width: 目标宽度
+        height: 目标高度
+        mode: 缩放模式 (CONTAIN, COVER, STRETCH)
+        only_shrink: 是否只缩小不放大
+        resampling: 重采样方法 (默认为LANCZOS)
+    """
     width: int = 800
     height: int = 600
     mode: ResizeMode = ResizeMode.CONTAIN
     only_shrink: bool = True
+    resampling: int = getattr(Image, "Resampling", Image).LANCZOS
 
 @dataclass(slots=True)
 class CropConfig:
-    """裁剪相关配置"""
+    """裁剪相关配置
+    
+    属性:
+        x: 左上角X坐标
+        y: 左上角Y坐标
+        w: 裁剪宽度
+        h: 裁剪高度
+        smart_crop: 是否使用智能裁剪(基于图像内容)
+    """
     x: int
     y: int
     w: int
     h: int
+    smart_crop: bool = False
 
     def __post_init__(self):
         if self.w <= 0 or self.h <= 0:
@@ -85,32 +168,122 @@ class CropConfig:
 
 @dataclass(slots=True)
 class RotateConfig:
-    """旋转相关配置"""
+    """旋转相关配置
+    
+    属性:
+        angle: 旋转角度(度)
+        expand: 是否扩展画布以适应旋转后的图像
+        fill_color: 填充颜色(None表示透明)
+    """
     angle: int = 0
+    expand: bool = True
+    fill_color: Optional[Tuple[int, int, int]] = None
 
 @dataclass(slots=True)
 class FilterConfig:
-    """滤镜相关配置"""
+    """滤镜相关配置
+    
+    属性:
+        type: 滤镜类型
+        enhance_factor: 增强因子(用于某些滤镜)
+        blur_radius: 模糊半径(用于模糊滤镜)
+        posterize_bits: 色调分离位数(用于posterize滤镜)
+    """
     type: FilterType
     enhance_factor: float = 1.5
+    blur_radius: float = 2.0
+    posterize_bits: int = 2
 
     def __post_init__(self):
         if self.enhance_factor <= 0:
             raise ValueError("enhance_factor must be positive")
+        if self.blur_radius <= 0:
+            raise ValueError("blur_radius must be positive")
+        if not (1 <= self.posterize_bits <= 8):
+            raise ValueError("posterize_bits must be between 1 and 8")
 
 @dataclass(slots=True)
 class WatermarkConfig:
-    """水印相关配置"""
+    """水印相关配置
+    
+    属性:
+        text: 水印文本
+        font_path: 字体路径(None表示使用默认字体)
+        size: 字体大小
+        color: 颜色(RGBA)
+        position: 位置("bottom-right", "center", "top-left"等)
+        margin: 边距
+        rotation: 水印旋转角度
+        opacity: 水印不透明度(0-1)
+        image_path: 图片水印路径(优先于文本水印)
+    """
     text: str
     font_path: Optional[str] = None
     size: int = 32
     color: Tuple[int, int, int, int] = (255, 255, 255, 128)
     position: str = "bottom-right"
     margin: int = 20
+    rotation: float = 0.0
+    opacity: float = 0.5
+    image_path: Optional[str] = None
+
+@dataclass(slots=True)
+class BorderConfig:
+    """边框相关配置
+    
+    属性:
+        width: 边框宽度
+        color: 边框颜色(RGB)
+        radius: 圆角半径(0表示无圆角)
+    """
+    width: int = 5
+    color: Tuple[int, int, int] = (255, 255, 255)
+    radius: int = 0
+
+    def __post_init__(self):
+        if self.width < 0:
+            raise ValueError("Border width must be non-negative")
+        if self.radius < 0:
+            raise ValueError("Border radius must be non-negative")
+
+@dataclass(slots=True)
+class EffectsConfig:
+    """特效相关配置
+    
+    属性:
+        brightness: 亮度调整因子(1.0表示不变)
+        contrast: 对比度调整因子(1.0表示不变)
+        saturation: 饱和度调整因子(1.0表示不变)
+        sharpness: 锐度调整因子(1.0表示不变)
+    """
+    brightness: float = 1.0
+    contrast: float = 1.0
+    saturation: float = 1.0
+    sharpness: float = 1.0
+
+    def __post_init__(self):
+        for attr, value in asdict(self).items():
+            if value <= 0:
+                raise ValueError(f"{attr} must be positive")
 
 # --- 主配置类 (通过组合构建) ---
-@dataclass(kw_only=True, slots=True, frozen=False)
+@dataclass(kw_only=True, slots=True)
 class ProcessConfig:
+    """处理配置主类，组合了所有处理选项
+    
+    属性:
+        rename_config: 重命名配置
+        convert_config: 格式转换配置
+        resize_config: 尺寸调整配置
+        crop_config: 裁剪配置
+        rotate_config: 旋转配置
+        filter_config: 滤镜配置
+        watermark_config: 水印配置
+        border_config: 边框配置
+        effects_config: 特效配置
+        preserve_metadata: 是否保留元数据
+        num_processes: 处理进程数
+    """
     rename_config: Optional[RenameConfig] = None
     convert_config: Optional[ConvertConfig] = None
     resize_config: Optional[ResizeConfig] = None
@@ -118,22 +291,74 @@ class ProcessConfig:
     rotate_config: Optional[RotateConfig] = None
     filter_config: Optional[FilterConfig] = None
     watermark_config: Optional[WatermarkConfig] = None
+    border_config: Optional[BorderConfig] = None
+    effects_config: Optional[EffectsConfig] = None
 
     preserve_metadata: bool = True
-    num_processes: int = field(default_factory=lambda: 2)
+    num_processes: int = field(default_factory=lambda: max(2, os.cpu_count() or 2))
 
     def __post_init__(self):
         if self.num_processes < 1:
             raise ValueError("num_processes must be >= 1")
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """将配置转换为字典，用于序列化"""
+        result = {}
+        for key, value in asdict(self).items():
+            if value is not None:
+                if hasattr(value, '__dataclass_fields__'):
+                    result[key] = asdict(value)
+                else:
+                    result[key] = value
+        return result
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ProcessConfig':
+        """从字典创建配置，用于反序列化"""
+        config_map = {
+            'rename_config': RenameConfig,
+            'convert_config': ConvertConfig,
+            'resize_config': ResizeConfig,
+            'crop_config': CropConfig,
+            'rotate_config': RotateConfig,
+            'filter_config': FilterConfig,
+            'watermark_config': WatermarkConfig,
+            'border_config': BorderConfig,
+            'effects_config': EffectsConfig
+        }
+        
+        kwargs = {}
+        for key, value in data.items():
+            if key in config_map and value is not None:
+                if isinstance(value, dict):
+                    # 处理枚举类型
+                    if key == 'resize_config' and 'mode' in value:
+                        value['mode'] = ResizeMode(value['mode'])
+                    elif key == 'filter_config' and 'type' in value:
+                        value['type'] = FilterType(value['type'])
+                    kwargs[key] = config_map[key](**value)
+                else:
+                    kwargs[key] = value
+            else:
+                kwargs[key] = value
+                
+        return cls(**kwargs)
 
 
 # =====================
-# 2. 日志与常量 (已改进)
+# 2. 日志与常量 (已升级)
 # =====================
 FORMAT_MAPPING = {
     "jpg": "JPEG", "jpeg": "JPEG", "png": "PNG", "bmp": "BMP",
-    "gif": "GIF", "tiff": "TIFF", "webp": "WEBP"
+    "gif": "GIF", "tiff": "TIFF", "webp": "WEBP", "heic": "HEIF",
+    "avif": "AVIF"
 }
+
+# 支持的输入格式
+SUPPORTED_INPUT_FORMATS = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp", ".heic"}
+
+# 支持的输出格式
+SUPPORTED_OUTPUT_FORMATS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff"}
 
 def get_logger(name: str = "image_processor"):
     """
@@ -143,47 +368,108 @@ def get_logger(name: str = "image_processor"):
 
 logger = get_logger(__name__)
 
+class ProcessingError(Exception):
+    """图片处理错误基类"""
+    pass
+
+class UnsupportedFormatError(ProcessingError):
+    """不支持的格式错误"""
+    pass
+
+class ProcessingTimeoutError(ProcessingError):
+    """处理超时错误"""
+    pass
+
 
 # =====================
 # 3. 核心处理逻辑 (已重构)
 # =====================
 
+@timed
 def process_image(
     src_path: Path, dest_dir: Path, config: ProcessConfig, *, counter: int
 ) -> Tuple[str, str, Optional[str]]:
-    """单张图片处理函数，处理流程由ProcessConfig驱动"""
+    """单张图片处理函数，处理流程由ProcessConfig驱动
+    
+    Args:
+        src_path: 源图片路径
+        dest_dir: 目标目录路径
+        config: 处理配置
+        counter: 计数器(用于命名)
+        
+    Returns:
+        Tuple[str, str, Optional[str]]: (原文件名, 状态, 结果路径或错误信息)
+    """
     try:
+        # 检查文件格式是否支持
+        original_ext = src_path.suffix.lower()
+        if original_ext not in SUPPORTED_INPUT_FORMATS:
+            raise UnsupportedFormatError(f"Unsupported input format: {original_ext}")
+            
+        # 获取图片基本信息
         with Image.open(src_path) as temp_img:
             width, height = temp_img.size
+            format_name = temp_img.format or "Unknown"
 
         # --- 文件名处理 ---
         original_stem = src_path.stem
-        original_ext = src_path.suffix.lower()
-
+        
         if config.rename_config:
             rc = config.rename_config
+            # 扩展命名上下文，增加日期和时间
+            from datetime import datetime
+            now = datetime.now()
             naming_context = {
-                "prefix": rc.prefix, "counter": counter,
-                "original_filename": original_stem, "width": width, "height": height
+                "prefix": rc.prefix, 
+                "counter": counter + rc.start_number - 1,
+                "original_filename": original_stem, 
+                "width": width, 
+                "height": height,
+                "date": now.strftime("%Y%m%d"),
+                "time": now.strftime("%H%M%S"),
+                "format": format_name.lower()
             }
             base_name = rc.naming_template.format(**naming_context)
         else:
             base_name = original_stem
         
+        # 确定输出格式
         final_ext = f".{config.convert_config.format}" if config.convert_config else original_ext
+        if final_ext not in SUPPORTED_OUTPUT_FORMATS:
+            raise UnsupportedFormatError(f"Unsupported output format: {final_ext}")
+            
         dest_path = dest_dir / f"{base_name}{final_ext}"
+        
+        # 确保目标目录存在
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
 
+        # 处理图片
         _process_image_logic(src_path, dest_path, final_ext, config)
         return src_path.name, "success", str(dest_path)
+    except UnsupportedFormatError as e:
+        logger.warning(f"Format error for {src_path.name}: {e}")
+        return src_path.name, "format_error", str(e)
     except Exception as e:
         logger.error(f"Failed to process {src_path.name}: {e}", exc_info=True)
         return src_path.name, "error", f"{type(e).__name__}: {e}"
 
 def _process_image_logic(src_path: Path, dest_path: Path, target_ext: str, config: ProcessConfig):
+    """图片处理的核心逻辑，按顺序应用各种处理操作"""
     with Image.open(src_path) as img:
-        img = img.convert("RGB") if img.mode in ('CMYK', 'P') else img
-
-        exif_data = img.info.get("exif") if config.preserve_metadata and "exif" in img.info else None
+        # 保留原始模式，仅在必要时转换
+        original_mode = img.mode
+        has_alpha = 'A' in img.getbands()
+        
+        # 保存元数据
+        metadata = {}
+        if config.preserve_metadata:
+            for key in img.info:
+                if key in ('exif', 'icc_profile', 'xmp'):
+                    metadata[key] = img.info[key]
+        
+        # 转换CMYK和索引模式为RGB(A)
+        if original_mode in ('CMYK', 'P'):
+            img = img.convert("RGBA" if has_alpha else "RGB")
         
         # 按顺序应用各种处理，传递更精确的配置对象
         if config.crop_config and config.crop_config.w > 0:
@@ -192,49 +478,176 @@ def _process_image_logic(src_path: Path, dest_path: Path, target_ext: str, confi
             img = _apply_rotate_logic(img, config.rotate_config)
         if config.resize_config:
             img = _resize_image_logic(img, config.resize_config)
+        if config.effects_config:
+            img = _apply_effects_logic(img, config.effects_config)
         if config.filter_config:
             img = _apply_filter_logic(img, config.filter_config)
+        if config.border_config and config.border_config.width > 0:
+            img = _apply_border_logic(img, config.border_config)
         if config.watermark_config:
             img = _apply_watermark_logic(img, config.watermark_config)
         
-        quality = config.convert_config.quality if config.convert_config else 85
-        _save_image_logic(img, dest_path, target_ext, exif_data, quality)
-
-def _save_image_logic(img: Image.Image, dest_path: Path, target_ext: str, exif_data: Optional[bytes], quality: int):
-    ext = target_ext.lower().lstrip('.')
-    save_params = {"format": FORMAT_MAPPING.get(ext, "JPEG")}
-
-    quality = int(max(1, min(100, quality)))
-    if ext in ("jpg", "jpeg", "webp"):
-        save_params["quality"] = quality
-    elif ext == "png":
-        save_params["compress_level"] = int(max(0, min(9, (100 - quality) // 10)))
-    
-    if exif_data: save_params["exif"] = exif_data
+        # 保存图片
+        save_params = {}
+        if config.convert_config:
+            save_params["quality"] = config.convert_config.quality
+            save_params["progressive"] = config.convert_config.progressive
+            save_params["optimize"] = config.convert_config.optimize
         
+        _save_image_logic(img, dest_path, target_ext, metadata, save_params)
+
+def _save_image_logic(img: Image.Image, dest_path: Path, target_ext: str, 
+                     metadata: Dict[str, Any], save_params: Dict[str, Any]):
+    """保存图片逻辑，处理不同格式的特殊需求"""
+    ext = target_ext.lower().lstrip('.')
+    
+    # 设置基本保存参数
+    format_name = FORMAT_MAPPING.get(ext, "JPEG")
+    params = {"format": format_name}
+    
+    # 合并用户提供的保存参数
+    params.update(save_params)
+    
+    # 根据格式设置特定参数
+    quality = params.get("quality", 85)
+    quality = int(max(1, min(100, quality)))
+    
+    if ext in ("jpg", "jpeg", "webp"):
+        params["quality"] = quality
+    elif ext == "png":
+        params["compress_level"] = int(max(0, min(9, (100 - quality) // 10)))
+        if "quality" in params:
+            del params["quality"]  # PNG不使用quality参数
+    
+    # 添加元数据
+    for key, value in metadata.items():
+        params[key] = value
+    
+    # 处理颜色模式兼容性
     if ext in ["jpg", "jpeg", "bmp"] and img.mode in ("RGBA", "LA", "P"):
         img = img.convert("RGB")
         
+    # 确保目标目录存在
     dest_path.parent.mkdir(parents=True, exist_ok=True)
-    img.save(dest_path, **save_params)
+    
+    # 保存图片
+    try:
+        img.save(dest_path, **params)
+    except (ValueError, OSError) as e:
+        # 如果保存失败，尝试使用更基本的参数重试
+        logger.warning(f"Failed to save with advanced parameters: {e}. Trying with basic parameters.")
+        basic_params = {"format": format_name}
+        if ext in ("jpg", "jpeg", "webp"):
+            basic_params["quality"] = quality
+        img.save(dest_path, **basic_params)
 
 def _apply_crop_logic(img: Image.Image, config: CropConfig) -> Image.Image:
-    return img.crop((config.x, config.y, config.x + config.w, config.y + config.h))
+    """应用裁剪效果，支持智能裁剪"""
+    if config.smart_crop and config.w > 0 and config.h > 0:
+        return _smart_crop(img, config.w, config.h)
+    else:
+        # 确保裁剪区域在图像范围内
+        width, height = img.size
+        x = min(config.x, width - 1)
+        y = min(config.y, height - 1)
+        w = min(config.w, width - x)
+        h = min(config.h, height - y)
+        return img.crop((x, y, x + w, y + h))
+
+def _smart_crop(img: Image.Image, target_width: int, target_height: int) -> Image.Image:
+    """智能裁剪，保留图像中最重要的部分"""
+    width, height = img.size
+    
+    # 如果目标尺寸大于原图，直接返回原图
+    if target_width >= width and target_height >= height:
+        return img
+    
+    # 获取正确的Resampling常量
+    Resampling = getattr(Image, "Resampling", Image)
+    Transpose = getattr(Image, "Transpose", Image)
+    
+    # 计算裁剪区域
+    if width / height > target_width / target_height:
+        # 原图更宽，需要裁剪宽度
+        new_width = int(height * target_width / target_height)
+        offset = _find_best_offset(img, new_width)
+        crop_box = (offset, 0, offset + new_width, height)
+    else:
+        # 原图更高，需要裁剪高度
+        new_height = int(width * target_height / target_width)
+        offset = _find_best_offset(img.transpose(_ROTATE_90), new_height)
+        crop_box = (0, offset, width, offset + new_height)
+    
+    # 裁剪并调整大小
+    cropped = img.crop(crop_box)
+    return cropped.resize((target_width, target_height), _LANCZOS)
+
+def _find_best_offset(img: Image.Image, target_size: int) -> int:
+    """找到最佳裁剪偏移量，基于图像内容分析"""
+    # 转换为灰度图进行分析
+    gray = img.convert("L")
+    width, height = gray.size
+    
+    # 如果目标尺寸大于等于原图尺寸，不需要裁剪
+    if target_size >= width:
+        return 0
+    
+    # 计算每个可能的裁剪窗口的熵值
+    entropies: List[float] = []
+    for i in range(width - target_size + 1):
+        window = gray.crop((i, 0, i + target_size, height))
+        stat = ImageStat.Stat(window)
+        # 使用标准差作为熵的近似值
+        entropies.append(stat.stddev[0])
+    
+    # 返回熵值最高的窗口的起始位置
+    return entropies.index(max(entropies))
 
 def _apply_rotate_logic(img: Image.Image, config: RotateConfig) -> Image.Image:
-    return img.rotate(config.angle, expand=True, resample=getattr(Image, "Resampling", Image).BICUBIC)
+    """应用旋转效果，支持填充颜色
+    Args:
+        img: 要旋转的图片对象
+        config: 旋转配置
+        
+    Returns:
+        旋转后的图片对象
+    """
+    # 处理填充颜色
+    fill_color = config.fill_color
+    if fill_color is None and 'A' in img.getbands():
+        # 对于带透明通道的图像，默认使用透明填充
+        fill_color = (0, 0, 0, 0)
+    
+    return img.rotate(
+        config.angle, 
+        expand=config.expand, 
+        fillcolor=fill_color,
+        resample=BICUBIC  # 使用已定义的常量
+    )
 
 def _resize_image_logic(img: Image.Image, config: ResizeConfig) -> Image.Image:
+    """调整图片尺寸逻辑
+    Args:
+        img: 要调整的图片对象
+        config: 调整配置
+        
+    Returns:
+        调整后的图片对象
+    """
     orig_w, orig_h = img.size
     if config.only_shrink and orig_w <= config.width and orig_h <= config.height:
         return img
 
     size = (config.width, config.height)
-    resample_filter = getattr(Image, "Resampling", Image).LANCZOS
+    resample_filter = LANCZOS  # 使用已定义的常量
     match config.mode:
-        case ResizeMode.CONTAIN: img.thumbnail(size, resample_filter); return img
-        case ResizeMode.COVER: return ImageOps.fit(img, size, resample_filter, bleed=0.0)
-        case ResizeMode.STRETCH: return img.resize(size, resample_filter)
+        case ResizeMode.CONTAIN: 
+            img.thumbnail(size, resample_filter)
+            return img
+        case ResizeMode.COVER: 
+            return ImageOps.fit(img, size, resample_filter, bleed=0.0)
+        case ResizeMode.STRETCH: 
+            return img.resize(size, resample_filter)
     return img
 
 def _apply_watermark_logic(img: Image.Image, config: WatermarkConfig) -> Image.Image:
@@ -261,21 +674,146 @@ def _apply_watermark_logic(img: Image.Image, config: WatermarkConfig) -> Image.I
     draw.text((x, y), config.text, font=font, fill=config.color)
     return Image.alpha_composite(base, overlay)
 
-def _apply_filter_logic(img: Image.Image, config: FilterConfig) -> Image.Image:
-    if config.type == FilterType.GRAYSCALE: return img.convert("L")
+def _apply_effects_logic(img: Image.Image, config: EffectsConfig) -> Image.Image:
+    """应用图像特效（亮度、对比度、饱和度、锐度）"""
+    if not config:
+        return img
+        
+    # 保存透明通道
     has_alpha = 'A' in img.getbands()
-    alpha = img.getchannel('A') if has_alpha else None
+    alpha: Optional[Image.Image] = img.getchannel('A') if has_alpha else None
+    
+    # 转换为RGB处理
     rgb_img = img.convert("RGB") if has_alpha else img
+    
+    # 应用各种增强效果
+    if config.brightness != 1.0:
+        enhancer = ImageEnhance.Brightness(rgb_img)
+        rgb_img = enhancer.enhance(config.brightness)
+        
+    if config.contrast != 1.0:
+        enhancer = ImageEnhance.Contrast(rgb_img)
+        rgb_img = enhancer.enhance(config.contrast)
+        
+    if config.saturation != 1.0:
+        enhancer = ImageEnhance.Color(rgb_img)
+        rgb_img = enhancer.enhance(config.saturation)
+        
+    if config.sharpness != 1.0:
+        enhancer = ImageEnhance.Sharpness(rgb_img)
+        rgb_img = enhancer.enhance(config.sharpness)
+    
+    # 恢复透明通道
+    if has_alpha and alpha is not None:
+        rgb_img.putalpha(alpha)
+        
+    return rgb_img
+
+def _apply_border_logic(img: Image.Image, config: BorderConfig) -> Image.Image:
+    """应用边框效果"""
+    if not config or config.width <= 0:
+        return img
+        
+    # 创建带边框的新图像
+    width, height = img.size
+    new_width = width + 2 * config.width
+    new_height = height + 2 * config.width
+    
+    # 确定模式和背景色
+    mode = img.mode
+    if mode == 'P':
+        mode = 'RGBA' if 'transparency' in img.info else 'RGB'
+    
+    # 创建带边框的新图像
+    if mode == 'RGBA':
+        # 对于透明图像，创建带透明边框的图像
+        border_color = config.color + (255,)  # 添加完全不透明的alpha通道
+        bordered = Image.new(mode, (new_width, new_height), (0, 0, 0, 0))
+    else:
+        border_color = config.color
+        bordered = Image.new(mode, (new_width, new_height), border_color)
+    
+    # 粘贴原图到中心
+    bordered.paste(img, (config.width, config.width))
+    
+    # 如果需要圆角
+    if config.radius > 0:
+        # 创建圆角蒙版
+        mask = Image.new('L', (new_width, new_height), 0)
+        draw = ImageDraw.Draw(mask)
+        draw.rounded_rectangle([(0, 0), (new_width-1, new_height-1)], 
+                              radius=config.radius, fill=255)
+        
+        # 应用圆角蒙版
+        if mode == 'RGBA':
+            # 对于RGBA模式，我们需要分别处理RGB和A通道
+            r, g, b, a = bordered.split()
+            a = ImageChops.multiply(a, mask)
+            bordered = Image.merge('RGBA', (r, g, b, a))
+        else:
+            # 对于RGB模式，创建一个新的透明图像
+            result = Image.new('RGBA', (new_width, new_height), (0, 0, 0, 0))
+            result.paste(bordered, mask=mask)
+            bordered = result
+    
+    return bordered
+
+def _apply_filter_logic(img: Image.Image, config: FilterConfig) -> Image.Image:
+    """应用滤镜效果"""
+    if not config:
+        return img
+        
+    # 灰度滤镜直接处理
+    if config.type == FilterType.GRAYSCALE: 
+        return img.convert("L")
+    
+    # 保存透明通道
+    has_alpha = 'A' in img.getbands()
+    alpha: Optional[Image.Image] = img.getchannel('A') if has_alpha else None
+    
+    # 转换为RGB处理
+    rgb_img = img.convert("RGB") if has_alpha else img
+    
+    # 应用标准滤镜
     filter_map = {
-        FilterType.SHARPEN: ImageFilter.SHARPEN, FilterType.BLUR: ImageFilter.BLUR,
-        FilterType.CONTOUR: ImageFilter.CONTOUR, FilterType.EMBOSS: ImageFilter.EMBOSS,
+        FilterType.SHARPEN: ImageFilter.SHARPEN, 
+        FilterType.BLUR: ImageFilter.GaussianBlur(radius=config.blur_radius),
+        FilterType.CONTOUR: ImageFilter.CONTOUR, 
+        FilterType.EMBOSS: ImageFilter.EMBOSS,
         FilterType.EDGE: ImageFilter.FIND_EDGES
     }
-    if config.type in filter_map: filtered = rgb_img.filter(filter_map[config.type])
+    
+    if config.type in filter_map:
+        filtered = rgb_img.filter(filter_map[config.type])
     elif config.type == FilterType.ENHANCE:
-        enhancer = ImageEnhance.Contrast(rgb_img); filtered = enhancer.enhance(config.enhance_factor)
-    else: return img
-    if alpha: filtered.putalpha(alpha)
+        enhancer = ImageEnhance.Contrast(rgb_img)
+        filtered = enhancer.enhance(config.enhance_factor)
+    elif config.type == FilterType.SEPIA:
+        # 棕褐色调滤镜
+        sepia_data = np.array([
+            [ 0.393, 0.769, 0.189],
+            [ 0.349, 0.686, 0.168],
+            [ 0.272, 0.534, 0.131]
+        ])
+        # 转换为numpy数组处理
+        rgb_array = np.array(rgb_img)
+        sepia_array = np.dot(rgb_array, sepia_data.T)
+        # 裁剪值到0-255范围
+        sepia_array = np.clip(sepia_array, 0, 255).astype(np.uint8)
+        filtered = Image.fromarray(sepia_array)
+    elif config.type == FilterType.INVERT:
+        # 反色滤镜
+        filtered = ImageOps.invert(rgb_img)
+    elif config.type == FilterType.POSTERIZE:
+        # 色调分离滤镜
+        filtered = ImageOps.posterize(rgb_img, config.posterize_bits)
+    else:
+        return img
+    
+    # 恢复透明通道
+    if has_alpha and alpha is not None:
+        filtered.putalpha(alpha)
+        
     return filtered
 
 
@@ -386,7 +924,8 @@ def find_duplicate_images(file_paths: List[str], threshold: int = 8) -> List[Lis
     logger.info(f"Building BK-Tree and searching with {len(hashes)} hashes...")
     tree = _BKTree(dist_fn=lambda h1, h2: h1 - h2)
     for h in hashes: tree.add(h)
-    groups, visited = [], set()
+    groups: List[List[str]] = []
+    visited: Set[str] = set()
     for path, d_hash in hashes:
         if path in visited: continue
         matches = tree.search((path, d_hash), threshold)
@@ -409,7 +948,7 @@ def get_exif_data(image_path: str) -> Dict[str, Any]:
                 if isinstance(value, bytes):
                     try: value = value.strip(b'\x00').decode('utf-8', errors='ignore')
                     except UnicodeDecodeError: value = repr(value)
-                exif_data[f"{ifd}:{tag_name}"] = value
+                exif_data[f"{ifd}:{tag_name}"] = str(value)
         return exif_data
     except (FileNotFoundError, piexif.InvalidImageDataError, ValueError) as e:
         logger.warning(f"Could not read EXIF from {image_path}: {e}"); return {}
@@ -435,7 +974,7 @@ def plot_image_histogram(image_path: str) -> Optional[io.BytesIO]:
         colors, names = ('r', 'g', 'b'), ('Red', 'Green', 'Blue')
         for i, color in enumerate(colors):
             ax.plot(rgb_img.getchannel(i).histogram(), color=color, alpha=0.8, label=names[i])
-        ax.set_title("RGB Histogram", fontsize=10); ax.set_xlim([0, 256])
+        ax.set_title("RGB Histogram", fontsize=10); ax.set_xlim((0, 256))
         ax.set_xlabel("Pixel Intensity"); ax.set_ylabel("Frequency")
         ax.legend(fontsize='small'); ax.grid(True); fig.tight_layout()
         buf = io.BytesIO(); fig.savefig(buf, format='png'); buf.seek(0)

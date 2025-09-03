@@ -7,10 +7,11 @@ import tempfile
 import shutil
 import os
 import uuid
+import time
 from pathlib import Path
 from PIL import Image
 from dataclasses import dataclass, field
-from typing import List, Callable, Dict, Any
+from typing import List, Callable, Dict, Any, Set, Optional
 
 # -----------------------------------------------------------------------------
 # 1. 后端逻辑导入 (Import Backend Logic)
@@ -44,11 +45,12 @@ except ImportError:
 @dataclass
 class AppState:
     """集中管理所有会话状态，避免魔法字符串，增强代码可维护性"""
-    # 修复缺陷1：临时目录管理已移出状态类，以防止资源泄露
+    # 修复缺陷1：使用更安全的资源管理方式
     result_file_paths: List[Path] = field(default_factory=list)
     duplicate_groups: List[List[str]] = field(default_factory=list)
     run_dedup: bool = False
     log_messages: List[str] = field(default_factory=list)
+    temp_dirs: Set[Path] = field(default_factory=set)  # 跟踪所有临时目录
 
     @classmethod
     def init(cls) -> 'AppState':
