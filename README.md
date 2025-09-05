@@ -1,3 +1,4 @@
+
 <div align="center">
 
   <!-- Logo -->
@@ -59,7 +60,7 @@ Try SnapForge directly in your browser without any installation!
 
 We strongly recommend using the **Live Demo** for quick feature evaluation and processing non-sensitive images.
 
-To **guarantee 100% data privacy and security** and to achieve **optimal processing performance** (by fully utilizing your local CPU cores), we advise you to **run SnapForge locally on your own machine** when handling private, critical, or commercial images.
+To **guarantee 100% data privacy and security** and to achieve **optimal processing performance** (by fully utilizing your local CPU cores), we advise you to **run SnapForge locally** on your own machine when handling private, critical, or commercial images.
 
 Local deployment ensures that all image files remain on your computer and are never uploaded to any cloud server, giving you complete control over your data.
 
@@ -104,24 +105,27 @@ processor.batch_process(files, output_dir, config, progress_callback)
 
 # Duplicate Detection
 find_duplicate_images(file_paths, threshold=8)
-```
+````
 
 #### Key Optimizations
-- **Resource Management** - Automatic temp directory cleanup with UUID-based file naming
-- **Error Handling** - Comprehensive exception handling with detailed logging
-- **Performance** - Multi-core parallel processing with fallback mechanisms
+
+* **Resource Management** - Automatic temp directory cleanup with UUID-based file naming
+* **Error Handling** - Comprehensive exception handling with detailed logging
+* **Performance** - Multi-core parallel processing with fallback mechanisms
 
 ---
 
 ### 🔧 Local Installation & Usage
 
 **1. Clone the Repository**
+
 ```bash
 git clone https://github.com/riceshowerX/SnapForge.git
 cd SnapForge
 ```
 
 **2. Create and Activate a Virtual Environment (Recommended)**
+
 ```bash
 # Windows
 python -m venv venv
@@ -133,16 +137,17 @@ source venv/bin/activate
 ```
 
 **3. Install Dependencies**
+
 ```bash
 pip install -r requirements.txt
 ```
 
-
-
 **4. Run the Application**
+
 ```bash
 streamlit run app.py
 ```
+
 The application will automatically open at `http://localhost:8501` in your browser.
 
 > **Note**: The application provides high-performance image processing with multi-core support.
@@ -151,15 +156,15 @@ The application will automatically open at `http://localhost:8501` in your brows
 
 ### 🛣️ Roadmap
 
-- [x] **UI/UX**: Modern, multi-language web interface (EN/CN)
-- [x] **Core Processing**: Batch conversion, renaming, compression, resizing
-- [x] **Advanced Processing**: Batch watermarking, rotation, filters
-- [x] **Naming System**: Advanced, customizable renaming templates
-- [x] **Performance**: Multi-process parallel processing engine
-- [x] **Deduplication**: Advanced BK-Tree algorithm for efficient duplicate detection
-- [x] **Info Viewer**: EXIF, dominant color, histogram display
-- [ ] **Workflows**: Save and load processing presets for one-click operations
-- [ ] **Portability**: Provide a one-click executable desktop version
+* [x] **UI/UX**: Modern, multi-language web interface (EN/CN)
+* [x] **Core Processing**: Batch conversion, renaming, compression, resizing
+* [x] **Advanced Processing**: Batch watermarking, rotation, filters
+* [x] **Naming System**: Advanced, customizable renaming templates
+* [x] **Performance**: Multi-process parallel processing engine
+* [x] **Deduplication**: Advanced BK-Tree algorithm for efficient duplicate detection
+* [x] **Info Viewer**: EXIF, dominant color, histogram display
+* [ ] **Workflows**: Save and load processing presets for one-click operations
+* [ ] **Portability**: Provide a one-click executable desktop version
 
 ---
 
@@ -167,8 +172,8 @@ The application will automatically open at `http://localhost:8501` in your brows
 
 We warmly welcome contributions of all forms! Whether it's **submitting new features**, **fixing bugs**, **optimizing code**, **improving documentation**, or just **suggesting a great idea**, your input is vital to the project.
 
-- **Report Issues**: Please describe any bugs or issues in detail via [**Issues**](https://github.com/riceshowerX/SnapForge/issues)
-- **Submit Code**: Please submit your code changes via [**Pull Requests**](https://github.com/riceshowerX/SnapForge/pulls)
+* **Report Issues**: Please describe any bugs or issues in detail via [**Issues**](https://github.com/riceshowerX/SnapForge/issues)
+* **Submit Code**: Please submit your code changes via [**Pull Requests**](https://github.com/riceshowerX/SnapForge/pulls)
 
 > This is an open-source project maintained by an individual in their spare time. Your understanding, support, and contributions are the driving force behind its continued development!
 
@@ -182,30 +187,39 @@ Third-party libraries relied upon by this project (such as `streamlit`.) are sub
 
 ---
 
-### ⚠️ Disclaimer & Legal Notice
+### ⚠️ Disclaimer & Legal
+
+
+Notice
 
 **IMPORTANT: PLEASE READ THIS DISCLAIMER CAREFULLY BEFORE USING SNAPFORGE**
 
 #### 1. No Warranty
+
 SnapForge is provided **"AS IS"** and **"AS AVAILABLE"**, without any warranties of any kind, either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement.
 
 #### 2. No Liability
+
 In no event shall the author, contributors, or any affiliated parties be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.
 
 #### 3. User Responsibility
-- You are solely responsible for **backing up your data** before using SnapForge
-- You assume all risks associated with the use of this software
-- You are responsible for ensuring that your use complies with all applicable laws and regulations
-- You are responsible for obtaining proper licenses for any copyrighted materials you process
+
+* You are solely responsible for **backing up your data** before using SnapForge
+* You assume all risks associated with the use of this software
+* You are responsible for ensuring that your use complies with all applicable laws and regulations
+* You are responsible for obtaining proper licenses for any copyrighted materials you process
 
 #### 4. Data Protection Warning
-- Always process sensitive or important images **locally on your own machine**
-- The online demo processes images on remote servers - use only for non-sensitive content
-- We cannot guarantee the security of images processed through the online demo
+
+* Always process sensitive or important images **locally on your own machine**
+* The online demo processes images on remote servers - use only for non-sensitive content
+* We cannot guarantee the security of images processed through the online demo
 
 #### 5. Technical Limitations
-- Some image formats may not be fully supported
-- Processing very large images may require significant system resources
-- The software may contain bugs that could affect image quality or metadata
+
+* Some image formats may not be fully supported
+* Processing very large images may require significant system resources
+* The software may contain bugs that could affect image quality or metadata
 
 **By using SnapForge, you acknowledge that you have read this disclaimer, understand it, and agree to be bound by its terms and conditions. If you do not agree to these terms, do not use this software.**
+
