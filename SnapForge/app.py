@@ -8,6 +8,8 @@ import shutil
 import os
 import uuid
 import time
+import logging
+import atexit
 from pathlib import Path
 from PIL import Image
 from dataclasses import dataclass, field
@@ -51,6 +53,21 @@ class AppState:
     run_dedup: bool = False
     log_messages: List[str] = field(default_factory=list)
     temp_dirs: Set[Path] = field(default_factory=set)  # 跟踪所有临时目录
+    
+    def register_temp_dir(self, temp_dir: Path):
+        """注册临时目录以便后续清理"""
+        self.temp_dirs.add(temp_dir)
+    
+    def cleanup_resources(self):
+        """清理所有临时资源"""
+        for temp_dir in self.temp_dirs:
+            if temp_dir.exists():
+                try:
+                    shutil.rmtree(temp_dir)
+                    logging.info(f"已清理临时目录: {temp_dir}")
+                except Exception as e:
+                    logging.error(f"清理临时目录失败: {temp_dir}, 错误: {e}")
+        self.temp_dirs.clear()
 
     @classmethod
     def init(cls) -> 'AppState':
@@ -167,22 +184,47 @@ def save_uploaded_files(uploaded_files, output_dir: Path) -> List[Path]:
     """
     将上传文件保存到临时目录。
     使用UUID确保即使原始文件名相同或清理后相同，也不会发生文件覆盖。
+    增加了文件类型验证，只接受图像文件。
     """
     file_paths = []
     if not uploaded_files: return []
+    
+    # 允许的图像文件扩展名
+    ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.tiff', '.tif'}
+    
     for f in uploaded_files:
-        f.seek(0)
-        original_path = Path(f.name)
-        safe_filename = "".join(c for c in original_path.name if c.isalnum() or c in "._-").strip() or "unnamed_file"
-        
-        # 使用UUID生成唯一前缀，防止任何形式的文件名冲突
-        unique_prefix = uuid.uuid4().hex[:8]
-        temp_filename = f"{unique_prefix}_{safe_filename}"
-        temp_path = output_dir / temp_filename
-        
-        with open(temp_path, "wb") as out:
-            out.write(f.getvalue())
-        file_paths.append(temp_path)
+        try:
+            f.seek(0)
+            original_path = Path(f.name)
+            file_ext = original_path.suffix.lower()
+            
+            # 验证文件类型
+            if file_ext not in ALLOWED_EXTENSIONS:
+                st.warning(f"跳过非图像文件: {original_path.name}")
+                continue
+                
+            # 进一步验证文件内容是否为有效图像
+            try:
+                img_data = f.getvalue()
+                Image.open(io.BytesIO(img_data))
+                f.seek(0)  # 重置文件指针
+            except Exception:
+                st.warning(f"跳过无效图像文件: {original_path.name}")
+                continue
+            
+            safe_filename = "".join(c for c in original_path.name if c.isalnum() or c in "._-").strip() or "unnamed_file"
+            
+            # 使用UUID生成唯一前缀，防止任何形式的文件名冲突
+            unique_prefix = uuid.uuid4().hex[:8]
+            temp_filename = f"{unique_prefix}_{safe_filename}"
+            temp_path = output_dir / temp_filename
+            
+            with open(temp_path, "wb") as out:
+                out.write(f.getvalue())
+            file_paths.append(temp_path)
+        except Exception as e:
+            st.warning(f"处理文件 {getattr(f, 'name', '未知')} 时出错: {str(e)}")
+    
     return file_paths
 
 def pack_files_to_zip(file_paths: List[Path]) -> io.BytesIO:
@@ -304,7 +346,20 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                         if not r_paths: result_area.error(_("❌ 未成功处理任何图片。"))
                         else: result_area.success(_("✅ 处理完成：{} / {}").format(p, t))
                         if r_paths: app_state.result_file_paths = [Path(p) for p in r_paths]; dl_area.download_button(_("⬇️ 下载全部结果"), pack_files_to_zip(app_state.result_file_paths), "processed.zip", use_container_width=True)
-                except Exception as e: st.error(_("处理中发生严重错误: {}").format(e), icon="❗")
+                except Exception as e: 
+                    st.error(_("处理中发生严重错误: {}").format(e), icon="❗")
+                    # 提供更详细的错误信息和可能的解决方案
+                    if "memory" in str(e).lower():
+                        st.error(_("可能是内存不足。尝试减少处理的图片数量或降低图片分辨率。"))
+                    elif "disk" in str(e).lower() or "space" in str(e).lower():
+                        st.error(_("可能是磁盘空间不足。请清理磁盘空间后重试。"))
+                    elif "permission" in str(e).lower():
+                        st.error(_("可能是文件权限问题。请检查应用程序是否有足够的权限。"))
+                    else:
+                        st.error(_("请尝试重新上传图片或刷新页面。如果问题持续存在，请联系支持团队。"))
+                    
+                    # 记录详细错误信息
+                    logging.exception("处理过程中发生严重错误")
 
     with tabs[1]: # 信息查看
         def on_info_upload_change():
@@ -351,12 +406,23 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
 
 # --- 运行主应用并渲染页脚 ---
 def run():
+    # 配置日志记录
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    
     st.set_page_config(page_title="SnapForge", page_icon="🖼️", layout="wide")
     app_state = AppState.init()
+    
+    # 注册退出时的资源清理
+    atexit.register(app_state.cleanup_resources)
     
     #【修复缺陷1】使用上下文管理器安全处理临时目录，杜绝资源泄露
     with tempfile.TemporaryDirectory(prefix="snapforge_") as temp_dir_str:
         TEMP_DIR = Path(temp_dir_str)
+        # 注册临时目录以便在异常情况下也能清理
+        app_state.register_temp_dir(TEMP_DIR)
         
         with st.sidebar:
             st.title("SnapForge")

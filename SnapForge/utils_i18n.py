@@ -124,7 +124,7 @@ class I18NManager:
             
             # Header banner & links
             "前往GitHub仓库": "Go to GitHub Repository", 
-            "反馈建议/极速提Issue": "Feedback & Issues",
+            "反馈建议/提Issue": "Feedback & Issues",
             "反馈建议": "Feedback",
 
             # Main tab titles
@@ -135,7 +135,7 @@ class I18NManager:
 
             # Batch processing tab
             "📂 上传文件": "📂 Upload Files",
-            "上传极速图片": "Upload Images",
+            "上传图片": "Upload Images",
             "🛠️ 图片处理参数": "🛠️ Processing Parameters",
             "重命名、格式转换与压缩": "Rename, Convert & Compress",
             "启用重命名": "Enable Renaming",
@@ -205,7 +205,8 @@ class I18NManager:
     
     def get_translator(self, lang: str = "中文") -> Callable[[str], str]:
         """获取翻译函数"""
-        lang_code = "zh" if lang == "中文" else "en"
+        # 修复语言选择逻辑，确保正确处理"English"和"中文"
+        lang_code = "zh" if lang in ["中文", "Chinese"] else "en"
         
         def translator(text_key: str) -> str:
             return self.translations[lang_code].get(text_key, text_key)
@@ -217,4 +218,7 @@ _i18n_manager = I18NManager()
 
 def get_translator(lang: str = "中文") -> Callable[[str], str]:
     """获取翻译函数（兼容旧接口）"""
+    # 处理app.py中传入的"English"或"中文"
+    if lang == "English":
+        return _i18n_manager.get_translator("English")
     return _i18n_manager.get_translator(lang)

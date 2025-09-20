@@ -1,5 +1,6 @@
 import os
 import io
+import sys
 import logging
 import multiprocessing
 import importlib.resources
@@ -142,6 +143,16 @@ class ResizeConfig:
     mode: ResizeMode = ResizeMode.CONTAIN
     only_shrink: bool = True
     resampling: int = getattr(Image, "Resampling", Image).LANCZOS
+    
+    def __post_init__(self):
+        """验证输入参数的有效性"""
+        if self.width <= 0:
+            raise ValueError("Width must be positive")
+        if self.height <= 0:
+            raise ValueError("Height must be positive")
+        # 验证模式是否为有效的ResizeMode
+        if not isinstance(self.mode, ResizeMode):
+            raise ValueError(f"Invalid resize mode: {self.mode}")
 
 @dataclass(slots=True)
 class CropConfig:
@@ -533,13 +544,18 @@ def _save_image_logic(img: Image.Image, dest_path: Path, target_ext: str,
     # 保存图片
     try:
         img.save(dest_path, **params)
-    except (ValueError, OSError) as e:
-        # 如果保存失败，尝试使用更基本的参数重试
+    except (ValueError, OSError, Exception) as e:
+        # 扩展异常捕获范围，捕获所有可能的异常
         logger.warning(f"Failed to save with advanced parameters: {e}. Trying with basic parameters.")
-        basic_params = {"format": format_name}
-        if ext in ("jpg", "jpeg", "webp"):
-            basic_params["quality"] = quality
-        img.save(dest_path, **basic_params)
+        try:
+            basic_params = {"format": format_name}
+            if ext in ("jpg", "jpeg", "webp"):
+                basic_params["quality"] = quality
+            img.save(dest_path, **basic_params)
+        except Exception as e2:
+            # 如果基本参数也失败，记录错误并抛出异常
+            logger.error(f"Failed to save image even with basic parameters: {e2}")
+            raise ProcessingError(f"Cannot save image: {e2}") from e2
 
 def _apply_crop_logic(img: Image.Image, config: CropConfig) -> Image.Image:
     """应用裁剪效果，支持智能裁剪"""
@@ -849,10 +865,32 @@ class ImageProcessor:
 
     def _process_multiprocess(self, tasks, results, config, total, progress_callback):
         self.logger.info(f"Using multiprocessing with {config.num_processes} processes.")
-        ctx = multiprocessing.get_context("spawn")
-        with ctx.Pool(processes=config.num_processes) as pool:
+        # 限制进程数，避免内存溢出
+        max_processes = min(config.num_processes, os.cpu_count() or 2, 8)
+        # 根据操作系统选择合适的多进程上下文
+        if sys.platform == 'win32':
+            ctx = multiprocessing.get_context("spawn")
+        else:
+            ctx = multiprocessing.get_context("fork")
+            
+        # 添加内存监控
+        try:
+            import psutil
+            process = psutil.Process(os.getpid())
+            initial_memory = process.memory_info().rss / 1024 / 1024
+            self.logger.info(f"Initial memory usage: {initial_memory:.2f} MB")
+            # 如果内存使用超过系统内存的70%，减少进程数
+            if process.memory_percent() > 70:
+                max_processes = max(1, max_processes // 2)
+                self.logger.warning(f"High memory usage detected. Reducing processes to {max_processes}")
+        except ImportError:
+            self.logger.debug("psutil not available, skipping memory monitoring")
+            
+        with ctx.Pool(processes=max_processes) as pool:
+            # 使用chunksize参数优化大量小任务的处理
+            chunksize = max(1, len(tasks) // (max_processes * 4))
             # 先收集所有结果，再在主进程中统一处理，避免并发问题
-            process_results = list(pool.imap_unordered(_mp_worker, tasks))
+            process_results = list(pool.imap_unordered(_mp_worker, tasks, chunksize=chunksize))
             for i, result in enumerate(process_results):
                 self._handle_result(result, results)
                 if progress_callback: 
@@ -913,13 +951,27 @@ class _BKTree:
 
 def find_duplicate_images(file_paths: List[str], threshold: int = 8) -> List[List[str]]:
     """使用BK-Tree高效查找相似图片，避免O(n^2)的暴力比较。"""
+    # 验证阈值参数
+    if threshold < 0:
+        logger.warning(f"Invalid threshold value: {threshold}, using default value 8")
+        threshold = 8
+    elif threshold > 64:  # 哈希通常是64位，所以最大距离是64
+        logger.warning(f"Threshold too large: {threshold}, using maximum value 64")
+        threshold = 64
+        
     logger.info("Hashing images for duplicate search...")
     hashes: List[Tuple[str, imagehash.ImageHash]] = []
     for path in file_paths:
         try:
-            with Image.open(path) as img: hashes.append((path, imagehash.phash(img)))
+            with Image.open(path) as img: 
+                # 转换为灰度图像以提高哈希一致性
+                gray_img = img.convert('L')
+                hashes.append((path, imagehash.phash(gray_img)))
         except (FileNotFoundError, UnidentifiedImageError) as e:
             logger.warning(f"Cannot hash {path}: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error hashing {path}: {e}")
+            
     if not hashes: return []
     logger.info(f"Building BK-Tree and searching with {len(hashes)} hashes...")
     tree = _BKTree(dist_fn=lambda h1, h2: h1 - h2)
@@ -966,23 +1018,77 @@ def get_image_main_color(image_path: str) -> Tuple[Optional[Tuple[int, int, int]
         return None, []
 
 def plot_image_histogram(image_path: str) -> Optional[io.BytesIO]:
+    """生成图像的RGB直方图
+    
+    Args:
+        image_path: 图像文件路径
+        
+    Returns:
+        包含直方图PNG图像的BytesIO对象，如果失败则返回None
+    """
     fig = None
+    buf = None
+    rgb_img = None
+    
     try:
-        with Image.open(image_path) as img: rgb_img = img.convert('RGB')
+        # 使用上下文管理器确保图像文件被正确关闭
+        with Image.open(image_path) as img:
+            # 转换为RGB并复制到内存中，避免文件句柄依赖
+            rgb_img = img.convert('RGB').copy()
+            
+        # 设置matplotlib样式
         plt.style.use('seaborn-v0_8-whitegrid')
+        
+        # 创建图表
         fig, ax = plt.subplots(figsize=(4, 2.5), dpi=100)
         colors, names = ('r', 'g', 'b'), ('Red', 'Green', 'Blue')
+        
+        # 绘制每个通道的直方图
         for i, color in enumerate(colors):
-            ax.plot(rgb_img.getchannel(i).histogram(), color=color, alpha=0.8, label=names[i])
-        ax.set_title("RGB Histogram", fontsize=10); ax.set_xlim((0, 256))
-        ax.set_xlabel("Pixel Intensity"); ax.set_ylabel("Frequency")
-        ax.legend(fontsize='small'); ax.grid(True); fig.tight_layout()
-        buf = io.BytesIO(); fig.savefig(buf, format='png'); buf.seek(0)
+            histogram = rgb_img.getchannel(i).histogram()
+            ax.plot(histogram, color=color, alpha=0.8, label=names[i])
+            
+        # 设置图表属性
+        ax.set_title("RGB Histogram", fontsize=10)
+        ax.set_xlim((0, 256))
+        ax.set_xlabel("Pixel Intensity")
+        ax.set_ylabel("Frequency")
+        ax.legend(fontsize='small')
+        ax.grid(True)
+        fig.tight_layout()
+        
+        # 保存到内存缓冲区
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png')
+        buf.seek(0)
+        
+        # 返回缓冲区，调用者负责关闭
         return buf
+        
     except (FileNotFoundError, UnidentifiedImageError) as e:
-        logger.warning(f"Histogram creation failed for {image_path}: {e}"); return None
+        logger.warning(f"Histogram creation failed for {image_path}: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error creating histogram for {image_path}: {e}", exc_info=True)
+        return None
     finally:
-        if fig: plt.close(fig)
+        # 确保所有资源被正确释放
+        if fig is not None: 
+            plt.close(fig)
+        
+        # 如果出现异常且buf已创建但未返回，关闭它
+        if buf is not None and sys.exc_info()[0] is not None:
+            try:
+                buf.close()
+            except Exception:
+                pass
+                
+        # 确保清理任何matplotlib资源
+        plt.clf()
+        
+        # 显式删除大型对象以帮助垃圾回收
+        if rgb_img is not None:
+            del rgb_img
 
 
 
@@ -1003,10 +1109,38 @@ def _get_bundled_font_path(font_name: str = "DejaVuSans.ttf") -> Optional[str]:
     try:
         font_ref = importlib.resources.files('assets.fonts').joinpath(font_name)
         with importlib.resources.as_file(font_ref) as font_path:
-            return str(font_path) if font_path.exists() else None
+            if font_path.exists():
+                return str(font_path)
+            else:
+                logger.warning(f"Bundled font '{font_name}' not found. Searching system fonts.")
+                return _find_system_font()
     except (ModuleNotFoundError, FileNotFoundError):
-        logger.debug(f"Bundled font package 'assets.fonts' not found. Pillow's default font will be used.")
-        return None
+        logger.warning(f"Bundled font package 'assets.fonts' not found. Searching system fonts.")
+        return _find_system_font()
+
+def _find_system_font() -> Optional[str]:
+    """尝试在系统中查找可用的字体"""
+    # 常见系统字体路径
+    common_fonts = [
+        # Windows 字体
+        "C:/Windows/Fonts/arial.ttf",
+        "C:/Windows/Fonts/calibri.ttf",
+        # macOS 字体
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/System/Library/Fonts/Geneva.ttf",
+        # Linux 字体
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    ]
+    
+    # 尝试找到一个可用的字体
+    for font_path in common_fonts:
+        if os.path.exists(font_path):
+            logger.info(f"Found system font: {font_path}")
+            return font_path
+            
+    logger.warning("No system fonts found. Pillow's default font will be used.")
+    return None
 
 # =====================
 # 6. 示例用法 (作为脚本运行时)
