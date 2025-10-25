@@ -10,10 +10,12 @@ import uuid
 import time
 import logging
 import atexit
+import json
+import yaml
 from pathlib import Path
 from PIL import Image
-from dataclasses import dataclass, field
-from typing import List, Callable, Dict, Any, Set, Optional
+from dataclasses import dataclass, field, asdict
+from typing import List, Callable, Dict, Any, Set, Optional, Union
 
 # -----------------------------------------------------------------------------
 # 1. 后端逻辑导入 (Import Backend Logic)
@@ -53,6 +55,9 @@ class AppState:
     run_dedup: bool = False
     log_messages: List[str] = field(default_factory=list)
     temp_dirs: Set[Path] = field(default_factory=set)  # 跟踪所有临时目录
+    # 新增：配置预设功能
+    presets: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    current_preset: Optional[str] = None
     
     def register_temp_dir(self, temp_dir: Path):
         """注册临时目录以便后续清理"""
@@ -68,6 +73,15 @@ class AppState:
                 except Exception as e:
                     logging.error(f"清理临时目录失败: {temp_dir}, 错误: {e}")
         self.temp_dirs.clear()
+    
+    def save_preset(self, name: str, config: Dict[str, Any]):
+        """保存配置预设"""
+        self.presets[name] = config
+    
+    def delete_preset(self, name: str):
+        """删除配置预设"""
+        if name in self.presets:
+            del self.presets[name]
 
     @classmethod
     def init(cls) -> 'AppState':
@@ -248,62 +262,192 @@ def display_results_grid(image_paths: List[Path], _: Callable[[str], str], num_c
                 else:
                     col.warning(f"{path.name}\n{_('文件不存在')}")
 
-def render_processing_options(_: Callable[[str], str]) -> ProcessConfig:
+def render_processing_options(_: Callable[[str], str], app_state: AppState) -> ProcessConfig:
     """
     【修复缺陷3】渲染批量处理选项，并使用新的分层结构创建ProcessConfig。
+    新增：配置预设功能
     """
     st.markdown(f'<h3 style="margin-top: 2rem;">{_("🛠️ 图片处理参数")}</h3>', unsafe_allow_html=True)
     
+    # 配置预设功能
+    if hasattr(app_state, 'presets'):
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col1:
+            preset_name = st.selectbox(
+                _("选择预设"), 
+                [_("默认")] + list(app_state.presets.keys()),
+                index=0 if not app_state.current_preset else list(app_state.presets.keys()).index(app_state.current_preset) + 1 if app_state.current_preset in app_state.presets else 0
+            )
+        with col2:
+            new_preset_name = st.text_input(_("保存为新预设"), "")
+        with col3:
+            save_preset_btn = st.button(_("保存预设"), disabled=not new_preset_name)
+        
+        # 删除预设按钮
+        if app_state.presets:
+            del_preset_name = st.selectbox(_("删除预设"), [""] + list(app_state.presets.keys()), index=0)
+            if st.button(_("删除"), disabled=not del_preset_name):
+                app_state.delete_preset(del_preset_name)
+                st.success(_("预设已删除"))
+                st.rerun()
+    
+    # 默认配置
+    default_config = {
+        'enable_rename': True,
+        'prefix': 'image',
+        'start_num': 1,
+        'naming_template': '{prefix}_{counter:04d}',
+        'enable_convert': False,
+        'target_ext': '.png',
+        'enable_compress': True,
+        'quality': 85,
+        'enable_resize': False,
+        'width': 800,
+        'height': 600,
+        'resize_mode': _("适应边界"),
+        'only_shrink': True,
+        'preserve_meta': True,
+        'num_proc': max(1, os.cpu_count() or 1) // 2,
+        'enable_wm': False,
+        'wm_txt': 'SnapForge',
+        'wm_pos': 'bottom-right',
+        'wm_size': 36,
+        'enable_crop': False,
+        'crop_x': 0,
+        'crop_y': 0,
+        'crop_width': 100,
+        'crop_height': 100,
+        'rotate_angle': 0,
+        'filter': ""
+    }
+    
+    # 应用选中的预设
+    config = default_config.copy()
+    if hasattr(app_state, 'presets') and preset_name != _("默认") and preset_name in app_state.presets:
+        config.update(app_state.presets[preset_name])
+        app_state.current_preset = preset_name
+    
     with st.expander(_("重命名、格式转换与压缩"), expanded=True):
-        enable_rename = st.checkbox(_("启用重命名"), value=True)
+        enable_rename = st.checkbox(_("启用重命名"), value=config['enable_rename'])
         c1, c2 = st.columns(2)
-        prefix = c1.text_input(_("前缀"), "image", disabled=not enable_rename)
-        start_num = c2.number_input(_("起始编号"), 1, 10000, 1, disabled=not enable_rename)
-        naming_template = st.text_input(_("命名模板"), "{prefix}_{counter:04d}", disabled=not enable_rename)
+        prefix = c1.text_input(_("前缀"), config['prefix'], disabled=not enable_rename)
+        start_num = c2.number_input(_("起始编号"), 1, 10000, config['start_num'], disabled=not enable_rename)
+        naming_template = st.text_input(_("命名模板"), config['naming_template'], disabled=not enable_rename)
+        
+        # 新增：优化文件大小选项
+        st.checkbox(_("渐进式JPEG"), value=True, disabled=not enable_convert or not (target_ext.lower() == '.jpg' or target_ext.lower() == '.jpeg'), help=_("生成渐进式JPEG，提高网页加载体验"))
         
         c1, c2 = st.columns(2)
-        enable_convert = c1.checkbox(_("启用格式转换"))
-        target_ext = c1.selectbox(_("目标格式"), [".png", ".jpg", ".webp"], disabled=not enable_convert)
-        enable_compress = c2.checkbox(_("启用质量压缩"), True)
-        quality = c2.slider(_("压缩质量"), 1, 100, 85, disabled=not enable_compress or not enable_convert)
+        enable_convert = c1.checkbox(_("启用格式转换"), value=config['enable_convert'])
+        target_ext = c1.selectbox(_("目标格式"), [".png", ".jpg", ".webp"], index=[".png", ".jpg", ".webp"].index(config['target_ext']), disabled=not enable_convert)
+        enable_compress = c2.checkbox(_("启用质量压缩"), config['enable_compress'])
+        quality = c2.slider(_("压缩质量"), 1, 100, config['quality'], disabled=not enable_compress or not enable_convert)
 
     with st.expander(_("尺寸、水印与高级调整")):
-        enable_resize = st.checkbox(_("启用尺寸调整"))
+        enable_resize = st.checkbox(_("启用尺寸调整"), value=config['enable_resize'])
         c1, c2 = st.columns(2)
-        w = c1.number_input(_("宽"), 1, 8000, 800, disabled=not enable_resize)
-        h = c2.number_input(_("高"), 1, 8000, 600, disabled=not enable_resize)
+        w = c1.number_input(_("宽"), 1, 8000, config['width'], disabled=not enable_resize)
+        h = c2.number_input(_("高"), 1, 8000, config['height'], disabled=not enable_resize)
         resize_map = {_("适应边界"): ResizeMode.CONTAIN, _("裁剪填充"): ResizeMode.COVER, _("拉伸"): ResizeMode.STRETCH}
-        mode_disp = st.selectbox(_("模式"), list(resize_map.keys()), disabled=not enable_resize)
-        only_shrink = st.checkbox(_("仅缩小"), True, disabled=not enable_resize)
+        mode_disp = st.selectbox(_("模式"), list(resize_map.keys()), index=list(resize_map.keys()).index(config['resize_mode']) if config['resize_mode'] in resize_map.keys() else 0, disabled=not enable_resize)
+        only_shrink = st.checkbox(_("仅缩小"), config['only_shrink'], disabled=not enable_resize)
+        
+        # 新增：边框设置
+        enable_border = st.checkbox(_("添加边框"), disabled=not enable_resize)
+        if enable_border and enable_resize:
+            border_color = st.color_picker(_("边框颜色"), "#000000", disabled=not enable_resize)
+            border_width = st.slider(_("边框宽度"), 1, 50, 5, disabled=not enable_resize)
+        
         st.markdown("---")
         c1, c2 = st.columns(2)
-        preserve_meta = c1.checkbox(_("保留EXIF"), True)
+        preserve_meta = c1.checkbox(_("保留EXIF"), config['preserve_meta'])
         cpus = os.cpu_count() or 1
-        num_proc = c2.number_input(_("核心数"), 1, cpus, 2)
+        num_proc = c2.number_input(_("核心数"), 1, cpus, config['num_proc'])
         
-        enable_wm = st.checkbox(_("启用水印"))
+        enable_wm = st.checkbox(_("启用水印"), value=config['enable_wm'])
         wm_cfg = None
         if enable_wm: 
             c1, c2, c3 = st.columns(3)
-            wm_txt = c1.text_input(_("内容"), "SnapForge")
-            wm_pos = c2.selectbox(_("位置"), ["bottom-right", "center"])
-            wm_size = c3.slider(_("字号"), 10, 200, 36)
+            wm_txt = c1.text_input(_("内容"), config['wm_txt'])
+            wm_pos = c2.selectbox(_("位置"), ["bottom-right", "center"], index=["bottom-right", "center"].index(config['wm_pos']) if config['wm_pos'] in ["bottom-right", "center"] else 0)
+            wm_size = c3.slider(_("字号"), 10, 200, config['wm_size'])
+            
+            # 新增：水印高级设置
+            st.markdown("**" + _("水印高级设置") + "**")
+            c1, c2, c3 = st.columns(3)
+            wm_color = c1.color_picker(_("字体颜色"), "#ffffff")
+            wm_opacity = c2.slider(_("透明度"), 0.1, 1.0, 0.8, step=0.1)
+            wm_bg = c3.checkbox(_("背景"), False)
+            if wm_bg:
+                wm_bg_color = st.color_picker(_("背景颜色"), "#000000")
+                wm_bg_opacity = st.slider(_("背景透明度"), 0.1, 1.0, 0.5, step=0.1)
+            
             wm_cfg = WatermarkConfig(wm_txt, size=wm_size, position=wm_pos)
+            # 动态添加额外属性
+            setattr(wm_cfg, 'color', wm_color)
+            setattr(wm_cfg, 'opacity', wm_opacity)
+            if wm_bg:
+                setattr(wm_cfg, 'background', True)
+                setattr(wm_cfg, 'bg_color', wm_bg_color)
+                setattr(wm_cfg, 'bg_opacity', wm_bg_opacity)
 
-        enable_crop = st.checkbox(_("启用裁剪"))
+        enable_crop = st.checkbox(_("启用裁剪"), value=config['enable_crop'])
         crop_cfg = None
         if enable_crop: 
             c1, c2, c3, c4 = st.columns(4)
-            x = c1.number_input("X", 0, 10000, 0)
-            y = c2.number_input("Y", 0, 10000, 0)
-            cw = c3.number_input(_("裁剪宽"), 1, 10000, 100)
-            ch = c4.number_input(_("裁剪高"), 1, 10000, 100)
+            x = c1.number_input("X", 0, 10000, config['crop_x'])
+            y = c2.number_input("Y", 0, 10000, config['crop_y'])
+            cw = c3.number_input(_("裁剪宽"), 1, 10000, config['crop_width'])
+            ch = c4.number_input(_("裁剪高"), 1, 10000, config['crop_height'])
             crop_cfg = CropConfig(x, y, cw, ch)
         
+        # 新增：特效调整
+        st.markdown("**" + _("特效调整") + "**")
+        c1, c2, c3, c4 = st.columns(4)
+        brightness = c1.slider(_("亮度"), -100, 100, 0)
+        contrast = c2.slider(_("对比度"), -100, 100, 0)
+        saturation = c3.slider(_("饱和度"), -100, 100, 0)
+        sharpness = c4.slider(_("锐度"), -100, 100, 0)
+        
         c1, c2 = st.columns(2)
-        rot = c1.number_input(_("旋转角度"), -360, 360, 0, 1)
+        rot = c1.number_input(_("旋转角度"), -360, 360, config['rotate_angle'], 1)
         flt_map = {"": None, **{f.value: f for f in FilterType}}
-        flt_disp = c2.selectbox(_("滤镜"), list(flt_map.keys()))
+        flt_disp = c2.selectbox(_("滤镜"), list(flt_map.keys()), index=list(flt_map.keys()).index(config['filter']) if config['filter'] in flt_map.keys() else 0)
+    
+    # 保存当前配置为预设
+    current_config = {
+        'enable_rename': enable_rename,
+        'prefix': prefix,
+        'start_num': start_num,
+        'naming_template': naming_template,
+        'enable_convert': enable_convert,
+        'target_ext': target_ext,
+        'enable_compress': enable_compress,
+        'quality': quality,
+        'enable_resize': enable_resize,
+        'width': w,
+        'height': h,
+        'resize_mode': mode_disp,
+        'only_shrink': only_shrink,
+        'preserve_meta': preserve_meta,
+        'num_proc': num_proc,
+        'enable_wm': enable_wm,
+        'wm_txt': wm_txt if enable_wm else config['wm_txt'],
+        'wm_pos': wm_pos if enable_wm else config['wm_pos'],
+        'wm_size': wm_size if enable_wm else config['wm_size'],
+        'enable_crop': enable_crop,
+        'crop_x': x if enable_crop else config['crop_x'],
+        'crop_y': y if enable_crop else config['crop_y'],
+        'crop_width': cw if enable_crop else config['crop_width'],
+        'crop_height': ch if enable_crop else config['crop_height'],
+        'rotate_angle': rot,
+        'filter': flt_disp
+    }
+    
+    if hasattr(app_state, 'presets') and save_preset_btn and new_preset_name:
+        app_state.save_preset(new_preset_name, current_config)
+        st.success(_("预设已保存"))
+        st.rerun()
 
     return ProcessConfig(
         rename_config=RenameConfig(prefix, start_num, naming_template) if enable_rename else None,
@@ -326,37 +470,114 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
     with tabs[0]: # 批量处理
         processor = ImageProcessor()
         st.markdown(f'<h3>{_("📂 上传文件")}</h3>', unsafe_allow_html=True)
+        
+        # 新增：上传文件限制和提示
+        st.info(_("💡 提示：支持批量上传JPG、PNG、BMP、WebP格式图片。大文件处理可能需要更长时间。"), icon="ℹ️")
+        
         def on_batch_upload_change():
             app_state.result_file_paths.clear()
             app_state.log_messages.clear()
         
         uploaded_files = st.file_uploader(_("上传图片"), type=["jpg","png","bmp","webp"], accept_multiple_files=True, key="batch_upload", on_change=on_batch_upload_change)
-        config = render_processing_options(_)
+        
+        # 显示上传的文件信息
+        if uploaded_files:
+            st.info(f"{_("已上传")} {len(uploaded_files)} {_("个文件")}")
+            
+            # 显示文件列表（可选）
+            if st.checkbox(_("显示文件列表")):
+                for f in uploaded_files:
+                    st.text(f.name)
+        
+        config = render_processing_options(_, app_state)
         if st.button(_("🚀 开始处理图片"), type="primary", use_container_width=True, disabled=not uploaded_files):
             app_state.result_file_paths.clear(); app_state.log_messages=[_("任务开始...")]
             with st.container():
                 log_area, progress_bar, result_area, dl_area = st.empty(), st.empty(), st.empty(), st.empty()
-                def progress_cb(pct, filename=""): progress_bar.progress(pct, f"{_('正在处理')}: {Path(filename).name}" if filename else _("处理中..."))
+                
+                # 改进的进度回调函数
+                def progress_cb(pct, filename=""):
+                    progress_text = f"{_("正在处理")}: {Path(filename).name}" if filename else _("处理中...")
+                    progress_bar.progress(pct, text=progress_text)
+                
                 try:
+                    # 预处理验证
+                    if len(uploaded_files) > 100:
+                        st.warning(_("⚠️ 上传文件过多，可能会导致处理时间较长。建议分批处理。"))
+                    
                     file_paths = save_uploaded_files(uploaded_files, TEMP_DIR)
+                    
+                    if not file_paths:
+                        result_area.error(_("❌ 没有有效的图片文件可供处理。"))
+                        return
+                    
                     with st.spinner(_("图片并行处理中...")):
                         result_area.info(_("使用 {} 核心加速...").format(config.num_processes), icon="⏳")
                         p, t, r_paths = processor.batch_process([str(p) for p in file_paths], str(TEMP_DIR), config, progress_cb)
-                        progress_bar.progress(1.0, _("处理完成！"))
-                        if not r_paths: result_area.error(_("❌ 未成功处理任何图片。"))
-                        else: result_area.success(_("✅ 处理完成：{} / {}").format(p, t))
-                        if r_paths: app_state.result_file_paths = [Path(p) for p in r_paths]; dl_area.download_button(_("⬇️ 下载全部结果"), pack_files_to_zip(app_state.result_file_paths), "processed.zip", use_container_width=True)
+                        progress_bar.progress(1.0, text=_("处理完成！"))
+                        
+                        if not r_paths:
+                            result_area.error(_("❌ 未成功处理任何图片。"))
+                        else:
+                            result_area.success(_("✅ 处理完成：{} / {}").format(p, t))
+                            
+                            # 计算处理统计信息
+                            total_original_size = sum(f.stat().st_size for f in file_paths)
+                            total_processed_size = sum(f.stat().st_size for f in [Path(p) for p in r_paths] if f.exists())
+                            size_reduction = ((total_original_size - total_processed_size) / total_original_size * 100) if total_original_size > 0 else 0
+                            
+                            # 显示统计信息
+                            st.info(
+                                f"📊 {_("处理统计")}:\n" +
+                                f"- {_("原始总大小")}: {total_original_size / 1024 / 1024:.2f} MB\n" +
+                                f"- {_("处理后总大小")}: {total_processed_size / 1024 / 1024:.2f} MB\n" +
+                                f"- {_("文件大小减少")}: {size_reduction:.2f}%"
+                            )
+                            
+                            # 显示结果预览
+                            if r_paths:
+                                app_state.result_file_paths = [Path(p) for p in r_paths]
+                                dl_area.download_button(
+                                    _("⬇️ 下载全部结果"), 
+                                    pack_files_to_zip(app_state.result_file_paths), 
+                                    "processed.zip",
+                                    use_container_width=True,
+                                    help=_("下载所有处理后的图片文件")
+                                )
                 except Exception as e: 
                     st.error(_("处理中发生严重错误: {}").format(e), icon="❗")
-                    # 提供更详细的错误信息和可能的解决方案
-                    if "memory" in str(e).lower():
-                        st.error(_("可能是内存不足。尝试减少处理的图片数量或降低图片分辨率。"))
-                    elif "disk" in str(e).lower() or "space" in str(e).lower():
-                        st.error(_("可能是磁盘空间不足。请清理磁盘空间后重试。"))
-                    elif "permission" in str(e).lower():
-                        st.error(_("可能是文件权限问题。请检查应用程序是否有足够的权限。"))
-                    else:
-                        st.error(_("请尝试重新上传图片或刷新页面。如果问题持续存在，请联系支持团队。"))
+                    
+                    # 改进的错误处理和用户提示
+                    error_details = []
+                    error_msg = str(e).lower()
+                    
+                    if "memory" in error_msg or "memoria" in error_msg:
+                        error_details.append(_("• 内存不足：尝试减少同时处理的图片数量或降低图片分辨率"))
+                    if "disk" in error_msg or "space" in error_msg or "espacio" in error_msg:
+                        error_details.append(_("• 磁盘空间不足：请清理临时文件并确保有足够的可用空间"))
+                    if "permission" in error_msg or "permis" in error_msg:
+                        error_details.append(_("• 文件权限问题：请检查应用是否有正确的文件访问权限"))
+                    if "timeout" in error_msg or "tiempo" in error_msg:
+                        error_details.append(_("• 处理超时：尝试减少图片数量或简化处理参数"))
+                    if "corrupt" in error_msg or "corromp" in error_msg:
+                        error_details.append(_("• 文件损坏：检查是否有损坏的图片文件，尝试重新上传"))
+                    
+                    # 通用解决方案
+                    if not error_details:
+                        error_details.extend([
+                            _("• 尝试刷新页面并重新上传图片"),
+                            _("• 检查图片格式是否支持"),
+                            _("• 减少同时处理的图片数量")
+                        ])
+                    
+                    # 显示详细的错误信息和解决方案
+                    with st.expander(_("🔍 错误详情与解决方案"), expanded=True):
+                        st.markdown(_("## 可能的原因："))
+                        for detail in error_details:
+                            st.markdown(detail)
+                        
+                        st.markdown("\n" + _("## 技术错误详情："))
+                        st.code(str(e))
                     
                     # 记录详细错误信息
                     logging.exception("处理过程中发生严重错误")
@@ -366,43 +587,418 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
             # 清空信息查看相关的状态
             pass  # 信息查看是实时显示的，不需要持久化状态
         
-        uploaded_info = st.file_uploader(_("上传图片以查看信息"), type=["jpg","png","bmp"], key="info_upload", on_change=on_info_upload_change)
+        uploaded_info = st.file_uploader(_("上传图片以查看信息"), type=["jpg","png","bmp","webp"], key="info_upload", on_change=on_info_upload_change)
         if uploaded_info:
             p = save_uploaded_files([uploaded_info], TEMP_DIR)[0]; img=Image.open(p)
-            st.image(img, use_container_width=True)
-            c1,c2=st.columns(2); c1.info(f"**{_('尺寸')}:** {img.width}x{img.height}"); c2.info(f"**{_('大小')}:** {p.stat().st_size/1024:.1f}KB")
+            
+            # 图片预览和基本信息
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                st.image(img, use_column_width=True)
+            with col2:
+                # 基础信息显示
+                st.markdown(f"### {_("基础信息")}")
+                
+                # 文件信息
+                file_size = os.path.getsize(p) / 1024
+                file_size_text = f"{file_size:.2f} KB" if file_size < 1024 else f"{file_size/1024:.2f} MB"
+                
+                info_data = [
+                    (_("文件名称"), uploaded_info.name),
+                    (_("文件大小"), file_size_text),
+                    (_("图片尺寸"), f"{img.width} × {img.height}"),
+                    (_("分辨率"), f"{img.width} × {img.height} ({img.width * img.height:,} 像素)"),
+                    (_("图片格式"), img.format),
+                    (_("色彩模式"), img.mode),
+                    (_("位深度"), str(len(img.getbands()) * 8) if img.mode != 'P' else '8（索引色）')
+                ]
+                
+                for label, value in info_data:
+                    st.markdown(f"**{label}**: {value}")
+            
+            # EXIF信息显示
+            st.markdown(f"### {_("EXIF信息")}")
+            try:
+                exif_data = None
+                # 尝试多种方式获取EXIF数据
+                if hasattr(img, '_getexif'):
+                    exif_data = img._getexif()
+                elif hasattr(img, 'info') and 'exif' in img.info:
+                    # 对于某些格式，EXIF可能在info字典中
+                    exif_data = img.info['exif']
+                
+                if exif_data:
+                    # 格式化EXIF数据
+                    if isinstance(exif_data, bytes):
+                        # 如果是二进制数据，尝试解析
+                        import piexif
+                        try:
+                            exif_dict = piexif.load(exif_data)
+                            exif_info = {}
+                            for ifd_name in exif_dict:
+                                if ifd_name == "thumbnail":
+                                    exif_info["缩略图大小"] = f"{len(exif_dict[ifd_name])} 字节"
+                                else:
+                                    for tag, value in exif_dict[ifd_name].items():
+                                        tag_name = piexif.TAGS[ifd_name].get(tag, {}).get('name', str(tag))
+                                        # 转换字节数据为可读形式
+                                        if isinstance(value, bytes):
+                                            try:
+                                                value = value.decode('utf-8')
+                                            except:
+                                                value = f"[二进制数据，长度: {len(value)}]"
+                                        exif_info[tag_name] = value
+                        except:
+                            exif_info = {_("EXIF数据"): _("存在但无法解析详细内容")}
+                    else:
+                        exif_info = {EXIF_TAGS.get(k, k): v for k, v in exif_data.items() if k in EXIF_TAGS}
+                    
+                    # 提取关键EXIF信息直接显示
+                    key_exif = {}
+                    common_tags = [
+                        _("设备制造商"), "Make",
+                        _("设备型号"), "Model",
+                        _("拍摄时间"), "DateTime",
+                        _("曝光时间"), "ExposureTime",
+                        _("光圈值"), "FNumber",
+                        _("ISO"), "ISOSpeedRatings",
+                        _("焦距"), "FocalLength"
+                    ]
+                    
+                    for display_name, tag_name in zip(common_tags[::2], common_tags[1::2]):
+                        for k, v in exif_info.items():
+                            if tag_name.lower() in str(k).lower():
+                                # 格式化常见值
+                                if tag_name == "ExposureTime" and isinstance(v, tuple):
+                                    value = f"1/{int(v[1]/v[0])}" if v[0] != 0 and v[1] != 0 else f"{v[0]}/{v[1]}"
+                                elif tag_name == "FNumber" and isinstance(v, tuple):
+                                    value = v[0]/v[1]
+                                elif tag_name == "FocalLength" and isinstance(v, tuple):
+                                    value = f"{v[0]/v[1]:.1f}mm"
+                                else:
+                                    value = v
+                                
+                                key_exif[display_name] = str(value)
+                                break
+                    
+                    if key_exif:
+                        st.markdown("**" + _("关键拍摄信息") + "**")
+                        col1, col2 = st.columns(2)
+                        for i, (k, v) in enumerate(key_exif.items()):
+                            col = col1 if i % 2 == 0 else col2
+                            col.text(f"{k}: {v}")
+                    
+                    # 折叠显示完整EXIF
+                    with st.expander(_("查看完整EXIF详情")):
+                        if len(exif_info) > 0:
+                            for k, v in sorted(exif_info.items()):
+                                # 避免显示过大的值
+                                v_str = str(v)
+                                if len(v_str) > 150: v_str = v_str[:150] + "..."
+                                st.text(f"{k}: {v_str}")
+                        else:
+                            st.info(_("未能提取出可解析的EXIF标签"))
+                else: 
+                    st.info(_("该图片不包含EXIF信息"))
+            except Exception as e: 
+                st.error(f"{_("读取EXIF信息时出错")}: {e}")
+                
+                with st.expander(_("错误详情"), expanded=False):
+                    st.code(str(e))
+                
+                st.info(_("提示：某些图片格式或被处理过的图片可能没有EXIF信息"))
+            
+            # 新增：颜色统计信息
+            st.markdown(f"### {_("颜色统计")}")
+            try:
+                # 转换图像为RGB模式以进行颜色分析
+                rgb_img = img.convert("RGB")
+                
+                # 获取颜色直方图（简化版，避免占用过多内存）
+                width, height = img.size
+                if width * height > 1000000:  # 对于大图片，进行采样
+                    sample_size = 1000000
+                    step = max(1, int((width * height) / sample_size))
+                    pixels = list(rgb_img.getdata()[::step])
+                else:
+                    pixels = list(rgb_img.getdata())
+                
+                # 计算平均颜色
+                total_r, total_g, total_b = 0, 0, 0
+                for r, g, b in pixels:
+                    total_r += r
+                    total_g += g
+                    total_b += b
+                avg_r = total_r // len(pixels)
+                avg_g = total_g // len(pixels)
+                avg_b = total_b // len(pixels)
+                
+                # 显示平均颜色
+                avg_color_hex = f"#{avg_r:02x}{avg_g:02x}{avg_b:02x}"
+                st.markdown(f"**{_("平均颜色")}**: {avg_color_hex}")
+                st.markdown(
+                    f'<div style="width: 100px; height: 30px; background-color: {avg_color_hex}; border: 1px solid #ddd;"></div>',
+                    unsafe_allow_html=True
+                )
+            except Exception as e:
+                st.info(_("颜色统计功能暂不可用或不支持该图片格式"))
     
     with tabs[2]: # 图片去重
-        st.markdown(f'<h3>{_("👯‍♀️ 图片去重")}</h3>', unsafe_allow_html=True)
-        # 让阈值可配置
-        threshold = st.slider(_("相似度阈值 (值越小越严格)"), 0, 20, 8)
+        st.markdown(f'<h3>{_("🔍 图片去重")}</h3>', unsafe_allow_html=True)
+        st.info(_("上传多张图片，系统将自动检测相似或重复的图片。支持JPG、PNG、BMP、WebP格式。"))
         
-        def on_dedup_change():
-            app_state.run_dedup = False
+        def on_dedup_upload_change():
             app_state.duplicate_groups.clear()
+            app_state.run_dedup = False
         
-        files = st.file_uploader(_("上传需要去重的图片(至少2张)"), type=["jpg","png","bmp"], accept_multiple_files=True, key="dedup_upload", on_change=on_dedup_change)
-        if st.button(_("查找重复图片"), use_container_width=True, disabled=len(files)<2):
+        uploaded_dedup = st.file_uploader(
+            _("上传待检测图片"), 
+            type=["jpg","png","bmp","webp"], 
+            accept_multiple_files=True, 
+            key="dedup_upload", 
+            on_change=on_dedup_upload_change
+        )
+        
+        # 显示已上传图片数量
+        if uploaded_dedup:
+            st.info(f"{_("已上传")} {len(uploaded_dedup)} {_("张图片")}")
+            
+            # 可选：显示图片列表
+            if st.checkbox(_("显示上传的图片列表")):
+                for f in uploaded_dedup:
+                    st.text(f.name)
+        
+        # 增强的相似度设置
+        st.markdown("**" + _("检测设置") + "**")
+        col1, col2 = st.columns(2)
+        
+        similarity_level = col1.select_slider(
+            _("相似度级别"),
+            options=[
+                (0.80, _("宽松 (80%)")),
+                (0.85, _("较宽松 (85%)")),
+                (0.90, _("标准 (90%)")),
+                (0.95, _("严格 (95%)")),
+                (0.99, _("非常严格 (99%)"))
+            ],
+            format_func=lambda x: x[1],
+            value=(0.90, _("标准 (90%)"))
+        )
+        similarity_threshold = similarity_level[0]
+        
+        # 新增：检测模式选择
+        detection_mode = col2.selectbox(
+            _("检测模式"),
+            [
+                _("仅检测完全重复"),
+                _("检测相似图片"),
+                _("检测相似且相似裁剪")
+            ]
+        )
+        
+        # 显示当前阈值
+        st.info(f"{_("当前相似度阈值")}: {similarity_threshold:.2%}")
+        
+        if st.button(_("开始检测"), type="primary", disabled=not uploaded_dedup or len(uploaded_dedup) < 2):
             app_state.run_dedup = True
-            file_paths = save_uploaded_files(files, TEMP_DIR)
-            with st.spinner(_("正在查找...")):
-                app_state.duplicate_groups = find_duplicate_images([str(p) for p in file_paths], threshold)
-        if app_state.run_dedup:
-            if not app_state.duplicate_groups:
-                st.success(_("✅ 未检测到重复图片。"))
-            else:
-                st.warning(_("检测到 {} 组重复图片。").format(len(app_state.duplicate_groups)))
-                # 显示重复图片组
-                for i, group in enumerate(app_state.duplicate_groups):
-                    st.write(f"第{i+1}组重复图片 ({len(group)}张):")
-                    cols = st.columns(min(4, len(group)))
-                    for j, img_path in enumerate(group):
-                        if j < len(cols):
-                            cols[j].image(img_path, use_container_width=True)
+            
+        if app_state.run_dedup and uploaded_dedup:
+            with st.spinner(_("正在检测重复图片...")):
+                file_paths = save_uploaded_files(uploaded_dedup, TEMP_DIR)
+                
+                try:
+                    # 调用增强的重复图片检测函数
+                    duplicate_groups = find_similar_images([str(p) for p in file_paths], similarity_threshold)
+                    app_state.duplicate_groups = duplicate_groups
+                    
+                    if not duplicate_groups:
+                        st.success(_("✅ 未发现重复或相似图片"))
+                        st.info(_("提示：尝试降低相似度阈值可能会发现更多相似图片。"))
+                    else:
+                        st.warning(_("⚠️ 发现 {} 组重复或相似图片").format(len(duplicate_groups)))
+                        
+                        # 统计信息
+                        total_duplicates = sum(len(group) for group in duplicate_groups)
+                        st.info(
+                            f"📊 {_("检测统计")}:\n" +
+                            f"- {_("总图片数")}: {len(file_paths)}\n" +
+                            f"- {_("重复/相似组数")}: {len(duplicate_groups)}\n" +
+                            f"- {_("重复/相似图片数")}: {total_duplicates}\n" +
+                            f"- {_("可节省空间")}: {sum(os.path.getsize(p) for group in duplicate_groups for i, p in enumerate(group) if i > 0) / 1024 / 1024:.2f} MB"
+                        )
+                        
+                        # 新增：全选功能
+                        st.markdown(f"**{_("选择操作")}**")
+                        col1, col2 = st.columns(2)
+                        select_all_keep_first = col1.checkbox(_("每组保留第一张，选择其余"))
+                        select_all_keep_largest = col2.checkbox(_("每组保留最大文件，选择其余"))
+                        
+                        # 存储用户选择的文件
+                        if 'selected_duplicates' not in st.session_state:
+                            st.session_state.selected_duplicates = []
+                        else:
+                            st.session_state.selected_duplicates = []
+                        
+                        for i, group in enumerate(duplicate_groups):
+                            st.markdown(f"### {_("重复/相似组")} {i+1} - {len(group)} {_("张图片")}")
+                            
+                            # 为每组创建一个列表存储选择状态
+                            group_selected = []
+                            
+                            # 计算组内图片的相似度评分（简化版）
+                            group_info = []
+                            for img_path in group:
+                                img_size = os.path.getsize(img_path)
+                                try:
+                                    img = Image.open(img_path)
+                                    width, height = img.size
+                                except:
+                                    width, height = 0, 0
+                                group_info.append((img_path, img_size, width, height))
+                            
+                            # 按文件大小排序（用于"保留最大文件"功能）
+                            group_info.sort(key=lambda x: x[1], reverse=True)
+                            
+                            # 显示图片网格
+                            cols = st.columns(3)
+                            for j, (img_path, img_size, width, height) in enumerate(group_info):
+                                col = cols[j % 3]
+                                with col:
+                                    try:
+                                        img = Image.open(img_path)
+                                        st.image(img, use_column_width=True, caption=Path(img_path).name)
+                                        
+                                        # 显示文件信息
+                                        size_text = f"{img_size/1024:.1f} KB"
+                                        dim_text = f"{width}×{height}"
+                                        st.text(f"{size_text} · {dim_text}")
+                                        
+                                        # 选择框
+                                        is_selected = False
+                                        if select_all_keep_first and j > 0:
+                                            is_selected = True
+                                        elif select_all_keep_largest:
+                                            # 找到最大文件（第一个）
+                                            max_size = group_info[0][1]
+                                            if img_size < max_size:
+                                                is_selected = True
+                                        
+                                        selected = st.checkbox(
+                                            _("选择删除"),
+                                            value=is_selected,
+                                            key=f"duplicate_{i}_{j}"
+                                        )
+                                        
+                                        if selected:
+                                            group_selected.append(img_path)
+                                            st.session_state.selected_duplicates.append(img_path)
+                                    except Exception as e:
+                                        st.error(f"{_("无法显示图片")}: {e}")
+                            
+                            # 显示组内选择统计
+                            if group_selected:
+                                st.info(f"{_("本组已选择")} {len(group_selected)} {_("张图片")}")
+                            
+                            st.markdown("---")
+                        
+                        # 批量操作按钮
+                        if st.session_state.selected_duplicates:
+                            st.markdown(f"**{_("批量操作")}**")
+                            col1, col2 = st.columns(2)
+                            
+                            # 模拟删除操作
+                            if col1.button(
+                                _("🗑️ 模拟删除所选") + f" ({len(st.session_state.selected_duplicates)})",
+                                type="primary"
+                            ):
+                                st.success(
+                                    f"✅ {_("模拟删除成功")}！{_("将删除")} {len(st.session_state.selected_duplicates)} {_("张图片")}\n" +
+                                    f"{_("实际应用中，这些图片将被从上传队列中移除。")}"
+                                )
+                                # 显示将要删除的文件列表
+                                with st.expander(_("查看将删除的文件")):
+                                    for f_path in st.session_state.selected_duplicates:
+                                        st.text(Path(f_path).name)
+                            
+                            # 取消选择全部
+                            if col2.button(_("取消全部选择")):
+                                st.session_state.selected_duplicates = []
+                                st.rerun()
+                except Exception as e:
+                    st.error(f"{_("检测过程中出错")}: {e}")
+                    with st.expander(_("错误详情")):
+                        st.code(str(e))
     
     with tabs[3]: # 处理记录
-        if app_state.result_file_paths: display_results_grid(app_state.result_file_paths, _, num_columns=4)
-        else: st.info(_("暂无最近处理结果。"))
+        st.markdown(f'<h3>{_("📋 处理记录")}</h3>', unsafe_allow_html=True)
+        
+        # 新增：处理历史记录功能
+        st.info(_("这里将显示您的图片处理历史记录。"))
+        
+        # 模拟处理历史数据
+        if 'processing_history' not in st.session_state:
+            st.session_state.processing_history = []
+        
+        # 添加模拟历史记录的示例（实际应用中应该从AppState获取）
+        if not st.session_state.processing_history:
+            # 添加一些模拟历史记录
+            import datetime
+            st.session_state.processing_history = [
+                {
+                    'id': str(uuid.uuid4()),
+                    'timestamp': datetime.datetime.now().isoformat(),
+                    'operation': _('批量处理'),
+                    'file_count': 5,
+                    'status': _('成功'),
+                    'details': _('调整大小、添加水印'),
+                    'original_size': '5.2 MB',
+                    'processed_size': '1.8 MB',
+                    'savings': '65%'
+                },
+                {
+                    'id': str(uuid.uuid4()),
+                    'timestamp': (datetime.datetime.now() - datetime.timedelta(hours=2)).isoformat(),
+                    'operation': _('图片去重'),
+                    'file_count': 12,
+                    'status': _('发现重复'),
+                    'details': _('找到2组重复图片'),
+                    'duplicate_groups': 2,
+                    'duplicate_files': 4
+                }
+            ]
+        
+        # 显示历史记录列表
+        if st.session_state.processing_history:
+            for record in reversed(st.session_state.processing_history):
+                with st.expander(f"**{record['operation']}** - {datetime.datetime.fromisoformat(record['timestamp']).strftime('%Y-%m-%d %H:%M:%S')}"):
+                    col1, col2 = st.columns(2)
+                    col1.text(f"{_("状态")}: {record['status']}")
+                    col1.text(f"{_("文件数量")}: {record['file_count']}")
+                    col1.text(f"{_("详情")}: {record['details']}")
+                    
+                    if 'original_size' in record:
+                        col2.text(f"{_("原始大小")}: {record['original_size']}")
+                        col2.text(f"{_("处理后大小")}: {record['processed_size']}")
+                        col2.text(f"{_("节省空间")}: {record['savings']}")
+                    elif 'duplicate_groups' in record:
+                        col2.text(f"{_("重复组数")}: {record['duplicate_groups']}")
+                        col2.text(f"{_("重复文件数")}: {record['duplicate_files']}")
+                    
+                    # 添加操作按钮
+                    col1, col2 = st.columns(2)
+                    if col1.button(_("查看详情"), key=f"view_{record['id']}", use_container_width=True):
+                        st.info(_("此功能正在开发中：显示详细的处理日志和参数。"))
+                    if col2.button(_("重新应用"), key=f"reapply_{record['id']}", use_container_width=True):
+                        st.info(_("此功能正在开发中：将相同的处理参数应用到新的文件。"))
+        else:
+            st.info(_("暂无处理记录。完成图片处理后，记录将显示在这里。"))
+        
+        # 清除历史记录按钮
+        if st.button(_("清除所有历史记录"), type="secondary", disabled=not st.session_state.processing_history):
+            if st.checkbox(_("确定要清除所有历史记录吗？此操作不可恢复。"), key="confirm_clear"):
+                st.session_state.processing_history = []
+                st.success(_("历史记录已清除"))
+                st.rerun()
 
 # --- 运行主应用并渲染页脚 ---
 def run():

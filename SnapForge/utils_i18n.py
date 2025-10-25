@@ -34,7 +34,7 @@ class I18NManager:
             "反馈建议": "反馈建议",
 
             # 主标签页标题
-            "批量极速处理": "批量处理", 
+            "批量处理": "批量处理", 
             "信息查看": "信息查看", 
             "图片去重": "图片去重",
             "处理记录": "处理记录",
@@ -52,6 +52,8 @@ class I18NManager:
             "目标格式": "目标格式",
             "启用质量压缩": "启用质量压缩", 
             "压缩质量": "压缩质量",
+            "优化文件大小": "优化文件大小",
+            "渐进式JPEG": "渐进式JPEG",
             
             # 高级参数
             "尺寸、水印与高级调整": "尺寸、水印与高级调整",
@@ -69,10 +71,22 @@ class I18NManager:
             "内容": "内容", 
             "位置": "位置", 
             "字号": "字号",
+            "字体颜色": "字体颜色",
+            "透明度": "透明度",
+            "水印边距": "水印边距",
             "启用裁剪": "启用裁剪", 
             "X": "X", "Y": "Y", "裁剪宽": "裁剪宽", "裁剪高": "裁剪高",
             "旋转角度": "旋转角度", 
             "滤镜": "滤镜",
+            "启用边框": "启用边框",
+            "边框宽度": "边框宽度",
+            "边框颜色": "边框颜色",
+            "边框圆角": "边框圆角",
+            "亮度": "亮度",
+            "对比度": "对比度",
+            "饱和度": "饱和度",
+            "锐度": "锐度",
+            "启用特效调整": "启用特效调整",
             
             # 动作与状态
             "🚀 开始处理图片": "🚀 开始处理图片",
@@ -87,10 +101,29 @@ class I18NManager:
             "✅ 处理完成：{} / {}": "✅ 处理完成：{} / {}", 
             "⬇️ 下载全部结果": "⬇️ 下载全部结果",
             "处理中发生严重错误: {}": "处理中发生严重错误: {}",
-
+            "可能是内存不足。尝试减少处理的图片数量或降低图片分辨率。": "可能是内存不足。尝试减少处理的图片数量或降低图片分辨率。",
+            "可能是磁盘空间不足。请清理磁盘空间后重试。": "可能是磁盘空间不足。请清理磁盘空间后重试。",
+            "可能是文件权限问题。请检查应用程序是否有足够的权限。": "可能是文件权限问题。请检查应用程序是否有足够的权限。",
+            "请尝试重新上传图片或刷新页面。如果问题持续存在，请联系支持团队。": "请尝试重新上传图片或刷新页面。如果问题持续存在，请联系支持团队。",
+            
             # 信息查看选项卡
             "上传图片以查看信息": "上传图片以查看信息",
             "尺寸": "尺寸", "大小": "大小",
+            "文件格式": "文件格式",
+            "颜色模式": "颜色模式",
+            "分辨率": "分辨率",
+            "EXIF数据": "EXIF数据",
+            "主要颜色": "主要颜色",
+            "颜色分布": "颜色分布",
+            "无EXIF数据": "无EXIF数据",
+            "旋转信息": "旋转信息",
+            "相机型号": "相机型号",
+            "镜头型号": "镜头型号",
+            "拍摄时间": "拍摄时间",
+            "焦距": "焦距",
+            "光圈": "光圈",
+            "快门速度": "快门速度",
+            "ISO": "ISO",
 
             # 图片去重选项卡
             "👯‍♀️ 图片去重": "👯‍♀️ 图片去重",
@@ -100,13 +133,37 @@ class I18NManager:
             "正在查找...": "正在查找...",
             "✅ 未检测到重复图片。": "✅ 未检测到重复图片。",
             "检测到 {} 组重复图片。": "检测到 {} 组重复图片。",
-
-
-
+            "第{}组重复图片 ({}张):": "第{}组重复图片 ({}张):",
+            "选择保留图片": "选择保留图片",
+            "仅查看缩略图": "仅查看缩略图",
+            "快速预览模式": "快速预览模式",
+            
             # 处理记录选项卡
             "结果预览": "结果预览",
             "文件不存在": "文件不存在",
             "暂无最近处理结果。": "暂无最近处理结果。",
+            "上次处理时间": "上次处理时间",
+            "处理数量": "处理数量",
+            "成功数量": "成功数量",
+            "处理参数": "处理参数",
+            
+            # 配置预设功能
+            "配置预设": "配置预设",
+            "保存当前配置": "保存当前配置",
+            "预设名称": "预设名称",
+            "加载预设": "加载预设",
+            "删除预设": "删除预设",
+            "预设已保存": "预设已保存",
+            "预设不存在": "预设不存在",
+            "预设已删除": "预设已删除",
+            "请输入预设名称": "请输入预设名称",
+            
+            # 错误处理
+            "跳过非图像文件: {}": "跳过非图像文件: {}",
+            "跳过无效图像文件: {}": "跳过无效图像文件: {}",
+            "处理文件 {} 时出错: {}": "处理文件 {} 时出错: {}",
+            "请上传至少一张图片": "请上传至少一张图片",
+            "请上传至少两张图片": "请上传至少两张图片",
         }
     
     def _english_translations(self) -> Dict[str, str]:
@@ -146,6 +203,8 @@ class I18NManager:
             "目标格式": "Target Format",
             "启用质量压缩": "Enable Quality Compression", 
             "压缩质量": "Quality",
+            "优化文件大小": "Optimize File Size",
+            "渐进式JPEG": "Progressive JPEG",
             
             # Advanced parameters
             "尺寸、水印与高级调整": "Resize, Watermark & Advanced",
@@ -163,10 +222,22 @@ class I18NManager:
             "内容": "Text", 
             "位置": "Position", 
             "字号": "Font Size",
+            "字体颜色": "Font Color",
+            "透明度": "Opacity",
+            "水印边距": "Margin",
             "启用裁剪": "Enable Cropping", 
             "X": "X", "Y": "Y", "裁剪宽": "Crop Width", "裁剪高": "Crop Height",
             "旋转角度": "Rotation Angle", 
             "滤镜": "Filter",
+            "启用边框": "Enable Border",
+            "边框宽度": "Border Width",
+            "边框颜色": "Border Color",
+            "边框圆角": "Border Radius",
+            "亮度": "Brightness",
+            "对比度": "Contrast",
+            "饱和度": "Saturation",
+            "锐度": "Sharpness",
+            "启用特效调整": "Enable Effects",
             
             # Actions & status
             "🚀 开始处理图片": "🚀 Process Images",
@@ -181,10 +252,29 @@ class I18NManager:
             "✅ 处理完成：{} / {}": "✅ Processed {} / {}", 
             "⬇️ 下载全部结果": "⬇️ Download All Results",
             "处理中发生严重错误: {}": "Critical error: {}",
-
+            "可能是内存不足。尝试减少处理的图片数量或降低图片分辨率。": "Possible memory shortage. Try reducing the number of images or lowering resolution.",
+            "可能是磁盘空间不足。请清理磁盘空间后重试。": "Possible disk space shortage. Please free up space and retry.",
+            "可能是文件权限问题。请检查应用程序是否有足够的权限。": "Possible permission issue. Please check application permissions.",
+            "请尝试重新上传图片或刷新页面。如果问题持续存在，请联系支持团队。": "Please try re-uploading images or refreshing the page. If the problem persists, contact support.",
+            
             # Image info tab
             "上传图片以查看信息": "Upload image to view info",
             "尺寸": "Dimensions", "大小": "Size",
+            "文件格式": "File Format",
+            "颜色模式": "Color Mode",
+            "分辨率": "Resolution",
+            "EXIF数据": "EXIF Data",
+            "主要颜色": "Dominant Color",
+            "颜色分布": "Color Distribution",
+            "无EXIF数据": "No EXIF Data",
+            "旋转信息": "Rotation Info",
+            "相机型号": "Camera Model",
+            "镜头型号": "Lens Model",
+            "拍摄时间": "Capture Time",
+            "焦距": "Focal Length",
+            "光圈": "Aperture",
+            "快门速度": "Shutter Speed",
+            "ISO": "ISO",
 
             # Duplicate finder tab
             "👯‍♀️ 图片去重": "👯‍♀️ Find Duplicates",
@@ -194,13 +284,37 @@ class I18NManager:
             "正在查找...": "Searching...",
             "✅ 未检测到重复图片。": "✅ No duplicates found.",
             "检测到 {} 组重复图片。": "Found {} duplicate groups.",
-
-
-
-            # History tab
+            "第{}组重复图片 ({}张):": "Group {} ({} images):",
+            "选择保留图片": "Select images to keep",
+            "仅查看缩略图": "Thumbnails Only",
+            "快速预览模式": "Quick Preview Mode",
+            
+            # Processing history tab
             "结果预览": "Result Preview",
             "文件不存在": "File not found",
             "暂无最近处理结果。": "No recent results.",
+            "上次处理时间": "Last Process Time",
+            "处理数量": "Total Images",
+            "成功数量": "Successfully Processed",
+            "处理参数": "Processing Parameters",
+            
+            # Preset configuration
+            "配置预设": "Configuration Presets",
+            "保存当前配置": "Save Current Configuration",
+            "预设名称": "Preset Name",
+            "加载预设": "Load Preset",
+            "删除预设": "Delete Preset",
+            "预设已保存": "Preset Saved",
+            "预设不存在": "Preset Does Not Exist",
+            "预设已删除": "Preset Deleted",
+            "请输入预设名称": "Please Enter Preset Name",
+            
+            # Error handling
+            "跳过非图像文件: {}": "Skipping non-image file: {}",
+            "跳过无效图像文件: {}": "Skipping invalid image file: {}",
+            "处理文件 {} 时出错: {}": "Error processing file {}: {}",
+            "请上传至少一张图片": "Please upload at least one image",
+            "请上传至少两张图片": "Please upload at least two images",
         }
     
     def get_translator(self, lang: str = "中文") -> Callable[[str], str]:
