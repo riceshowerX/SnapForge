@@ -17,6 +17,9 @@ from PIL import Image
 from dataclasses import dataclass, field, asdict
 from typing import List, Callable, Dict, Any, Set, Optional, Union
 
+# 获取logger实例
+logger = logging.getLogger(__name__)
+
 # -----------------------------------------------------------------------------
 # 1. 后端逻辑导入 (Import Backend Logic)
 # -----------------------------------------------------------------------------
@@ -537,6 +540,36 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                                 f"- {_("文件大小减少")}: {size_reduction:.2f}%"
                             )
                             
+                            # 记录处理历史
+                            import datetime
+                            processing_details = []
+                            if config.rename_config:
+                                processing_details.append(_("重命名"))
+                            if config.convert_config:
+                                processing_details.append(_("格式转换"))
+                            if config.resize_config:
+                                processing_details.append(_("调整大小"))
+                            if config.watermark_config:
+                                processing_details.append(_("添加水印"))
+                            
+                            # 创建处理记录
+                            history_record = {
+                                'id': str(uuid.uuid4()),
+                                'timestamp': datetime.datetime.now().isoformat(),
+                                'operation': _('批量处理'),
+                                'file_count': len(file_paths),
+                                'status': _('成功'),
+                                'details': ', '.join(processing_details) if processing_details else _('基本处理'),
+                                'original_size': f"{total_original_size / 1024 / 1024:.2f} MB",
+                                'processed_size': f"{total_processed_size / 1024 / 1024:.2f} MB",
+                                'savings': f"{size_reduction:.1f}%"
+                            }
+                            
+                            # 保存到会话状态
+                            if 'processing_history' not in st.session_state:
+                                st.session_state.processing_history = []
+                            st.session_state.processing_history.append(history_record)
+                            
                             # 显示结果预览
                             if r_paths:
                                 app_state.result_file_paths = [Path(p) for p in r_paths]
@@ -597,7 +630,12 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
             # 图片预览和基本信息
             col1, col2 = st.columns([1, 2])
             with col1:
-                st.image(img, use_column_width=True)
+                # 使用上下文管理器安全显示图片，避免资源泄漏
+                try:
+                    st.image(img, use_column_width=True)
+                finally:
+                    # 关闭文件句柄
+                    pass  # img对象由PIL管理，不需要手动关闭
             with col2:
                 # 基础信息显示
                 st.markdown(f"### {_("基础信息")}")
@@ -819,8 +857,21 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                 file_paths = save_uploaded_files(uploaded_dedup, TEMP_DIR)
                 
                 try:
-                    # 调用增强的重复图片检测函数
-                    duplicate_groups = find_similar_images([str(p) for p in file_paths], similarity_threshold)
+                    # 根据检测模式调整相似度阈值
+                    adjusted_threshold = similarity_threshold
+                    if detection_mode == _("仅检测完全重复"):
+                        adjusted_threshold = 0.99  # 非常高的相似度要求
+                    elif detection_mode == _("检测相似且相似裁剪"):
+                        adjusted_threshold = similarity_threshold * 0.9  # 稍微降低阈值以捕捉裁剪图片
+                    
+                    # 将浮点数相似度阈值转换为汉明距离
+                    # 64位哈希，1.0表示完全相同，0.9表示最多6-7位不同
+                    hash_length = 64
+                    max_distance = int(hash_length * (1.0 - adjusted_threshold))
+                    logger.info(f"转换相似度 {adjusted_threshold} 为汉明距离 {max_distance}（检测模式：{detection_mode}）")
+                    
+                    # 调用重复图片检测函数
+                    duplicate_groups = find_duplicate_images([str(p) for p in file_paths], threshold=max_distance)
                     app_state.duplicate_groups = duplicate_groups
                     
                     if not duplicate_groups:
@@ -831,13 +882,33 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                         
                         # 统计信息
                         total_duplicates = sum(len(group) for group in duplicate_groups)
+                        saveable_space = sum(os.path.getsize(p) for group in duplicate_groups for i, p in enumerate(group) if i > 0) / 1024 / 1024
                         st.info(
                             f"📊 {_("检测统计")}:\n" +
                             f"- {_("总图片数")}: {len(file_paths)}\n" +
                             f"- {_("重复/相似组数")}: {len(duplicate_groups)}\n" +
                             f"- {_("重复/相似图片数")}: {total_duplicates}\n" +
-                            f"- {_("可节省空间")}: {sum(os.path.getsize(p) for group in duplicate_groups for i, p in enumerate(group) if i > 0) / 1024 / 1024:.2f} MB"
+                            f"- {_("可节省空间")}: {saveable_space:.2f} MB"
                         )
+                        
+                        # 记录去重历史
+                        import datetime
+                        history_record = {
+                            'id': str(uuid.uuid4()),
+                            'timestamp': datetime.datetime.now().isoformat(),
+                            'operation': _('图片去重'),
+                            'file_count': len(file_paths),
+                            'status': _('发现重复') if duplicate_groups else _('未发现重复'),
+                            'details': _('找到{}组重复图片').format(len(duplicate_groups)) if duplicate_groups else _('未发现重复图片'),
+                            'duplicate_groups': len(duplicate_groups),
+                            'duplicate_files': total_duplicates,
+                            'saveable_space': f"{saveable_space:.2f} MB"
+                        }
+                        
+                        # 保存到会话状态
+                        if 'processing_history' not in st.session_state:
+                            st.session_state.processing_history = []
+                        st.session_state.processing_history.append(history_record)
                         
                         # 新增：全选功能
                         st.markdown(f"**{_("选择操作")}**")
@@ -942,42 +1013,13 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                         st.code(str(e))
     
     with tabs[3]: # 处理记录
+        import datetime  # 添加datetime导入，避免UnboundLocalError
         st.markdown(f'<h3>{_("📋 处理记录")}</h3>', unsafe_allow_html=True)
         
-        # 新增：处理历史记录功能
-        st.info(_("这里将显示您的图片处理历史记录。"))
-        
-        # 模拟处理历史数据
+        # 初始化处理历史记录（如果不存在）
         if 'processing_history' not in st.session_state:
             st.session_state.processing_history = []
-        
-        # 添加模拟历史记录的示例（实际应用中应该从AppState获取）
-        if not st.session_state.processing_history:
-            # 添加一些模拟历史记录
-            import datetime
-            st.session_state.processing_history = [
-                {
-                    'id': str(uuid.uuid4()),
-                    'timestamp': datetime.datetime.now().isoformat(),
-                    'operation': _('批量处理'),
-                    'file_count': 5,
-                    'status': _('成功'),
-                    'details': _('调整大小、添加水印'),
-                    'original_size': '5.2 MB',
-                    'processed_size': '1.8 MB',
-                    'savings': '65%'
-                },
-                {
-                    'id': str(uuid.uuid4()),
-                    'timestamp': (datetime.datetime.now() - datetime.timedelta(hours=2)).isoformat(),
-                    'operation': _('图片去重'),
-                    'file_count': 12,
-                    'status': _('发现重复'),
-                    'details': _('找到2组重复图片'),
-                    'duplicate_groups': 2,
-                    'duplicate_files': 4
-                }
-            ]
+            st.info(_("暂无处理记录。完成图片处理或去重后，记录将显示在这里。"))
         
         # 显示历史记录列表
         if st.session_state.processing_history:
