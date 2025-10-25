@@ -301,6 +301,7 @@ def render_processing_options(_: Callable[[str], str], app_state: AppState) -> P
         'target_ext': '.png',
         'enable_compress': True,
         'quality': 85,
+        'progressive_jpeg': True,
         'enable_resize': False,
         'width': 800,
         'height': 600,
@@ -334,14 +335,15 @@ def render_processing_options(_: Callable[[str], str], app_state: AppState) -> P
         start_num = c2.number_input(_("起始编号"), 1, 10000, config['start_num'], disabled=not enable_rename)
         naming_template = st.text_input(_("命名模板"), config['naming_template'], disabled=not enable_rename)
         
-        # 新增：优化文件大小选项
-        st.checkbox(_("渐进式JPEG"), value=True, disabled=not enable_convert or not (target_ext.lower() == '.jpg' or target_ext.lower() == '.jpeg'), help=_("生成渐进式JPEG，提高网页加载体验"))
-        
         c1, c2 = st.columns(2)
         enable_convert = c1.checkbox(_("启用格式转换"), value=config['enable_convert'])
         target_ext = c1.selectbox(_("目标格式"), [".png", ".jpg", ".webp"], index=[".png", ".jpg", ".webp"].index(config['target_ext']), disabled=not enable_convert)
         enable_compress = c2.checkbox(_("启用质量压缩"), config['enable_compress'])
         quality = c2.slider(_("压缩质量"), 1, 100, config['quality'], disabled=not enable_compress or not enable_convert)
+        
+        # 新增：优化文件大小选项
+        progressive_jpeg = st.checkbox(_("渐进式JPEG"), value=True, disabled=not enable_convert or not (target_ext.lower() == '.jpg' or target_ext.lower() == '.jpeg'), help=_(
+"生成渐进式JPEG，提高网页加载体验"))
 
     with st.expander(_("尺寸、水印与高级调整")):
         enable_resize = st.checkbox(_("启用尺寸调整"), value=config['enable_resize'])
@@ -424,6 +426,7 @@ def render_processing_options(_: Callable[[str], str], app_state: AppState) -> P
         'target_ext': target_ext,
         'enable_compress': enable_compress,
         'quality': quality,
+        'progressive_jpeg': progressive_jpeg,
         'enable_resize': enable_resize,
         'width': w,
         'height': h,
@@ -772,19 +775,28 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
         st.markdown("**" + _("检测设置") + "**")
         col1, col2 = st.columns(2)
         
-        similarity_level = col1.select_slider(
-            _("相似度级别"),
-            options=[
-                (0.80, _("宽松 (80%)")),
-                (0.85, _("较宽松 (85%)")),
-                (0.90, _("标准 (90%)")),
-                (0.95, _("严格 (95%)")),
-                (0.99, _("非常严格 (99%)"))
-            ],
-            format_func=lambda x: x[1],
-            value=(0.90, _("标准 (90%)"))
+        # 修改选项格式，使用更简单的结构
+        similarity_levels = [
+            {"value": 0.80, "label": _("宽松 (80%)")},
+            {"value": 0.85, "label": _("较宽松 (85%)")},
+            {"value": 0.90, "label": _("标准 (90%)")},
+            {"value": 0.95, "label": _("严格 (95%)")},
+            {"value": 0.99, "label": _("非常严格 (99%)")}
+        ]
+        
+        # 使用更简单的滑块设置
+        similarity_threshold = col1.slider(
+            _("相似度阈值"),
+            min_value=0.80,
+            max_value=0.99,
+            value=0.90,
+            step=0.01,
+            format="%.2f"
         )
-        similarity_threshold = similarity_level[0]
+        
+        # 根据阈值显示对应级别标签
+        selected_label = next((level["label"] for level in similarity_levels if abs(level["value"] - similarity_threshold) < 0.01), _("自定义"))
+        col1.text(f"当前级别: {selected_label}")
         
         # 新增：检测模式选择
         detection_mode = col2.selectbox(
