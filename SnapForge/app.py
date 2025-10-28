@@ -31,9 +31,11 @@ try:
         find_duplicate_images, get_exif_data, get_image_main_color,
         plot_image_histogram, select_best_image_in_group
     )
-except ImportError:
+    # 导入性能监控模块
+    from performance_monitor import performance_monitor, debug_helper, get_performance_dashboard, monitor_performance
+except ImportError as e:
     st.error(
-        "关键错误：无法找到 'logic.py' 文件。"
+        f"关键错误：无法导入必要的模块。错误: {e}"
         "请确保您已经拥有升级后的后端逻辑文件 'logic.py'，并与此应用脚本 'app.py' 放在同一目录下。"
     )
     st.stop()
@@ -191,6 +193,60 @@ class UIManager:
             <span>© 2025 <b>SnapForge</b> | {self._('由')} <a href="https://github.com/riceshowerX" target="_blank">riceshowerX</a> {self._('设计与开发')}</span>
         </div>
         """, unsafe_allow_html=True)
+    
+    def create_info_card(self, title: str, content: str, icon: str = "ℹ️"):
+        """创建信息卡片组件"""
+        st.markdown(f"""
+        <div class="res-card" style="margin: 10px 0;">
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 24px; margin-right: 10px;">{icon}</span>
+                <h4 style="margin: 0; color: #333;">{title}</h4>
+            </div>
+            <p style="margin: 0; color: #666; line-height: 1.5;">{content}</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    def create_stat_card(self, title: str, value: str, subtitle: str = "", color: str = "#406aff"):
+        """创建统计卡片组件"""
+        st.markdown(f"""
+        <div class="res-card" style="text-align: center; padding: 20px; margin: 10px 0;">
+            <div style="font-size: 32px; font-weight: bold; color: {color}; margin-bottom: 5px;">{value}</div>
+            <div style="font-size: 14px; color: #666; font-weight: 600;">{title}</div>
+            {f'<div style="font-size: 12px; color: #999; margin-top: 5px;">{subtitle}</div>' if subtitle else ''}
+        </div>
+        """, unsafe_allow_html=True)
+    
+    def create_progress_with_stats(self, current: int, total: int, success: int = 0, errors: int = 0):
+        """创建带统计信息的进度条"""
+        progress = current / total if total > 0 else 0
+        
+        col1, col2, col3 = st.columns([2, 1, 1])
+        
+        with col1:
+            st.progress(progress, text=f"处理进度: {current}/{total} ({progress*100:.1f}%)")
+        
+        with col2:
+            st.metric("成功", success, delta=f"{success/total*100:.1f}%" if total > 0 else "0%")
+        
+        with col3:
+            st.metric("错误", errors, delta=f"{errors/total*100:.1f}%" if total > 0 else "0%")
+        
+        return progress
+    
+    def create_loading_spinner(self, message: str = "处理中..."):
+        """创建加载动画"""
+        st.markdown(f"""
+        <div style="text-align: center; padding: 20px;">
+            <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #406aff; border-radius: 50%; animation: spin 2s linear infinite;"></div>
+            <p style="margin-top: 10px; color: #666;">{message}</p>
+        </div>
+        <style>
+        @keyframes spin {{
+            0% {{ transform: rotate(0deg); }}
+            100% {{ transform: rotate(360deg); }}
+        }}
+        </style>
+        """, unsafe_allow_html=True)
 
 
 # -----------------------------------------------------------------------------
@@ -259,7 +315,7 @@ def display_results_grid(image_paths: List[Path], _: Callable[[str], str], num_c
         cols = st.columns(num_columns)
         for j, col in enumerate(cols):
             if i + j < len(image_paths):
-                path = image_paths[i + j]
+                path = Path(image_paths[i + j])  # 确保转换为Path对象
                 if path.exists():
                     col.image(str(path), caption=path.name, use_container_width=True)
                 else:
@@ -469,16 +525,19 @@ def render_processing_options(_: Callable[[str], str], app_state: AppState) -> P
 # 4. 主应用渲染 (Main Application Rendering)
 # -----------------------------------------------------------------------------
 
-def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
-    tab_titles = [_("批量处理"), _("信息查看"), _("图片去重"), _("处理记录")]
+def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState, ui):
+    tab_titles = [_("批量处理"), _("信息查看"), _("图片去重"), _("处理记录"), _("性能监控")]
     tabs = st.tabs(tab_titles)
 
     with tabs[0]: # 批量处理
         processor = ImageProcessor()
-        st.markdown(f'<h3>{_("📂 上传文件")}</h3>', unsafe_allow_html=True)
         
-        # 新增：上传文件限制和提示
-        st.info(_("💡 提示：支持批量上传JPG、PNG、BMP、WebP格式图片。大文件处理可能需要更长时间。"), icon="ℹ️")
+        # 使用新的UI组件
+        ui.create_info_card(
+            _("批量图片处理"),
+            _("支持批量上传JPG、PNG、BMP、WebP格式图片，提供重命名、格式转换、尺寸调整、水印添加等丰富功能。大文件处理可能需要更长时间。"),
+            "🖼️"
+        )
         
         def on_batch_upload_change():
             app_state.result_file_paths.clear()
@@ -488,28 +547,53 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
         
         # 显示上传的文件信息
         if uploaded_files:
-            st.info(f"{_("已上传")} {len(uploaded_files)} {_("个文件")}")
+            # 计算总文件大小
+            total_size = sum(len(f.getvalue()) for f in uploaded_files) / 1024 / 1024
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                ui.create_stat_card(_("文件数量"), str(len(uploaded_files)), _("个图片文件"))
+            with col2:
+                ui.create_stat_card(_("总大小"), f"{total_size:.1f}", _("MB"))
+            with col3:
+                avg_size = total_size / len(uploaded_files) if uploaded_files else 0
+                ui.create_stat_card(_("平均大小"), f"{avg_size:.1f}", _("MB/文件"))
             
             # 显示文件列表（可选）
             if st.checkbox(_("显示文件列表")):
-                for f in uploaded_files:
-                    st.text(f.name)
+                st.markdown("**" + _("上传的文件列表") + "**")
+                for i, f in enumerate(uploaded_files, 1):
+                    file_size = len(f.getvalue()) / 1024
+                    st.text(f"{i}. {f.name} ({file_size:.1f} KB)")
         
         config = render_processing_options(_, app_state)
         if st.button(_("🚀 开始处理图片"), type="primary", use_container_width=True, disabled=not uploaded_files):
             app_state.result_file_paths.clear(); app_state.log_messages=[_("任务开始...")]
             with st.container():
-                log_area, progress_bar, result_area, dl_area = st.empty(), st.empty(), st.empty(), st.empty()
+                progress_container = st.empty()
+                result_area = st.empty()
+                stats_container = st.empty()
                 
                 # 改进的进度回调函数
-                def progress_cb(pct, filename=""):
-                    progress_text = f"{_("正在处理")}: {Path(filename).name}" if filename else _("处理中...")
-                    progress_bar.progress(pct, text=progress_text)
+                def progress_cb(pct, filename="", success_count=0, error_count=0):
+                    with progress_container:
+                        ui.create_progress_with_stats(
+                            int(pct * len(uploaded_files)), 
+                            len(uploaded_files), 
+                            success_count, 
+                            error_count
+                        )
+                        if filename:
+                            st.info(f"{_("正在处理")}: {Path(filename).name}")
                 
                 try:
                     # 预处理验证
                     if len(uploaded_files) > 100:
-                        st.warning(_("⚠️ 上传文件过多，可能会导致处理时间较长。建议分批处理。"))
+                        ui.create_info_card(
+                            _("文件数量提醒"),
+                            _("上传文件较多，处理时间可能较长。建议分批处理以获得更好的体验。"),
+                            "⚠️"
+                        )
                     
                     file_paths = save_uploaded_files(uploaded_files, TEMP_DIR)
                     
@@ -518,9 +602,15 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                         return
                     
                     with st.spinner(_("图片并行处理中...")):
-                        result_area.info(_("使用 {} 核心加速...").format(config.num_processes), icon="⏳")
+                        result_area.info(_("使用 {} 核心加速处理...").format(config.num_processes), icon="⏳")
+                        
+                        # 初始化进度显示
+                        progress_cb(0, "", 0, 0)
+                        
                         p, t, r_paths = processor.batch_process([str(p) for p in file_paths], str(TEMP_DIR), config, progress_cb)
-                        progress_bar.progress(1.0, text=_("处理完成！"))
+                        
+                        # 处理完成
+                        progress_cb(1.0, _("处理完成"), p, t-p)
                         
                         if not r_paths:
                             result_area.error(_("❌ 未成功处理任何图片。"))
@@ -532,13 +622,27 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                             total_processed_size = sum(f.stat().st_size for f in [Path(p) for p in r_paths] if f.exists())
                             size_reduction = ((total_original_size - total_processed_size) / total_original_size * 100) if total_original_size > 0 else 0
                             
-                            # 显示统计信息
-                            st.info(
-                                f"📊 {_("处理统计")}:\n" +
-                                f"- {_("原始总大小")}: {total_original_size / 1024 / 1024:.2f} MB\n" +
-                                f"- {_("处理后总大小")}: {total_processed_size / 1024 / 1024:.2f} MB\n" +
-                                f"- {_("文件大小减少")}: {size_reduction:.2f}%"
-                            )
+                            # 使用新的统计卡片显示信息
+                            with stats_container:
+                                col1, col2, col3 = st.columns(3)
+                                with col1:
+                                    ui.create_stat_card(
+                                        _("原始大小"), 
+                                        f"{total_original_size / 1024 / 1024:.1f}", 
+                                        _("MB")
+                                    )
+                                with col2:
+                                    ui.create_stat_card(
+                                        _("处理后大小"), 
+                                        f"{total_processed_size / 1024 / 1024:.1f}", 
+                                        _("MB")
+                                    )
+                                with col3:
+                                    ui.create_stat_card(
+                                        _("节省空间"), 
+                                        f"{size_reduction:.1f}", 
+                                        _("%")
+                                    )
                             
                             # 记录处理历史
                             import datetime
@@ -573,13 +677,29 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                             # 显示结果预览
                             if r_paths:
                                 app_state.result_file_paths = [Path(p) for p in r_paths]
-                                dl_area.download_button(
-                                    _("⬇️ 下载全部结果"), 
-                                    pack_files_to_zip(app_state.result_file_paths), 
-                                    "processed.zip",
-                                    use_container_width=True,
-                                    help=_("下载所有处理后的图片文件")
+                                
+                                # 使用信息卡片显示处理完成
+                                ui.create_info_card(
+                                    _("处理完成"),
+                                    _("所有图片已处理完成，您可以查看处理结果或下载文件。"),
+                                    "✅"
                                 )
+                                
+                                # 显示处理结果网格
+                                st.subheader(_("📸 处理结果"))
+                                display_results_grid(r_paths, _)
+                                
+                                # 打包下载功能
+                                st.subheader(_("📦 下载处理结果"))
+                                zip_buffer = pack_files_to_zip(app_state.result_file_paths)
+                                if zip_buffer:
+                                    st.download_button(
+                                        label=_("📥 下载所有处理后的图片"),
+                                        data=zip_buffer,
+                                        file_name="processed_images.zip",
+                                        mime="application/zip",
+                                        use_container_width=True
+                                    )
                 except Exception as e: 
                     st.error(_("处理中发生严重错误: {}").format(e), icon="❗")
                     
@@ -623,6 +743,13 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
             # 清空信息查看相关的状态
             pass  # 信息查看是实时显示的，不需要持久化状态
         
+        # 使用信息卡片作为标题
+        ui.create_info_card(
+            _("图片信息查看"),
+            _("上传图片文件，查看详细的图片信息、EXIF数据和颜色统计。"),
+            "🔍"
+        )
+        
         uploaded_info = st.file_uploader(_("上传图片以查看信息"), type=["jpg","png","bmp","webp"], key="info_upload", on_change=on_info_upload_change)
         if uploaded_info:
             p = save_uploaded_files([uploaded_info], TEMP_DIR)[0]; img=Image.open(p)
@@ -644,12 +771,18 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                 file_size = os.path.getsize(p) / 1024
                 file_size_text = f"{file_size:.2f} KB" if file_size < 1024 else f"{file_size/1024:.2f} MB"
                 
+                # 使用统计卡片显示关键信息
+                col_size, col_dim, col_format = st.columns(3)
+                with col_size:
+                    ui.create_stat_card(_("文件大小"), file_size_text.split()[0], file_size_text.split()[1])
+                with col_dim:
+                    ui.create_stat_card(_("图片尺寸"), f"{img.width}×{img.height}", _("像素"))
+                with col_format:
+                    ui.create_stat_card(_("图片格式"), img.format or "未知", "")
+                
+                # 详细信息列表
                 info_data = [
                     (_("文件名称"), uploaded_info.name),
-                    (_("文件大小"), file_size_text),
-                    (_("图片尺寸"), f"{img.width} × {img.height}"),
-                    (_("分辨率"), f"{img.width} × {img.height} ({img.width * img.height:,} 像素)"),
-                    (_("图片格式"), img.format),
                     (_("色彩模式"), img.mode),
                     (_("位深度"), str(len(img.getbands()) * 8) if img.mode != 'P' else '8（索引色）')
                 ]
@@ -785,8 +918,12 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                 st.info(_("颜色统计功能暂不可用或不支持该图片格式"))
     
     with tabs[2]: # 图片去重
-        st.markdown(f'<h3>{_("🔍 图片去重")}</h3>', unsafe_allow_html=True)
-        st.info(_("上传多张图片，系统将自动检测相似或重复的图片。支持JPG、PNG、BMP、WebP格式。"))
+        # 使用信息卡片作为标题
+        ui.create_info_card(
+            _("图片去重检测"),
+            _("上传多张图片，系统将自动检测相似或重复的图片。支持JPG、PNG、BMP、WebP格式。"),
+            "🔍"
+        )
         
         def on_dedup_upload_change():
             app_state.duplicate_groups.clear()
@@ -802,7 +939,13 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
         
         # 显示已上传图片数量
         if uploaded_dedup:
-            st.info(f"{_("已上传")} {len(uploaded_dedup)} {_("张图片")}")
+            # 使用统计卡片显示上传信息
+            col1, col2 = st.columns(2)
+            with col1:
+                ui.create_stat_card(_("已上传图片"), str(len(uploaded_dedup)), _("张"))
+            with col2:
+                total_size = sum(f.size for f in uploaded_dedup) / 1024 / 1024
+                ui.create_stat_card(_("总大小"), f"{total_size:.1f}", _("MB"))
             
             # 可选：显示图片列表
             if st.checkbox(_("显示上传的图片列表")):
@@ -875,21 +1018,32 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                     app_state.duplicate_groups = duplicate_groups
                     
                     if not duplicate_groups:
-                        st.success(_("✅ 未发现重复或相似图片"))
-                        st.info(_("提示：尝试降低相似度阈值可能会发现更多相似图片。"))
+                        ui.create_info_card(
+                            _("检测完成"),
+                            _("未发现重复或相似图片。尝试降低相似度阈值可能会发现更多相似图片。"),
+                            "✅"
+                        )
                     else:
-                        st.warning(_("⚠️ 发现 {} 组重复或相似图片").format(len(duplicate_groups)))
+                        ui.create_info_card(
+                            _("发现重复图片"),
+                            _("检测到{}组重复或相似图片，请查看下面的详细结果。").format(len(duplicate_groups)),
+                            "⚠️"
+                        )
                         
                         # 统计信息
                         total_duplicates = sum(len(group) for group in duplicate_groups)
                         saveable_space = sum(os.path.getsize(p) for group in duplicate_groups for i, p in enumerate(group) if i > 0) / 1024 / 1024
-                        st.info(
-                            f"📊 {_("检测统计")}:\n" +
-                            f"- {_("总图片数")}: {len(file_paths)}\n" +
-                            f"- {_("重复/相似组数")}: {len(duplicate_groups)}\n" +
-                            f"- {_("重复/相似图片数")}: {total_duplicates}\n" +
-                            f"- {_("可节省空间")}: {saveable_space:.2f} MB"
-                        )
+                        
+                        # 使用统计卡片显示检测结果
+                        col1, col2, col3, col4 = st.columns(4)
+                        with col1:
+                            ui.create_stat_card(_("总图片数"), str(len(file_paths)), "")
+                        with col2:
+                            ui.create_stat_card(_("重复组数"), str(len(duplicate_groups)), "")
+                        with col3:
+                            ui.create_stat_card(_("重复图片数"), str(total_duplicates), "")
+                        with col4:
+                            ui.create_stat_card(_("可节省空间"), f"{saveable_space:.1f}", _("MB"))
                         
                         # 记录去重历史
                         import datetime
@@ -1014,29 +1168,56 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
     
     with tabs[3]: # 处理记录
         import datetime  # 添加datetime导入，避免UnboundLocalError
-        st.markdown(f'<h3>{_("📋 处理记录")}</h3>', unsafe_allow_html=True)
+        
+        # 使用信息卡片作为标题
+        ui.create_info_card(
+            _("处理记录"),
+            _("查看历史处理记录，包括批量处理和图片去重的详细信息。"),
+            "📋"
+        )
         
         # 初始化处理历史记录（如果不存在）
         if 'processing_history' not in st.session_state:
             st.session_state.processing_history = []
-            st.info(_("暂无处理记录。完成图片处理或去重后，记录将显示在这里。"))
+            ui.create_info_card(
+                _("暂无记录"),
+                _("完成图片处理或去重后，记录将显示在这里。"),
+                "ℹ️"
+            )
         
         # 显示历史记录列表
         if st.session_state.processing_history:
+            # 显示统计信息
+            total_records = len(st.session_state.processing_history)
+            processing_count = sum(1 for r in st.session_state.processing_history if r['operation'] == _('批量处理'))
+            dedup_count = sum(1 for r in st.session_state.processing_history if r['operation'] == _('图片去重'))
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                ui.create_stat_card(_("总记录数"), str(total_records), "")
+            with col2:
+                ui.create_stat_card(_("处理记录"), str(processing_count), "")
+            with col3:
+                ui.create_stat_card(_("去重记录"), str(dedup_count), "")
+            
             for record in reversed(st.session_state.processing_history):
-                with st.expander(f"**{record['operation']}** - {datetime.datetime.fromisoformat(record['timestamp']).strftime('%Y-%m-%d %H:%M:%S')}"):
-                    col1, col2 = st.columns(2)
-                    col1.text(f"{_("状态")}: {record['status']}")
-                    col1.text(f"{_("文件数量")}: {record['file_count']}")
-                    col1.text(f"{_("详情")}: {record['details']}")
-                    
-                    if 'original_size' in record:
-                        col2.text(f"{_("原始大小")}: {record['original_size']}")
-                        col2.text(f"{_("处理后大小")}: {record['processed_size']}")
-                        col2.text(f"{_("节省空间")}: {record['savings']}")
-                    elif 'duplicate_groups' in record:
-                        col2.text(f"{_("重复组数")}: {record['duplicate_groups']}")
-                        col2.text(f"{_("重复文件数")}: {record['duplicate_files']}")
+                # 使用卡片样式显示每条记录
+                with st.container():
+                    st.markdown(f"""
+                    <div style="border: 1px solid #ddd; border-radius: 10px; padding: 15px; margin: 10px 0; background: #f9f9f9;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4 style="margin: 0; color: #333;">{record['operation']}</h4>
+                            <span style="color: #666; font-size: 0.9em;">{datetime.datetime.fromisoformat(record['timestamp']).strftime('%Y-%m-%d %H:%M:%S')}</span>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                                <div><strong>{_("状态")}:</strong> {record['status']}</div>
+                                <div><strong>{_("文件数量")}:</strong> {record['file_count']}</div>
+                                <div><strong>{_("详情")}:</strong> {record['details']}</div>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                     # 添加操作按钮
                     col1, col2 = st.columns(2)
@@ -1044,15 +1225,171 @@ def main_app(_: Callable[[str], str], TEMP_DIR: Path, app_state: AppState):
                         st.info(_("此功能正在开发中：显示详细的处理日志和参数。"))
                     if col2.button(_("重新应用"), key=f"reapply_{record['id']}", use_container_width=True):
                         st.info(_("此功能正在开发中：将相同的处理参数应用到新的文件。"))
+                    
+                    st.markdown("---")
         else:
-            st.info(_("暂无处理记录。完成图片处理后，记录将显示在这里。"))
+            ui.create_info_card(
+                _("暂无记录"),
+                _("完成图片处理后，记录将显示在这里。"),
+                "ℹ️"
+            )
         
         # 清除历史记录按钮
-        if st.button(_("清除所有历史记录"), type="secondary", disabled=not st.session_state.processing_history):
-            if st.checkbox(_("确定要清除所有历史记录吗？此操作不可恢复。"), key="confirm_clear"):
-                st.session_state.processing_history = []
-                st.success(_("历史记录已清除"))
-                st.rerun()
+        if st.session_state.processing_history:
+            if st.button(_("清除所有历史记录"), type="secondary", use_container_width=True):
+                if st.checkbox(_("确定要清除所有历史记录吗？此操作不可恢复。"), key="confirm_clear"):
+                    st.session_state.processing_history = []
+                    st.success(_("历史记录已清除"))
+                    st.rerun()
+    
+    with tabs[4]: # 性能监控
+        # 使用信息卡片作为标题
+        ui.create_info_card(
+            _("性能监控"),
+            _("实时监控系统性能指标，包括内存使用、处理时间和系统资源。"),
+            "📊"
+        )
+        
+        # 性能监控控制面板
+        st.subheader(_("性能监控控制"))
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if st.button(_("开始监控"), use_container_width=True):
+                performance_monitor.start_monitoring()
+                st.success(_("性能监控已启动"))
+        
+        with col2:
+            if st.button(_("停止监控"), use_container_width=True):
+                performance_monitor.stop_monitoring()
+                st.success(_("性能监控已停止"))
+        
+        with col3:
+            if st.button(_("重置数据"), use_container_width=True):
+                performance_monitor.reset_data()
+                st.success(_("监控数据已重置"))
+        
+        # 实时性能指标
+        st.subheader(_("实时性能指标"))
+        
+        # 获取当前性能数据
+        current_stats = performance_monitor.get_current_stats()
+        
+        if current_stats:
+            # 显示关键指标
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                ui.create_stat_card(
+                    _("内存使用率"), 
+                    f"{current_stats.get('memory_percent', 0):.1f}%", 
+                    _("系统内存")
+                )
+            
+            with col2:
+                ui.create_stat_card(
+                    _("CPU使用率"), 
+                    f"{current_stats.get('cpu_percent', 0):.1f}%", 
+                    _("系统CPU")
+                )
+            
+            with col3:
+                ui.create_stat_card(
+                    _("磁盘使用率"), 
+                    f"{current_stats.get('disk_percent', 0):.1f}%", 
+                    _("临时目录")
+                )
+            
+            with col4:
+                ui.create_stat_card(
+                    _("处理时间"), 
+                    f"{current_stats.get('processing_time', 0):.2f}s", 
+                    _("最近操作")
+                )
+            
+            # 性能图表
+            st.subheader(_("性能趋势"))
+            
+            # 获取历史数据
+            history_data = performance_monitor.get_history()
+            
+            if history_data:
+                # 创建图表数据
+                timestamps = [h['timestamp'] for h in history_data]
+                memory_data = [h['memory_percent'] for h in history_data]
+                cpu_data = [h['cpu_percent'] for h in history_data]
+                
+                # 显示内存使用趋势
+                st.line_chart(
+                    data={
+                        _("时间"): timestamps,
+                        _("内存使用率%"): memory_data,
+                        _("CPU使用率%"): cpu_data
+                    },
+                    x=_("时间")
+                )
+            
+            # 性能阈值设置
+            st.subheader(_("性能阈值设置"))
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                memory_threshold = st.slider(
+                    _("内存使用阈值 (%)："),
+                    min_value=50,
+                    max_value=95,
+                    value=80,
+                    help=_("当内存使用超过此阈值时发出警告")
+                )
+            
+            with col2:
+                cpu_threshold = st.slider(
+                    _("CPU使用阈值 (%)："),
+                    min_value=50,
+                    max_value=95,
+                    value=85,
+                    help=_("当CPU使用超过此阈值时发出警告")
+                )
+            
+            # 检查阈值
+            if current_stats.get('memory_percent', 0) > memory_threshold:
+                st.warning(_("⚠️ 内存使用率过高！建议优化内存使用或增加系统内存。"))
+            
+            if current_stats.get('cpu_percent', 0) > cpu_threshold:
+                st.warning(_("⚠️ CPU使用率过高！建议优化处理逻辑或减少并发任务。"))
+        else:
+            st.info(_("性能监控未启动，请点击'开始监控'按钮启动性能监控。"))
+        
+        # 调试工具
+        st.subheader(_("调试工具"))
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button(_("内存快照"), use_container_width=True):
+                snapshot = debug_helper.take_memory_snapshot()
+                st.success(_("内存快照已创建"))
+                with st.expander(_("查看内存快照")):
+                    st.json(snapshot)
+        
+        with col2:
+            if st.button(_("系统信息"), use_container_width=True):
+                system_info = debug_helper.get_system_info()
+                st.success(_("系统信息已获取"))
+                with st.expander(_("查看系统信息")):
+                    st.json(system_info)
+        
+        # 性能优化建议
+        st.subheader(_("性能优化建议"))
+        
+        suggestions = performance_monitor.get_optimization_suggestions()
+        
+        if suggestions:
+            for suggestion in suggestions:
+                st.info(f"💡 {suggestion}")
+        else:
+            st.info(_("系统性能良好，暂无优化建议。"))
 
 # --- 运行主应用并渲染页脚 ---
 def run():
@@ -1088,7 +1425,7 @@ def run():
         ui.load_resources()
 
         st.markdown('<div class="main-card">', unsafe_allow_html=True)
-        main_app(_, TEMP_DIR, app_state)
+        main_app(_, TEMP_DIR, app_state, ui)
         st.markdown('</div>', unsafe_allow_html=True)
         
         ui.display_footer()

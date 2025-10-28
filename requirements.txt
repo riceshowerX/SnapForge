@@ -9,3 +9,4 @@ tqdm
 Pillow_heif
 pyyaml
 click
+altair<5.0

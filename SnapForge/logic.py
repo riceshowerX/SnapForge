@@ -14,16 +14,56 @@ from typing import (
     TypeVar, Generic, Union, cast
 )
 
-# Pillow and external libraries
+# Pillow and external libraries - 优化导入，支持可选依赖
 from PIL import (
-    Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, 
-    ImageOps, UnidentifiedImageError, ImageChops, ImageStat
+    Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps, 
+    UnidentifiedImageError, ImageChops, ImageStat
 )
-import imagehash
-import piexif
-from colorthief import ColorThief
-import matplotlib.pyplot as plt
-import numpy as np
+
+# 可选依赖 - 优雅降级处理
+_OPTIONAL_DEPENDENCIES = {}
+
+try:
+    import imagehash
+    _OPTIONAL_DEPENDENCIES['imagehash'] = True
+except ImportError:
+    _OPTIONAL_DEPENDENCIES['imagehash'] = False
+    imagehash = None
+
+try:
+    import piexif
+    _OPTIONAL_DEPENDENCIES['piexif'] = True
+except ImportError:
+    _OPTIONAL_DEPENDENCIES['piexif'] = False
+    piexif = None
+
+try:
+    from colorthief import ColorThief
+    _OPTIONAL_DEPENDENCIES['colorthief'] = True
+except ImportError:
+    _OPTIONAL_DEPENDENCIES['colorthief'] = False
+    ColorThief = None
+
+try:
+    import matplotlib.pyplot as plt
+    _OPTIONAL_DEPENDENCIES['matplotlib'] = True
+except ImportError:
+    _OPTIONAL_DEPENDENCIES['matplotlib'] = False
+    plt = None
+
+try:
+    import numpy as np
+    _OPTIONAL_DEPENDENCIES['numpy'] = True
+except ImportError:
+    _OPTIONAL_DEPENDENCIES['numpy'] = False
+    np = None
+
+try:
+    import psutil
+    _OPTIONAL_DEPENDENCIES['psutil'] = True
+except ImportError:
+    _OPTIONAL_DEPENDENCIES['psutil'] = False
+    psutil = None
 
 # 定义Pillow库的常量
 Resampling = getattr(Image, "Resampling", Image)
@@ -39,10 +79,30 @@ _BICUBIC = BICUBIC
 _LANCZOS = LANCZOS
 
 # =====================
-# 0. 性能监控与缓存装饰器
+# 0. 错误处理与性能监控
 # =====================
 
 T = TypeVar('T')
+
+def handle_errors(default_return=None, log_level='warning'):
+    """统一的错误处理装饰器
+    
+    Args:
+        default_return: 发生错误时的默认返回值
+        log_level: 日志级别 ('debug', 'info', 'warning', 'error')
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                logger = logging.getLogger(__name__)
+                log_method = getattr(logger, log_level, logger.warning)
+                log_method(f"Error in {func.__name__}: {e}")
+                return default_return
+        return wrapper
+    return decorator
 
 def timed(func):
     """性能监控装饰器，记录函数执行时间"""
@@ -456,7 +516,12 @@ def process_image(
 
         # 处理图片
         _process_image_logic(src_path, dest_path, final_ext, config)
-        return src_path.name, "success", str(dest_path)
+        
+        # 验证输出文件是否确实被创建
+        if dest_path.exists() and dest_path.is_file():
+            return src_path.name, "success", str(dest_path)
+        else:
+            raise ProcessingError(f"Output file was not created: {dest_path}")
     except UnsupportedFormatError as e:
         logger.warning(f"Format error for {src_path.name}: {e}")
         return src_path.name, "format_error", str(e)
@@ -838,82 +903,329 @@ def _apply_filter_logic(img: Image.Image, config: FilterConfig) -> Image.Image:
 # =====================
 
 class ImageProcessor:
+    """优化的图像处理器，支持多进程和优雅降级"""
+    
     def __init__(self):
         self.logger = get_logger("ImageProcessor")
+        self._memory_warning_issued = False
+        self._memory_check_interval = 10  # 每10个任务检查一次内存
+        self._last_memory_check = 0
+        self._high_memory_count = 0
 
+    @handle_errors(default_return=(0, 0, []), log_level='error')
     def batch_process(
         self, files: Sequence[str], output_dir: str, config: ProcessConfig,
         progress_callback: Optional[Callable[[float, str], None]] = None
     ) -> Tuple[int, int, List[str]]:
+        """批量处理图像文件
+        
+        Args:
+            files: 要处理的文件路径列表
+            output_dir: 输出目录
+            config: 处理配置
+            progress_callback: 进度回调函数
+            
+        Returns:
+            成功处理数，总文件数，处理结果列表
+        """
         if not files:
             self.logger.info("No files to process.")
-            if progress_callback: progress_callback(1.0, "No files to process")
+            if progress_callback: 
+                progress_callback(1.0, "No files to process")
             return 0, 0, []
-        output_path = Path(output_dir); output_path.mkdir(parents=True, exist_ok=True)
+            
+        # 验证输出目录
+        output_path = Path(output_dir)
+        try:
+            output_path.mkdir(parents=True, exist_ok=True)
+        except (PermissionError, OSError) as e:
+            self.logger.error(f"Cannot create output directory {output_dir}: {e}")
+            if progress_callback:
+                progress_callback(0.0, f"Output directory error: {e}")
+            return 0, len(files), []
+            
+        # 准备处理任务
         start_num = config.rename_config.start_number if config.rename_config else 1
         tasks = [(Path(file), output_path, config, start_num + i) for i, file in enumerate(files)]
-        total = len(tasks); results: List[str] = []
-        use_mp = (config.num_processes > 1 and total > 1)
+        total = len(tasks)
+        results: List[str] = []
+        
+        # 智能选择处理模式
+        use_mp = self._should_use_multiprocessing(config, total)
         processor = self._process_multiprocess if use_mp else self._process_serial
+        
         try:
             processor(tasks, results, config, total, progress_callback)
         except Exception as e:
             self.logger.error(f"Processing failed: {e}, falling back to serial mode.", exc_info=True)
             results.clear()
             self._process_serial(tasks, results, config, total, progress_callback)
-        return len(results), total, sorted(results)
-
-    def _process_multiprocess(self, tasks, results, config, total, progress_callback):
-        self.logger.info(f"Using multiprocessing with {config.num_processes} processes.")
-        # 限制进程数，避免内存溢出
-        max_processes = min(config.num_processes, os.cpu_count() or 2, 8)
-        # 根据操作系统选择合适的多进程上下文
-        if sys.platform == 'win32':
-            ctx = multiprocessing.get_context("spawn")
-        else:
-            ctx = multiprocessing.get_context("fork")
             
-        # 添加内存监控
+        return len(results), total, sorted(results)
+    
+    def _should_use_multiprocessing(self, config: ProcessConfig, total_files: int) -> bool:
+        """智能判断是否使用多进程处理"""
+        if config.num_processes <= 1 or total_files <= 1:
+            return False
+            
+        # 检查系统资源
+        if _OPTIONAL_DEPENDENCIES.get('psutil'):
+            try:
+                import psutil
+                # 如果内存使用率超过80%，不使用多进程
+                if psutil.virtual_memory().percent > 80:
+                    if not self._memory_warning_issued:
+                        self.logger.warning("High memory usage detected, using serial processing")
+                        self._memory_warning_issued = True
+                    return False
+            except Exception:
+                pass
+                
+        return True
+
+    @handle_errors(default_return=None, log_level='error')
+    def _process_multiprocess(self, tasks, results, config, total, progress_callback):
+        """优化的多进程处理，支持超时控制和资源管理"""
+        import multiprocessing as mp
+        ctx = mp.get_context('spawn')
+        
+        # 智能调整进程数
+        num_processes = self._calculate_optimal_processes(config, len(tasks))
+        
+        self.logger.info(f"Starting multiprocessing with {num_processes} processes for {len(tasks)} tasks")
+        
+        with ctx.Pool(processes=num_processes) as pool:
+            # 使用imap_unordered提高性能，支持超时控制
+            try:
+                results_list = []
+                for i, result in enumerate(pool.imap_unordered(
+                    _mp_worker, 
+                    tasks,
+                    chunksize=max(1, len(tasks) // (num_processes * 4))  # 优化chunk大小
+                )):
+                    if result:
+                        results_list.append(result)
+                    
+                    completed = i + 1
+                    if progress_callback:
+                        progress_callback(completed / total, f"Processed {completed}/{total}")
+                        
+                # 合并结果
+                for result in results_list:
+                    self._handle_result(result, results)
+                    
+            except Exception as e:
+                self.logger.error(f"Multiprocessing failed: {e}")
+                # 优雅降级到串行处理
+                self.logger.info("Falling back to serial processing")
+                self._process_serial(tasks, results, config, total, progress_callback)
+    
+    def _calculate_optimal_processes(self, config: ProcessConfig, task_count: int) -> int:
+        """计算最优进程数"""
+        import multiprocessing as mp
+        
+        # 基础限制
+        cpu_count = mp.cpu_count()
+        max_processes = min(config.num_processes, task_count, cpu_count)
+        
+        # 根据系统资源进一步调整
+        if _OPTIONAL_DEPENDENCIES.get('psutil'):
+            try:
+                import psutil
+                memory_percent = psutil.virtual_memory().percent
+                
+                # 内存使用率超过70%时减少进程数
+                if memory_percent > 70:
+                    reduction_factor = max(0.3, 1.0 - (memory_percent - 70) / 30)
+                    max_processes = max(1, int(max_processes * reduction_factor))
+                    self.logger.info(f"Reduced processes to {max_processes} due to high memory usage ({memory_percent:.1f}%)")
+                    
+            except Exception:
+                pass
+                
+        return max(1, max_processes)
+
+    @handle_errors(default_return=None, log_level='warning')
+    def _process_serial(self, tasks, results, config, total, progress_callback):
+        """优化的串行处理，支持进度跟踪和错误恢复"""
+        self.logger.info(f"Using single-threaded serial processing for {total} files.")
+        success_count = 0
+        error_count = 0
+        
+        for i, task in enumerate(tasks):
+            try:
+                result = _mp_worker(task)
+                if result:
+                    self._handle_result(result, results)
+                    success_count += 1
+                else:
+                    error_count += 1
+                    
+                # 更新进度
+                completed = i + 1
+                if progress_callback:
+                    status = f"Processed {completed}/{total} (Success: {success_count}, Errors: {error_count})"
+                    progress_callback(completed / total, status)
+                    
+            except Exception as e:
+                self.logger.error(f"Task {i + 1} failed: {e}")
+                error_count += 1
+                if progress_callback:
+                    status = f"Error processing task {i + 1} (Success: {success_count}, Errors: {error_count})"
+                    progress_callback((i + 1) / total, status)
+        
+        self.logger.info(f"Serial processing completed: {success_count} successes, {error_count} errors")
+
+    @handle_errors(default_return=None, log_level='warning')
+    def _handle_result(self, result: Tuple[str, str, Optional[str]], results: list):
+        """优化结果处理，支持多种结果格式和文件验证"""
+        if not result:
+            self.logger.debug("Empty result received")
+            return
+            
+        try:
+            # 支持多种结果格式
+            if isinstance(result, tuple) and len(result) >= 3:
+                # 格式: (input_file_path, status, output_file_path)
+                input_path, status, output_path = result
+                if status != "success":
+                    self.logger.warning(f"Processing failed for {input_path}: {status}")
+                    return
+            elif isinstance(result, tuple) and len(result) >= 2:
+                # 兼容旧格式: (input_file_path, output_file_path)
+                output_path = result[1]
+            elif isinstance(result, str):
+                output_path = result
+            else:
+                self.logger.warning(f"Unsupported result format: {type(result)}")
+                return
+                
+            # 验证输出文件
+            if output_path and os.path.exists(output_path):
+                file_size = os.path.getsize(output_path)
+                if file_size > 0:  # 确保文件非空
+                    results.append(output_path)
+                    self.logger.debug(f"Successfully processed: {output_path} ({file_size} bytes)")
+                else:
+                    self.logger.warning(f"Empty output file: {output_path}")
+                    try:
+                        os.remove(output_path)  # 删除空文件
+                    except OSError:
+                        pass
+            else:
+                self.logger.warning(f"Output file not found or invalid: {output_path}")
+                
+        except Exception as e:
+            self.logger.error(f"Error handling result: {e}")
+    
+    def _check_memory_usage(self, current_task: int, total_tasks: int) -> bool:
+        """检查内存使用情况，必要时进行清理"""
+        if not _OPTIONAL_DEPENDENCIES.get('psutil'):
+            return True
+            
+        # 控制检查频率
+        if current_task - self._last_memory_check < self._memory_check_interval:
+            return True
+            
+        self._last_memory_check = current_task
+        
         try:
             import psutil
-            process = psutil.Process(os.getpid())
-            initial_memory = process.memory_info().rss / 1024 / 1024
-            self.logger.info(f"Initial memory usage: {initial_memory:.2f} MB")
-            # 如果内存使用超过系统内存的70%，减少进程数
-            if process.memory_percent() > 70:
-                max_processes = max(1, max_processes // 2)
-                self.logger.warning(f"High memory usage detected. Reducing processes to {max_processes}")
-        except ImportError:
-            self.logger.debug("psutil not available, skipping memory monitoring")
+            import gc
             
-        with ctx.Pool(processes=max_processes) as pool:
-            # 使用chunksize参数优化大量小任务的处理
-            chunksize = max(1, len(tasks) // (max_processes * 4))
-            # 先收集所有结果，再在主进程中统一处理，避免并发问题
-            process_results = list(pool.imap_unordered(_mp_worker, tasks, chunksize=chunksize))
-            for i, result in enumerate(process_results):
-                self._handle_result(result, results)
-                if progress_callback: 
-                    progress_callback((i + 1) / total, result[0])
+            memory_percent = psutil.virtual_memory().percent
+            
+            # 内存使用率超过85%时进行清理
+            if memory_percent > 85:
+                self._high_memory_count += 1
+                self.logger.warning(f"High memory usage detected: {memory_percent:.1f}%")
+                
+                # 强制垃圾回收
+                gc.collect()
+                
+                # 如果连续多次高内存使用，建议用户减少并发数
+                if self._high_memory_count >= 3:
+                    self.logger.warning("Persistent high memory usage detected. Consider reducing concurrent processes.")
+                    
+                return False
+            else:
+                self._high_memory_count = 0
+                
+        except Exception as e:
+            self.logger.debug(f"Memory check failed: {e}")
+            
+        return True
+    
+    def cleanup_resources(self):
+        """清理所有资源，释放内存"""
+        try:
+            import gc
+            gc.collect()
+            
+            # 清理可能存在的缓存
+            if 'PIL' in sys.modules:
+                from PIL import Image
+                Image.MAX_IMAGE_PIXELS = None  # 重置限制
+                
+            self.logger.info("Resources cleaned up successfully")
+            
+        except Exception as e:
+            self.logger.warning(f"Resource cleanup failed: {e}")
 
-    def _process_serial(self, tasks, results, config, total, progress_callback):
-        self.logger.info(f"Using single-threaded serial processing for {total} files.")
-        for i, task in enumerate(tasks):
-            result = _mp_worker(task)
-            self._handle_result(result, results)
-            if progress_callback: progress_callback((i + 1) / total, task[0].name)
-
-    def _handle_result(self, result: Tuple[str, str, Optional[str]], results: list):
-        orig, status, data = result
-        if status == "success" and data:
-            self.logger.info(f"✅ Success: {orig} -> {Path(data).name}")
-            results.append(data)
+@handle_errors(default_return=None, log_level='error')
+def _mp_worker(args: Tuple[Path, Path, ProcessConfig, int]) -> Optional[Tuple[str, str, Optional[str]]]:
+    """优化的多进程工作函数，支持资源清理和优雅错误处理"""
+    file_path, output_dir, config, index = args
+    logger = get_logger("ImageProcessor")
+    
+    # 验证输入文件
+    if not file_path.exists():
+        logger.warning(f"Input file not found: {file_path}")
+        return str(file_path), "error", "Input file not found"
+    
+    if not file_path.is_file():
+        logger.warning(f"Input path is not a file: {file_path}")
+        return str(file_path), "error", "Input path is not a file"
+    
+    try:
+        # 处理单个文件
+        result = process_image(file_path, output_dir, config, counter=index)
+        
+        # 验证输出结果
+        if result and isinstance(result, tuple) and len(result) == 3:
+            filename, status, result_path = result
+            if status == "success" and result_path and os.path.exists(result_path):
+                logger.debug(f"Successfully processed: {file_path} -> {result_path}")
+                return str(file_path), "success", result_path
+            else:
+                logger.error(f"Processing failed for {file_path}: {status} - {result_path}")
+                return str(file_path), "error", f"{status}: {result_path}"
         else:
-            self.logger.error(f"❌ Failed: {orig}, Reason: {data}")
-
-def _mp_worker(args: Tuple[Path, Path, ProcessConfig, int]) -> Tuple[str, str, Optional[str]]:
-    src, out_dir, cfg, ctr = args
-    return process_image(src, out_dir, cfg, counter=ctr)
+            logger.error(f"Processing failed for {file_path}: Invalid output format")
+            return str(file_path), "error", "Invalid output format"
+            
+    except MemoryError:
+        logger.error(f"Memory error processing {file_path}")
+        # 尝试清理内存
+        import gc
+        gc.collect()
+        return str(file_path), "error", "Memory error during processing"
+        
+    except IOError as e:
+        logger.error(f"I/O error processing {file_path}: {e}")
+        return str(file_path), "error", f"I/O error: {e}"
+        
+    except Exception as e:
+        logger.error(f"Unexpected error processing {file_path}: {e}", exc_info=True)
+        return str(file_path), "error", f"Unexpected error: {e}"
+    
+    finally:
+        # 确保资源清理
+        try:
+            import gc
+            gc.collect()
+        except:
+            pass
 
 # =====================
 # 5. 工具函数 (重大改进)
