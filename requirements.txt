@@ -1,5 +1,6 @@
 streamlit
 Pillow
+psutil
 imagehash
 piexif
 colorthief
