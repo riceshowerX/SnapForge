@@ -14,6 +14,7 @@
 | 样式 | Tailwind CSS 4 + shadcn/ui |
 | 状态管理 | Zustand (persist) |
 | 图像处理 | Sharp (libvips) |
+| 国际化 | 自定义 i18n (中文/英文) |
 | 打包下载 | JSZip |
 
 ### 项目根目录
@@ -61,23 +62,63 @@ pnpm ts-check  # TypeScript 类型检查
 
 ---
 
-## 3. 代码风格指南
+## 3. 重要：图片数据存储说明
 
-### TypeScript 规范
+### image.url 和 image.preview 都是 data URL
 
-- 使用 `interface` 定义对象类型
-- 使用 `type` 定义联合类型、别名
-- 禁止使用 `any`，使用具体类型或 `unknown`
-- 所有函数参数必须标注类型
-- 所有 React 组件使用 `'use client'` 指令（客户端组件）
+**关键点**：上传后的图片存储在 `image.preview` 字段中，格式为 **data URL (base64)**，不是可 fetch 的 HTTP URL。
 
-### React 规范
+```typescript
+// ❌ 错误：尝试 fetch data URL
+const response = await fetch(image.url); // 会失败！
+
+// ✅ 正确：直接解析 base64
+const base64Data = image.preview.split(',')[1];
+const binaryString = atob(base64Data);
+const bytes = new Uint8Array(binaryString.length);
+for (let i = 0; i < binaryString.length; i++) {
+  bytes[i] = binaryString.charCodeAt(i);
+}
+const blob = new Blob([bytes], { type: image.type });
+```
+
+### 适用场景
+- `ProcessingPanel` - 图片处理
+- `DuplicateDetector` - 重复检测
+- 任何需要将图片发送到后端 API 的场景
+
+---
+
+## 5. React 规范
 
 - 使用函数组件 + Hooks
 - 优先使用 `useCallback` 包装回调函数
 - 避免在 `useEffect` 中直接调用 `setState`，使用延迟初始化
 - 使用 `ref` 存储频繁变化的临时状态（如 dragging）
 - 组件卸载时清理副作用（URLs、定时器、事件监听）
+
+### 国际化 (i18n) 规范
+
+项目支持中文（默认）和英文界面。
+
+```typescript
+// 1. 导入翻译函数
+import { t } from '@/lib/i18n';
+
+// 2. 从 store 获取当前语言
+const { language } = useAppStore();
+
+// 3. 使用翻译
+const tr = useCallback((key: keyof Translations) => t(language, key), [language]);
+
+// 4. 在组件中使用
+<span>{tr('upload')}</span>
+
+// 5. 简单文本可使用三元表达式
+{language === 'zh' ? '中文' : 'English'}
+```
+
+语言切换存储在 `useAppStore` 的 `language` 字段中，会自动持久化到 localStorage。
 
 ### 命名规范
 
@@ -115,7 +156,7 @@ import JSZip from 'jszip';
 
 ---
 
-## 4. 组件规范
+## 6. 组件规范
 
 ### 文件结构
 
@@ -175,7 +216,7 @@ export function MyComponent({ title, onComplete }: MyComponentProps) {
 
 ---
 
-## 5. API 设计规范
+## 7. API 设计规范
 
 ### 统一响应格式
 

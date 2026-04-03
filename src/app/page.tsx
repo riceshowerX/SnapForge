@@ -17,7 +17,7 @@ import { SchemeManager } from '@/components/SchemeManager';
 import { StatsDashboard } from '@/components/StatsDashboard';
 import { useAppStore } from '@/store';
 import type { ProcessConfigKey } from '@/types';
-import { t, type Language } from '@/lib/i18n';
+import { t } from '@/lib/i18n';
 import { 
   Image as ImageIcon, 
   Zap, 
