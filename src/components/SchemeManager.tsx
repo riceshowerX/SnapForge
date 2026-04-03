@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,34 +61,41 @@ const schemeIcons: Record<string, React.ReactNode> = {
   'print-ready': <Palette className="w-4 h-4" />,
 };
 
-export function SchemeManager({ currentConfig, onApplyScheme }: SchemeManagerProps) {
-  const [schemes, setSchemes] = useState<ProcessingScheme[]>(() => {
-    // 从 localStorage 加载自定义方案
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('snapforge-schemes');
-        if (saved) {
-          return [...presetSchemes, ...JSON.parse(saved)];
-        }
-      } catch (e) {
-        console.warn('Failed to load custom schemes:', e);
-      }
-    }
-    return presetSchemes;
-  });
+// localStorage 键名
+const STORAGE_KEY = 'snapforge-schemes';
 
+// 加载自定义方案的辅助函数
+function loadCustomSchemes(): ProcessingScheme[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      return JSON.parse(saved) as ProcessingScheme[];
+    }
+  } catch (e) {
+    console.warn('Failed to load custom schemes:', e);
+  }
+  return [];
+}
+
+export function SchemeManager({ currentConfig, onApplyScheme }: SchemeManagerProps) {
+  // 使用延迟初始化加载本地存储数据，避免水合不匹配
+  const [schemes, setSchemes] = useState<ProcessingScheme[]>(() => [
+    ...presetSchemes,
+    ...loadCustomSchemes(),
+  ]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newSchemeName, setNewSchemeName] = useState('');
   const [newSchemeDesc, setNewSchemeDesc] = useState('');
 
   // 保存自定义方案到 localStorage
-  const saveCustomSchemes = (customSchemes: ProcessingScheme[]) => {
+  const saveCustomSchemes = useCallback((customSchemes: ProcessingScheme[]) => {
     try {
-      localStorage.setItem('snapforge-schemes', JSON.stringify(customSchemes));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(customSchemes));
     } catch (e) {
       console.warn('Failed to save custom schemes:', e);
     }
-  };
+  }, []);
 
   // 创建新方案
   const handleCreateScheme = () => {

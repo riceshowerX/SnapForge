@@ -14,6 +14,13 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 // =============================================
+// 常量定义
+// =============================================
+
+// 任务历史最大条目数
+const MAX_HISTORY_ITEMS = 20;
+
+// =============================================
 // Store 状态接口
 // =============================================
 
@@ -285,8 +292,8 @@ export const useAppStore = create<AppState>()(
             endTime: Date.now(),
           });
           
-          // 只保留最近 5 条历史记录
-          const newHistory = [completedTask, ...state.taskHistory].slice(0, 5);
+          // 限制历史记录数量
+          const newHistory = [completedTask, ...state.taskHistory].slice(0, MAX_HISTORY_ITEMS);
           
           return {
             currentTask: null,

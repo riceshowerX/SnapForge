@@ -43,29 +43,33 @@ export function ImageCompare({
   const [mode, setMode] = useState<'slider' | 'overlay' | 'side-by-side'>('slider');
   const [sliderPosition, setSliderPosition] = useState(50);
   const [zoom, setZoom] = useState(100);
-  const [isDragging, setIsDragging] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // 使用 ref 存储 dragging 状态，避免闭包 stale 值问题
+  const isDraggingRef = useRef(false);
 
   const sizeDiff = processedSize && originalSize 
     ? ((processedSize - originalSize) / originalSize) * 100 
     : 0;
 
   const handleMouseDown = useCallback(() => {
-    setIsDragging(true);
+    isDraggingRef.current = true;
   }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging || !containerRef.current) return;
+    if (!isDraggingRef.current || !containerRef.current) return;
     
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const percentage = (x / rect.width) * 100;
     setSliderPosition(Math.min(100, Math.max(0, percentage)));
-  }, [isDragging]);
+  }, []);
 
   useEffect(() => {
-    const handleGlobalMouseUp = () => setIsDragging(false);
+    const handleGlobalMouseUp = () => {
+      isDraggingRef.current = false;
+    };
     window.addEventListener('mouseup', handleGlobalMouseUp);
     return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
   }, []);

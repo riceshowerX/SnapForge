@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { 
+  successResponse, 
+  errorResponse, 
+  ErrorCodes 
+} from '@/lib/api-response';
+import { checkRateLimit, getRateLimitHeaders } from '@/lib/rate-limit';
 
 // =============================================
 // POST /api/upload - 上传并获取图片信息
@@ -49,14 +55,32 @@ function validateFileType(buffer: Buffer, claimedType: string): boolean {
   return true;
 }
 
-// 安全的文件名处理 - 防止路径遍历
+// 增强的文件名安全处理 - 防止路径遍历和 Unicode 攻击
 function sanitizeFilename(filename: string): string {
-  // 移除路径分隔符和特殊字符
-  return filename
-    .replace(/[\/\\]/g, '_')
-    .replace(/\.\./g, '')
-    .replace(/[<>:"|?*\x00-\x1f]/g, '_')
-    .slice(0, 255); // 限制文件名长度
+  // 1. 移除所有路径分隔符
+  let safe = filename.replace(/[\/\\]/g, '_');
+  
+  // 2. 移除路径遍历尝试
+  safe = safe.replace(/\.\./g, '');
+  
+  // 3. 移除 Unicode 控制字符和危险字符
+  safe = safe.replace(/[<>:"|?*\x00-\x1f\x7f]/g, '_');
+  
+  // 4. 移除 Unicode 规范化攻击（NFC/NFD）
+  safe = safe.normalize('NFC');
+  
+  // 5. 移除空白字符
+  safe = safe.trim().replace(/\s+/g, '_');
+  
+  // 6. 限制长度
+  safe = safe.slice(0, 255);
+  
+  // 7. 确保不为空
+  if (!safe || safe === '.' || safe === '..') {
+    safe = 'unnamed_image';
+  }
+  
+  return safe;
 }
 
 // 延迟加载 image-processor 避免循环依赖问题
@@ -67,11 +91,17 @@ async function getImageInfo(buffer: Buffer) {
 
 export async function POST(request: NextRequest) {
   try {
+    // 检查速率限制
+    const rateLimit = checkRateLimit(request, 'upload');
+    if (!rateLimit.allowed && rateLimit.response) {
+      return rateLimit.response;
+    }
+
     // 检查 Content-Type
     const contentType = request.headers.get('content-type') || '';
     if (!contentType.includes('multipart/form-data')) {
       return NextResponse.json(
-        { error: 'Invalid content type. Expected multipart/form-data' },
+        errorResponse(ErrorCodes.INVALID_REQUEST, 'Invalid content type. Expected multipart/form-data'),
         { status: 400 }
       );
     }
@@ -80,7 +110,7 @@ export async function POST(request: NextRequest) {
     const contentLength = parseInt(request.headers.get('content-length') || '0');
     if (contentLength > MAX_FILE_SIZE * 2) {
       return NextResponse.json(
-        { error: 'Request body too large' },
+        errorResponse(ErrorCodes.REQUEST_BODY_TOO_LARGE, 'Request body too large'),
         { status: 413 }
       );
     }
@@ -90,7 +120,7 @@ export async function POST(request: NextRequest) {
     
     if (!file) {
       return NextResponse.json(
-        { error: 'No file provided' },
+        errorResponse(ErrorCodes.NO_FILE_PROVIDED, 'No file provided'),
         { status: 400 }
       );
     }
@@ -98,7 +128,11 @@ export async function POST(request: NextRequest) {
     // 验证文件大小
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: `File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+        errorResponse(
+          ErrorCodes.FILE_TOO_LARGE, 
+          `File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+          { maxSize: MAX_FILE_SIZE, actualSize: file.size }
+        ),
         { status: 400 }
       );
     }
@@ -106,7 +140,11 @@ export async function POST(request: NextRequest) {
     // 验证 MIME 类型
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: `Invalid file type. Supported: ${ALLOWED_TYPES.map(t => t.split('/')[1].toUpperCase()).join(', ')}` },
+        errorResponse(
+          ErrorCodes.INVALID_FILE_TYPE, 
+          `Invalid file type. Supported: ${ALLOWED_TYPES.map(t => t.split('/')[1].toUpperCase()).join(', ')}`,
+          { allowedTypes: ALLOWED_TYPES, actualType: file.type }
+        ),
         { status: 400 }
       );
     }
@@ -118,7 +156,11 @@ export async function POST(request: NextRequest) {
     // 验证真实文件类型（Magic Number）
     if (!validateFileType(buffer, file.type)) {
       return NextResponse.json(
-        { error: 'File content does not match the claimed file type' },
+        errorResponse(
+          ErrorCodes.FILE_SIGNATURE_MISMATCH, 
+          'File content does not match the claimed file type',
+          { claimedType: file.type }
+        ),
         { status: 400 }
       );
     }
@@ -144,16 +186,21 @@ export async function POST(request: NextRequest) {
       previewBase64 = `data:${file.type};base64,${buffer.toString('base64')}`;
     }
     
-    return NextResponse.json({
-      name: safeName,
-      size: file.size,
-      type: file.type,
-      width: info.width,
-      height: info.height,
-      format: info.format,
-      hasAlpha: info.hasAlpha,
-      preview: previewBase64,
-    });
+    return NextResponse.json(
+      successResponse({
+        name: safeName,
+        size: file.size,
+        type: file.type,
+        width: info.width,
+        height: info.height,
+        format: info.format,
+        hasAlpha: info.hasAlpha,
+        preview: previewBase64,
+      }),
+      {
+        headers: getRateLimitHeaders('upload'),
+      }
+    );
   } catch (error) {
     console.error('Upload error:', error);
     
@@ -163,7 +210,7 @@ export async function POST(request: NextRequest) {
       : 'Upload failed. Please try again.';
     
     return NextResponse.json(
-      { error: message },
+      errorResponse(ErrorCodes.INTERNAL_ERROR, message),
       { status: 500 }
     );
   }

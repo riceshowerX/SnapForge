@@ -9,15 +9,31 @@ import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAppStore } from '@/store';
-import { DuplicateGroup } from '@/types';
 import Image from 'next/image';
+
+// 扩展的重复图片信息，包含原始 imageId
+interface DuplicateImageInfo {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  similarity?: number;
+  imageId?: string; // 原始图片 ID，用于精确匹配
+}
+
+interface DuplicateGroupInfo {
+  id: string;
+  images: DuplicateImageInfo[];
+  similarity: number;
+  hash?: string;
+}
 
 export function DuplicateDetector() {
   const { images, removeImages } = useAppStore();
   const [isDetecting, setIsDetecting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<{
-    groups: DuplicateGroup[];
+    groups: DuplicateGroupInfo[];
     totalScanned: number;
     duplicatesFound: number;
   } | null>(null);
@@ -33,13 +49,32 @@ export function DuplicateDetector() {
     try {
       const formData = new FormData();
       
-      for (let i = 0; i < images.length; i++) {
-        const image = images[i];
+      // 并行获取所有图片的 blob（提高效率）
+      const fetchPromises = images.map(async (image, index) => {
         const response = await fetch(image.url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${image.name}`);
+        }
         const blob = await response.blob();
-        formData.append('files', blob, image.name);
-        setProgress(((i + 1) / images.length) * 50);
+        // 同时保存 imageId 映射
+        return { blob, imageId: image.id, index };
+      });
+
+      // 使用 Promise.all 并行获取，最多 10 个并发
+      const BATCH_SIZE = 10;
+      const results: { blob: Blob; imageId: string; index: number }[] = [];
+      
+      for (let i = 0; i < fetchPromises.length; i += BATCH_SIZE) {
+        const batch = fetchPromises.slice(i, i + BATCH_SIZE);
+        const batchResults = await Promise.all(batch);
+        results.push(...batchResults);
+        setProgress(((i + BATCH_SIZE) / images.length) * 40);
       }
+
+      // 按原始顺序添加文件，并嵌入 imageId 作为文件名标识
+      results.sort((a, b) => a.index - b.index).forEach(({ blob, imageId }) => {
+        formData.append('files', blob, imageId); // 使用 imageId 作为文件名
+      });
       
       formData.append('threshold', '0.9');
 
@@ -52,6 +87,27 @@ export function DuplicateDetector() {
       if (!response.ok) throw new Error('Detection failed');
 
       const data = await response.json();
+      
+      // 建立 imageId 到图片信息的映射
+      const imageIdMap = new Map(images.map(img => [img.id, img]));
+      
+      // 解析返回的数据，恢复 imageId 映射
+      if (data.groups) {
+        data.groups = data.groups.map((group: DuplicateGroupInfo) => ({
+          ...group,
+          images: group.images.map((img: DuplicateImageInfo) => {
+            // 尝试通过名称（实际上是 imageId）匹配
+            const matchedImage = imageIdMap.get(img.name);
+            return {
+              ...img,
+              imageId: matchedImage ? matchedImage.id : undefined,
+              // 保留原始图片预览
+              preview: matchedImage?.preview || undefined,
+            };
+          }),
+        }));
+      }
+      
       setProgress(100);
       setResults(data);
     } catch (error) {
@@ -79,9 +135,14 @@ export function DuplicateDetector() {
     results.groups.forEach(group => {
       // 保留第一张，选择其余的
       group.images.slice(1).forEach(img => {
-        // 通过名称匹配找到对应的图片ID
-        const matchedImage = images.find(i => i.name === img.name);
-        if (matchedImage) allIds.add(matchedImage.id);
+        // 优先使用 imageId 匹配，其次使用名称匹配
+        if (img.imageId) {
+          allIds.add(img.imageId);
+        } else {
+          // 兼容旧逻辑
+          const matchedImage = images.find(i => i.name === img.name);
+          if (matchedImage) allIds.add(matchedImage.id);
+        }
       });
     });
     setSelectedDuplicates(allIds);
@@ -235,8 +296,9 @@ export function DuplicateDetector() {
                   <CardContent className="p-3">
                     <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
                       {group.images.map((img, imgIndex) => {
-                        const matchedImage = images.find(i => i.name === img.name);
-                        const imageId = matchedImage?.id || img.id;
+                        // 优先使用 imageId 匹配，其次使用名称匹配
+                        const imageId = img.imageId || images.find(i => i.name === img.name)?.id || img.id;
+                        const matchedImage = images.find(i => i.id === imageId) || images.find(i => i.name === img.name);
                         const isSelected = selectedDuplicates.has(imageId);
                         const isKept = imgIndex === 0;
 

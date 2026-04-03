@@ -1,15 +1,31 @@
 'use client';
 
 import { useCallback, useState, useEffect, useRef } from 'react';
-import { Loader2, CheckCircle, XCircle, Download, Play, RotateCcw, FileImage, Sparkles, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Download, Play, RotateCcw, FileImage, Sparkles, AlertCircle, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { useAppStore } from '@/store';
 import JSZip from 'jszip';
 import Image from 'next/image';
+
+// 并发处理配置
+const DEFAULT_CONCURRENCY = 3;
+const MAX_CONCURRENCY = 10;
 
 export function ProcessingPanel() {
   const { 
@@ -28,8 +44,15 @@ export function ProcessingPanel() {
   const [currentProcessingIndex, setCurrentProcessingIndex] = useState<number>(-1);
   const [error, setError] = useState<string | null>(null);
   
+  // 新增：处理选项状态
+  const [stopOnError, setStopOnError] = useState(false);
+  const [concurrency, setConcurrency] = useState(DEFAULT_CONCURRENCY);
+  const [showSettings, setShowSettings] = useState(false);
+  
   // 用于跟踪需要清理的 URL
   const objectUrlsRef = useRef<Set<string>>(new Set());
+  // 用于中断处理
+  const abortRef = useRef(false);
 
   // 清理 object URLs
   useEffect(() => {
@@ -43,79 +66,135 @@ export function ProcessingPanel() {
     };
   }, []);
 
+  // 处理单张图片的函数
+  const processSingleImage = useCallback(async (
+    image: typeof images[0],
+    index: number,
+    currentConfig: typeof config
+  ): Promise<{ success: boolean; result?: { blob: Blob; filename: string; preview: string }; error?: string }> => {
+    try {
+      // 从 base64 获取 blob
+      const response = await fetch(image.url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      
+      const formData = new FormData();
+      formData.append('file', blob, image.name);
+      formData.append('config', JSON.stringify(currentConfig));
+      formData.append('counter', String(index + 1));
+
+      const result = await fetch('/api/process', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!result.ok) {
+        const errorData = await result.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || errorData.error || `Processing failed: ${result.statusText}`);
+      }
+
+      const processedBlob = await result.blob();
+      const filename = result.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '') || `processed_${index + 1}.jpg`;
+      const preview = URL.createObjectURL(processedBlob);
+      
+      // 跟踪 URL 以便清理
+      objectUrlsRef.current.add(preview);
+
+      return { success: true, result: { blob: processedBlob, filename, preview } };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error(`Failed to process ${image.name}:`, err);
+      return { success: false, error: errorMessage };
+    }
+  }, []);
+
+  // 并发处理图片
   const processImages = useCallback(async () => {
-    const selectedImages = images.filter(img => selectedImageIds.includes(img.id));
+    // 使用 zustand getState 避免闭包 stale 值问题
+    const { images: currentImages, config: currentConfig, selectedImageIds: currentSelectedIds } = useAppStore.getState();
+    const selectedImages = currentImages.filter(img => currentSelectedIds.includes(img.id));
+    
     if (selectedImages.length === 0) return;
 
     setError(null);
+    abortRef.current = false;
     startProcessing();
     setResults(new Map());
     setCurrentProcessingIndex(0);
 
-    for (let i = 0; i < selectedImages.length; i++) {
-      const image = selectedImages[i];
-      setCurrentProcessingIndex(i);
+    const totalImages = selectedImages.length;
+    let processedCount = 0;
+
+    // 并发处理函数
+    const processBatch = async (batch: typeof selectedImages, batchStartIndex: number) => {
+      const promises = batch.map((image, localIndex) => 
+        processSingleImage(image, batchStartIndex + localIndex, currentConfig)
+      );
+      return Promise.all(promises);
+    };
+
+    // 分批处理
+    for (let i = 0; i < totalImages; i += concurrency) {
+      // 检查是否中断
+      if (abortRef.current) break;
+
+      const batch = selectedImages.slice(i, i + concurrency);
+      const batchStartIndex = i;
       
-      try {
-        // 从 base64 获取 blob
-        const response = await fetch(image.url);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch image: ${response.statusText}`);
+      const batchResults = await processBatch(batch, batchStartIndex);
+      
+      // 处理批次结果
+      for (let j = 0; j < batchResults.length; j++) {
+        const result = batchResults[j];
+        const image = batch[j];
+        
+        processedCount++;
+        setCurrentProcessingIndex(processedCount - 1);
+
+        if (result.success && result.result) {
+          const processedResult = result.result;
+          setResults(prev => {
+            const newMap = new Map(prev);
+            newMap.set(image.id, processedResult);
+            return newMap;
+          });
+
+          updateProcessResult({
+            id: image.id,
+            originalName: image.name,
+            status: 'success',
+            processedUrl: processedResult.preview,
+            processingTime: Date.now(),
+          });
+        } else {
+          updateProcessResult({
+            id: image.id,
+            originalName: image.name,
+            status: 'error',
+            error: result.error,
+          });
+
+          // 如果设置为遇到错误停止
+          if (stopOnError) {
+            setError(`处理中断：${result.error}`);
+            abortRef.current = true;
+            break;
+          }
         }
-        
-        const blob = await response.blob();
-        
-        const formData = new FormData();
-        formData.append('file', blob, image.name);
-        formData.append('config', JSON.stringify(config));
-        formData.append('counter', String(i + 1));
-
-        const result = await fetch('/api/process', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!result.ok) {
-          const errorData = await result.json().catch(() => ({}));
-          throw new Error(errorData.error || `Processing failed: ${result.statusText}`);
-        }
-
-        const processedBlob = await result.blob();
-        const filename = result.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '') || `processed_${i + 1}.jpg`;
-        const preview = URL.createObjectURL(processedBlob);
-        
-        // 跟踪 URL 以便清理
-        objectUrlsRef.current.add(preview);
-
-        setResults(prev => {
-          const newMap = new Map(prev);
-          newMap.set(image.id, { blob: processedBlob, filename, preview });
-          return newMap;
-        });
-
-        updateProcessResult({
-          id: image.id,
-          originalName: image.name,
-          status: 'success',
-          processedUrl: preview,
-          processingTime: Date.now(),
-        });
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        console.error(`Failed to process ${image.name}:`, err);
-        
-        updateProcessResult({
-          id: image.id,
-          originalName: image.name,
-          status: 'error',
-          error: errorMessage,
-        });
       }
     }
 
     setCurrentProcessingIndex(-1);
     completeProcessing();
-  }, [images, config, selectedImageIds, startProcessing, updateProcessResult, completeProcessing]);
+  }, [concurrency, stopOnError, processSingleImage, startProcessing, updateProcessResult, completeProcessing]);
+
+  // 中断处理
+  const abortProcessing = useCallback(() => {
+    abortRef.current = true;
+  }, []);
 
   // 快捷键：Ctrl+Enter 开始处理
   useEffect(() => {
@@ -127,8 +206,9 @@ export function ProcessingPanel() {
       }
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        const selectedImages = images.filter(img => selectedImageIds.includes(img.id));
-        if (selectedImages.length > 0 && !isProcessing) {
+        const { images: currentImages, selectedImageIds: currentIds, isProcessing: currentIsProcessing } = useAppStore.getState();
+        const selectedImages = currentImages.filter(img => currentIds.includes(img.id));
+        if (selectedImages.length > 0 && !currentIsProcessing) {
           processImages();
         }
       }
@@ -136,7 +216,7 @@ export function ProcessingPanel() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [images, selectedImageIds, isProcessing, processImages]);
+  }, [processImages]);
 
   const downloadAll = useCallback(async () => {
     if (results.size === 0) return;
@@ -190,6 +270,7 @@ export function ProcessingPanel() {
   const canProcess = selectedImages.length > 0 && !isProcessing;
 
   const successCount = results.size;
+  const errorCount = selectedImages.length - successCount - (currentTask?.results.filter(r => r.status === 'pending').length || 0);
   const activeConfigCount = Object.entries(config).filter(([, value]) => 
     typeof value === 'object' && value !== null && 'enabled' in value && (value as { enabled: boolean }).enabled
   ).length;
@@ -242,25 +323,79 @@ export function ProcessingPanel() {
                   }
                 </p>
               </div>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    onClick={processImages} 
-                    disabled={!canProcess}
-                    size="lg"
-                    className="px-8"
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    开始处理
-                    {selectedImages.length > 0 && ` (${selectedImages.length}张)`}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {selectedImages.length > 0 
-                    ? '点击开始处理选中图片 (Ctrl+Enter)' 
-                    : '请先选择要处理的图片'}
-                </TooltipContent>
-              </Tooltip>
+              <div className="flex items-center justify-center gap-2">
+                {/* 设置按钮 */}
+                <Dialog open={showSettings} onOpenChange={setShowSettings}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-10 w-10">
+                      <Settings className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>处理设置</DialogTitle>
+                      <DialogDescription>
+                        配置图片处理的并发数和错误处理方式
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-6 py-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="concurrency">并发数量</Label>
+                          <span className="text-sm font-medium">{concurrency}</span>
+                        </div>
+                        <Slider
+                          id="concurrency"
+                          min={1}
+                          max={MAX_CONCURRENCY}
+                          step={1}
+                          value={[concurrency]}
+                          onValueChange={(v) => setConcurrency(v[0])}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          同时处理的图片数量，数值越高速度越快（1-{MAX_CONCURRENCY}）
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="stop-on-error">遇到错误停止</Label>
+                          <p className="text-xs text-muted-foreground">
+                            第一张图片处理失败时停止处理
+                          </p>
+                        </div>
+                        <Switch
+                          id="stop-on-error"
+                          checked={stopOnError}
+                          onCheckedChange={setStopOnError}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={() => setShowSettings(false)}>完成</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={processImages} 
+                      disabled={!canProcess}
+                      size="lg"
+                      className="px-8"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      开始处理
+                      {selectedImages.length > 0 && ` (${selectedImages.length}张)`}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {selectedImages.length > 0 
+                      ? '点击开始处理选中图片 (Ctrl+Enter)' 
+                      : '请先选择要处理的图片'}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -289,18 +424,25 @@ export function ProcessingPanel() {
             </CardTitle>
             <CardDescription className="text-xs mt-1">
               {isProcessing 
-                ? `正在处理第 ${currentProcessingIndex + 1} / ${selectedImages.length} 张`
-                : `成功 ${successCount} 张，共 ${selectedImages.length} 张`
+                ? `正在处理第 ${currentProcessingIndex + 1} / ${selectedImages.length} 张 (并发: ${concurrency})`
+                : `成功 ${successCount} 张${errorCount > 0 ? `，失败 ${errorCount} 张` : ''}，共 ${selectedImages.length} 张`
               }
             </CardDescription>
           </div>
           
-          {!isProcessing && successCount > 0 && (
-            <Button onClick={downloadAll} size="sm">
-              <Download className="w-4 h-4 mr-1.5" />
-              下载全部
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {!isProcessing && successCount > 0 && (
+              <Button onClick={downloadAll} size="sm">
+                <Download className="w-4 h-4 mr-1.5" />
+                下载全部
+              </Button>
+            )}
+            {isProcessing && (
+              <Button onClick={abortProcessing} variant="destructive" size="sm">
+                停止
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       
@@ -354,67 +496,67 @@ export function ProcessingPanel() {
                       <FileImage className="w-4 h-4 text-muted-foreground" />
                     </div>
                   )}
-                  {isProcessing && currentProcessingIndex === index && (
-                    <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                    </div>
-                  )}
                 </div>
 
-                {/* 文件信息 */}
+                {/* 信息 */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm truncate">{resultData?.filename || image.name}</p>
-                  {result?.error && (
-                    <p className="text-xs text-destructive truncate">{result.error}</p>
-                  )}
+                  <p className="text-sm font-medium truncate">{image.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {hasResult && resultData?.filename 
+                      ? resultData.filename 
+                      : result?.status === 'error' 
+                        ? '处理失败'
+                        : '等待处理'}
+                  </p>
                 </div>
 
-                {/* 状态图标 */}
-                <div className="shrink-0">
-                  {result?.status === 'processing' ? (
+                {/* 状态 */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {isProcessing && currentProcessingIndex === index ? (
                     <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  ) : result?.status === 'success' ? (
-                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  ) : result?.status === 'success' || hasResult ? (
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      </TooltipTrigger>
+                      <TooltipContent>成功</TooltipContent>
+                    </Tooltip>
                   ) : result?.status === 'error' ? (
-                    <XCircle className="w-4 h-4 text-destructive" />
-                  ) : (
-                    <div className="w-4 h-4 rounded-full border border-muted-foreground/30" />
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <XCircle className="w-4 h-4 text-destructive" />
+                      </TooltipTrigger>
+                      <TooltipContent>{result.error || '处理失败'}</TooltipContent>
+                    </Tooltip>
+                  ) : null}
+
+                  {hasResult && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => downloadSingle(image.id)}
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>下载</TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
-
-                {/* 下载按钮 */}
-                {hasResult && !isProcessing && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0 shrink-0"
-                    onClick={() => downloadSingle(image.id)}
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                  </Button>
-                )}
               </div>
             );
           })}
         </div>
 
-        {/* 底部操作 */}
+        {/* 重置按钮 */}
         {!isProcessing && (
-          <div className="flex justify-between items-center pt-2 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={resetProcessing}
-            >
+          <div className="flex justify-center pt-2">
+            <Button variant="outline" size="sm" onClick={resetProcessing}>
               <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-              重新处理
-            </Button>
-            <Button
-              size="sm"
-              onClick={processImages}
-            >
-              <Play className="w-3.5 h-3.5 mr-1.5" />
-              再次处理
+              重置
             </Button>
           </div>
         )}

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processImage } from '@/lib/image-processor';
 import { ProcessConfig, defaultProcessConfig } from '@/types';
+import { 
+  errorResponse, 
+  ErrorCodes 
+} from '@/lib/api-response';
+import { checkRateLimit, getRateLimitHeaders } from '@/lib/rate-limit';
 
 // =============================================
 // POST /api/process - 处理单张图片
@@ -39,13 +44,32 @@ function validateConfig(config: unknown): config is ProcessConfig {
   return true;
 }
 
-// 安全的文件名处理
+// 增强的文件名安全处理 - 防止路径遍历和 Unicode 攻击
 function sanitizeFilename(filename: string): string {
-  return filename
-    .replace(/[\/\\]/g, '_')
-    .replace(/\.\./g, '')
-    .replace(/[<>:"|?*\x00-\x1f]/g, '_')
-    .slice(0, 255);
+  // 1. 移除所有路径分隔符
+  let safe = filename.replace(/[\/\\]/g, '_');
+  
+  // 2. 移除路径遍历尝试
+  safe = safe.replace(/\.\./g, '');
+  
+  // 3. 移除 Unicode 控制字符和危险字符
+  safe = safe.replace(/[<>:"|?*\x00-\x1f\x7f]/g, '_');
+  
+  // 4. 移除 Unicode 规范化攻击（NFC/NFD）
+  safe = safe.normalize('NFC');
+  
+  // 5. 移除空白字符
+  safe = safe.trim().replace(/\s+/g, '_');
+  
+  // 6. 限制长度
+  safe = safe.slice(0, 255);
+  
+  // 7. 确保不为空
+  if (!safe || safe === '.' || safe === '..') {
+    safe = 'unnamed_image';
+  }
+  
+  return safe;
 }
 
 // 验证数值参数在安全范围内
@@ -81,11 +105,17 @@ function validateNumericParams(config: ProcessConfig): boolean {
 
 export async function POST(request: NextRequest) {
   try {
+    // 检查速率限制
+    const rateLimit = checkRateLimit(request, 'process');
+    if (!rateLimit.allowed && rateLimit.response) {
+      return rateLimit.response;
+    }
+
     // 检查 Content-Type
     const contentType = request.headers.get('content-type') || '';
     if (!contentType.includes('multipart/form-data')) {
       return NextResponse.json(
-        { error: 'Invalid content type. Expected multipart/form-data' },
+        errorResponse(ErrorCodes.INVALID_REQUEST, 'Invalid content type. Expected multipart/form-data'),
         { status: 400 }
       );
     }
@@ -98,7 +128,10 @@ export async function POST(request: NextRequest) {
     
     if (!file || !configJson) {
       return NextResponse.json(
-        { error: 'Missing required fields: file and config' },
+        errorResponse(
+          ErrorCodes.MISSING_FIELD, 
+          'Missing required fields: file and config'
+        ),
         { status: 400 }
       );
     }
@@ -106,7 +139,11 @@ export async function POST(request: NextRequest) {
     // 验证文件大小
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: `File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+        errorResponse(
+          ErrorCodes.FILE_TOO_LARGE, 
+          `File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+          { maxSize: MAX_FILE_SIZE, actualSize: file.size }
+        ),
         { status: 400 }
       );
     }
@@ -114,7 +151,7 @@ export async function POST(request: NextRequest) {
     // 验证配置大小
     if (configJson.length > MAX_CONFIG_SIZE) {
       return NextResponse.json(
-        { error: 'Configuration too large' },
+        errorResponse(ErrorCodes.CONFIG_TOO_LARGE, 'Configuration too large'),
         { status: 400 }
       );
     }
@@ -125,14 +162,14 @@ export async function POST(request: NextRequest) {
       const parsed = JSON.parse(configJson);
       if (!validateConfig(parsed)) {
         return NextResponse.json(
-          { error: 'Invalid configuration format' },
+          errorResponse(ErrorCodes.INVALID_CONFIG, 'Invalid configuration format'),
           { status: 400 }
         );
       }
       config = { ...defaultProcessConfig, ...parsed };
     } catch {
       return NextResponse.json(
-        { error: 'Invalid JSON configuration' },
+        errorResponse(ErrorCodes.INVALID_JSON, 'Invalid JSON configuration'),
         { status: 400 }
       );
     }
@@ -140,7 +177,7 @@ export async function POST(request: NextRequest) {
     // 验证数值参数
     if (!validateNumericParams(config)) {
       return NextResponse.json(
-        { error: 'Configuration parameters out of valid range' },
+        errorResponse(ErrorCodes.CONFIG_PARAMS_OUT_OF_RANGE, 'Configuration parameters out of valid range'),
         { status: 400 }
       );
     }
@@ -149,7 +186,11 @@ export async function POST(request: NextRequest) {
     const counter = counterStr ? parseInt(counterStr, 10) : 1;
     if (isNaN(counter) || counter < 1 || counter > 10000) {
       return NextResponse.json(
-        { error: 'Invalid counter value' },
+        errorResponse(
+          ErrorCodes.INVALID_CONFIG, 
+          'Invalid counter value',
+          { min: 1, max: 10000, actual: counter }
+        ),
         { status: 400 }
       );
     }
@@ -162,16 +203,17 @@ export async function POST(request: NextRequest) {
     const result = await processImage(buffer, config, safeName, counter);
     
     // 返回处理后的图片
-    return new NextResponse(new Uint8Array(result.buffer), {
-      headers: {
-        'Content-Type': `image/${result.metadata.format}`,
-        'Content-Disposition': `attachment; filename="${encodeURIComponent(result.filename)}"`,
-        'X-Image-Width': result.metadata.width.toString(),
-        'X-Image-Height': result.metadata.height.toString(),
-        'X-Image-Size': result.metadata.size.toString(),
-        'Cache-Control': 'no-store',
-      },
+    const headers = new Headers({
+      'Content-Type': `image/${result.metadata.format}`,
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(result.filename)}"`,
+      'X-Image-Width': result.metadata.width.toString(),
+      'X-Image-Height': result.metadata.height.toString(),
+      'X-Image-Size': result.metadata.size.toString(),
+      'Cache-Control': 'no-store',
+      ...getRateLimitHeaders('process'),
     });
+    
+    return new NextResponse(new Uint8Array(result.buffer), { headers });
   } catch (error) {
     console.error('Image processing error:', error);
     
@@ -181,7 +223,7 @@ export async function POST(request: NextRequest) {
       : 'Processing failed';
     
     return NextResponse.json(
-      { error: message },
+      errorResponse(ErrorCodes.PROCESSING_FAILED, message),
       { status: 500 }
     );
   }
