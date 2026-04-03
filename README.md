@@ -8,9 +8,9 @@
 
 # SnapForge
 
-### Professional Image Processing Platform
+### 专业图像处理平台
 
-**A powerful modern image processing platform featuring batch processing, format conversion, filters, watermarks, smart deduplication, and complete image processing workflow**
+**一个功能强大的现代化图像处理平台，支持批量处理、格式转换、滤镜特效、水印添加、智能去重等完整图像处理工作流**
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.1.1-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.3-61DAFB?logo=react)](https://react.dev/)
@@ -19,234 +19,159 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/riceshowerX/SnapForge?style=social)](https://github.com/riceshowerX/SnapForge)
 
-[Live Demo](https://snapforge.dev.coze.site) · [快速开始](#快速开始) · [功能特性](#功能特性) · [技术架构](#技术架构)
+[English](README_EN.md) · [快速开始](#快速开始) · [功能特性](#功能特性) · [技术架构](#技术架构)
 
 ---
 
-## Key Features
+## 核心优势
 
-| Feature | Description |
-|---------|-------------|
-| 🚀 **High Performance** | Concurrent processing engine, supports 1-10 images simultaneously |
-| 🔒 **Secure & Reliable** | Magic Number verification, rate limiting, path traversal protection |
-| 📦 **Batch Processing** | Process hundreds of images at once with auto queue management |
-| 🎨 **Rich Filters** | 15+ built-in filters with custom color adjustments |
-| 🧠 **Smart Deduplication** | Perceptual hash algorithm for fast similar/duplicate detection |
-| 💾 **Data Persistence** | Local storage for task history, cloud sync for processing schemes |
-
----
-
-## Features Overview
-
-### Core Image Processing
-
-| Feature | Description | Supported Formats |
-|---------|-------------|-------------------|
-| **Format Conversion** | Convert between popular formats with quality control | JPEG, PNG, WebP, AVIF, TIFF, GIF, BMP |
-| **Resize** | Smart scaling with multiple fit modes | Fit/Fill/Stretch/Crop |
-| **Smart Crop** | Custom crop areas with preset ratios | 1:1, 16:9, 4:3, 3:2, 2:1, Custom |
-| **Rotate & Flip** | Any-angle rotation, horizontal/vertical flip | - |
-| **Filters** | 15+ professional filters one-click apply | Grayscale, Vintage, Sharpen, Blur, Emboss, etc. |
-| **Color Adjustment** | Fine-tune brightness/contrast/saturation | Range 0-10 |
-| **Watermark** | Text/image watermarks with 9-grid positioning | 9-grid + Tiled |
-| **Border** | Customizable border width, color, rounded corners | - |
-
-### Advanced Features
-
-- **Batch Processing** - Process hundreds of images at once with concurrency control and error interruption options
-- **Processing Schemes** - 5 preset schemes for one-click apply, custom scheme save/import/export
-- **Duplicate Detection** - Perceptual hash algorithm with similarity threshold configuration (0.5-1.0)
-- **Statistics Dashboard** - Visual dashboard tracking processing trends, efficiency, success rate, and feature usage ranking
-- **Image Comparison** - Slider/overlay/side-by-side comparison modes with zoom and fullscreen viewing
-- **EXIF Information** - Complete display of shooting parameters, focal length, aperture, ISO and other metadata
-
-### User Experience
-
-- **Multiple Upload Methods** - Drag & drop, paste, click to upload
-- **Real-time Preview** - Instant processing effect visibility, no waiting
-- **Keyboard Shortcuts** - Ctrl+V paste, Ctrl+A select all, Delete remove, Ctrl+Enter process
-- **Batch Download** - One-click ZIP package download for all processed results
-- **Theme Toggle** - Dark/light mode following system preference
-- **Responsive Design** - Perfect adaptation for desktop, tablet, and mobile devices
+| 特性 | 说明 |
+|------|------|
+| 🚀 **高性能** | 并发处理引擎，支持 1-10 张图片同时处理 |
+| 🔒 **安全可靠** | Magic Number 文件验证、速率限制、路径遍历防护 |
+| 📦 **批量处理** | 支持数百张图片批量处理，自动队列管理 |
+| 🎨 **丰富滤镜** | 15+ 内置滤镜，支持自定义色彩调整 |
+| 🧠 **智能去重** | 感知哈希算法，快速识别相似/重复图片 |
+| 🌐 **双语支持** | 中文/英文界面一键切换 |
 
 ---
 
-## Screenshots
+## 功能特性
 
-> 📸 Screenshots are available at [screenshots](./screenshots/) directory.
-> 
-> To add your own screenshots:
-> 1. Visit the live demo at https://snapforge.dev.coze.site
-> 2. Take screenshots of the main interface, configuration panel, etc.
-> 3. Save them to the `screenshots/` directory as `main.png`, `config.png`, `compare.png`, `stats.png`
+### 图像处理核心
 
-### Main Interface
-![Main Interface](./screenshots/main.png)
+| 功能 | 描述 | 支持格式 |
+|------|------|----------|
+| **格式转换** | 主流格式互转，支持质量控制 | JPEG, PNG, WebP, AVIF, TIFF, GIF, BMP |
+| **尺寸调整** | 智能缩放，多种适应模式 | 适应/填充/拉伸/裁剪 |
+| **智能裁剪** | 自定义裁剪区域，预设比例 | 1:1, 16:9, 4:3, 3:2, 2:1, 自定义 |
+| **旋转翻转** | 任意角度旋转，水平/垂直翻转 | - |
+| **滤镜效果** | 15+ 专业滤镜一键应用 | 灰度、复古、锐化、模糊、浮雕等 |
+| **色彩调整** | 精细调节亮度/对比度/饱和度 | 范围 0-10 |
+| **水印添加** | 文字/图片水印，多种定位模式 | 9宫格 + 平铺 |
+| **边框装饰** | 自定义边框宽度、颜色、圆角 | - |
 
-### Processing Configuration
-![Configuration Panel](./screenshots/config.png)
+### 高级功能
 
-### Image Comparison
-![Image Comparison](./screenshots/compare.png)
+- **批量处理** - 一次性处理数百张图片，支持并发控制和错误中断选项
+- **处理方案** - 预设方案一键应用，支持自定义方案保存/导入/导出
+- **重复检测** - 感知哈希算法，支持相似度阈值配置
+- **统计分析** - 可视化仪表盘，追踪处理趋势、效率、成功率
+- **图片对比** - 滑块/叠加/并排三种对比模式，支持缩放和全屏
+- **EXIF 信息** - 完整展示拍摄参数、元数据
 
-### Statistics Dashboard
-![Statistics Dashboard](./screenshots/stats.png)
+### 用户体验
+
+- **多种上传** - 支持拖拽上传、粘贴上传、点击上传
+- **实时预览** - 处理效果即时可见
+- **快捷键支持** - Ctrl+V 粘贴、Ctrl+A 全选、Delete 删除
+- **批量下载** - 一键打包 ZIP 下载
+- **主题切换** - 深色/浅色模式跟随系统
+- **响应式设计** - 适配桌面、平板和移动设备
 
 ---
 
-## Quick Start
+## 快速开始
 
-### Requirements
+### 环境要求
 
-| Environment | Requirement |
-|-------------|-------------|
+| 环境 | 要求 |
+|------|------|
 | **Node.js** | >= 18.0 |
 | **pnpm** | >= 9.0 |
-| **OS** | Linux, macOS, Windows |
 
-### Installation
+### 安装步骤
 
 ```bash
-# 1. Clone the repository
+# 克隆仓库
 git clone https://github.com/riceshowerX/SnapForge.git
 cd SnapForge
 
-# 2. Install dependencies
+# 安装依赖
 pnpm install
 
-# 3. Start development server
+# 启动开发服务器
 pnpm dev
 
-# 4. Open browser
-open http://localhost:5000
+# 打开浏览器访问 http://localhost:5000
 ```
 
-### Production Deployment
+### 生产部署
 
 ```bash
-# 1. Build production version
+# 构建生产版本
 pnpm build
 
-# 2. Start production server
+# 启动生产服务器
 pnpm start
-
-# 3. Server runs at http://localhost:5000
 ```
-
-### Environment Variables (Optional)
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Server port | `5000` |
 
 ---
 
-## Architecture
+## 技术架构
 
-### Tech Stack
+### 技术栈
 
-| Category | Technology | Version |
-|----------|------------|---------|
-| **Framework** | Next.js (App Router) | 16.1.1 |
-| **UI Library** | React | 19.2.3 |
-| **Language** | TypeScript | 5.0 |
-| **Styling** | Tailwind CSS + shadcn/ui | 4.0 |
-| **State Management** | Zustand (with persistence) | - |
-| **Image Processing** | Sharp (libvips) | - |
-| **Charts** | Recharts | - |
-| **Zip Packaging** | JSZip | - |
-| **Unique ID** | UUID | - |
+| 类别 | 技术 | 版本 |
+|------|------|------|
+| **框架** | Next.js (App Router) | 16.1.1 |
+| **UI 库** | React | 19.2.3 |
+| **语言** | TypeScript | 5.0 |
+| **样式** | Tailwind CSS + shadcn/ui | 4.0 |
+| **状态管理** | Zustand (持久化) | - |
+| **图像处理** | Sharp (libvips) | - |
 
-### Project Structure
+### 项目结构
 
 ```
 SnapForge/
 ├── src/
-│   ├── app/                         # Next.js App Router
-│   │   ├── api/                     # API Routes
-│   │   │   ├── upload/route.ts      # File upload endpoint
-│   │   │   ├── process/route.ts     # Image processing endpoint
-│   │   │   └── duplicates/route.ts  # Duplicate detection endpoint
-│   │   ├── layout.tsx               # Root layout
-│   │   ├── page.tsx                 # Home page
-│   │   └── globals.css              # Global styles
-│   │
-│   ├── components/                   # React Components
-│   │   ├── ui/                      # shadcn/ui base components
-│   │   │   ├── button.tsx
-│   │   │   ├── card.tsx
-│   │   │   ├── dialog.tsx
-│   │   │   └── ... (more components)
-│   │   │
-│   │   ├── ImageUploader.tsx        # Image upload component
-│   │   ├── ProcessConfigPanel.tsx   # Processing config panel
-│   │   ├── ProcessingPanel.tsx       # Processing panel
-│   │   ├── ImageCompare.tsx          # Image comparison
-│   │   ├── ExifPanel.tsx            # EXIF info panel
-│   │   ├── SchemeManager.tsx         # Scheme management
-│   │   ├── StatsDashboard.tsx        # Statistics dashboard
-│   │   ├── DuplicateDetector.tsx    # Duplicate detection
-│   │   ├── ThemeToggle.tsx          # Theme toggle
-│   │   └── ProcessingHistory.tsx    # Processing history
-│   │
-│   ├── lib/                         # Utilities
-│   │   ├── image-processor.ts       # Image processing core
-│   │   ├── utils.ts                 # Common utilities
-│   │   ├── api-response.ts          # Unified API response
-│   │   └── rate-limit.ts            # Rate limiting
-│   │
-│   ├── store/                       # State management
-│   │   └── index.ts                 # Zustand Store
-│   │
-│   └── types/                        # TypeScript types
-│       └── index.ts                  # Global type definitions
-│
-├── public/                           # Static assets
-│   └── logo.png                      # Project logo
-│
-├── screenshots/                      # Screenshots
-│
-├── .coze                            # Coze config
-├── .cozeproj                        # Coze project config
-├── package.json                     # Dependencies
-├── tsconfig.json                    # TypeScript config
-├── tailwind.config.ts              # Tailwind config
-└── README.md                        # This file
+│   ├── app/
+│   │   ├── api/                  # API 路由
+│   │   ├── layout.tsx             # 根布局
+│   │   └── page.tsx               # 首页
+│   ├── components/
+│   │   ├── ui/                    # shadcn/ui 基础组件
+│   │   ├── ImageUploader.tsx       # 图片上传
+│   │   ├── ProcessConfigPanel.tsx # 处理配置
+│   │   ├── ProcessingPanel.tsx     # 处理面板
+│   │   ├── ImageCompare.tsx       # 图片对比
+│   │   ├── DuplicateDetector.tsx   # 重复检测
+│   │   └── StatsDashboard.tsx     # 统计仪表盘
+│   ├── lib/
+│   │   ├── image-processor.ts     # 图像处理核心
+│   │   ├── i18n.ts                # 国际化
+│   │   └── utils.ts               # 工具函数
+│   ├── store/                     # 状态管理
+│   └── types/                     # TypeScript 类型
+├── public/                        # 静态资源
+├── package.json
+├── tailwind.config.ts
+└── README.md
 ```
 
 ---
 
-## API Endpoints
+## 安全特性
 
-| Endpoint | Method | Description | Rate Limit |
-|----------|--------|-------------|------------|
-| `/api/upload` | POST | Upload images | 30/min |
-| `/api/process` | POST | Process images | 20/min |
-| `/api/duplicates` | POST | Detect duplicates | 10/min |
-
----
-
-## Security
-
-- **Magic Number Verification** - Validates real file type by file header bytes
-- **File Size Limit** - Max 50MB per file
-- **Safe Filenames** - Removes path traversal characters and Unicode control characters
-- **Unicode Normalization** - Prevents NFC/NFD normalization attacks
-- **Rate Limiting** - Prevents abuse and ensures service stability
+- **Magic Number 验证** - 文件头字节验证真实文件类型
+- **文件大小限制** - 单文件最大 50MB
+- **安全文件名** - 移除路径遍历字符
+- **速率限制** - 防止滥用
 
 ---
 
-## Contributing
+## 贡献
 
-Contributions are welcome! Please feel free to submit issues and pull requests.
+欢迎提交 Issue 和 Pull Request！
 
-## License
+## 许可证
 
-This project is licensed under the [MIT License](LICENSE).
+[MIT License](LICENSE)
 
 ---
 
 <p align="center">
-  Made with ❤️ by <a href="https://github.com/riceshowerX">riceshowerX</a>
+  由 <a href="https://github.com/riceshowerX">riceshowerX</a> ❤️ 构建
 </p>
 </div>

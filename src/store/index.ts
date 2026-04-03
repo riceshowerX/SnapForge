@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import type { Language } from '@/lib/i18n';
 import {
   ImageFile,
   ProcessConfig,
@@ -25,6 +26,9 @@ const MAX_HISTORY_ITEMS = 20;
 // =============================================
 
 interface AppState {
+  // 语言设置（持久化）
+  language: Language;
+  
   // 图像文件列表（不持久化）
   images: ImageFile[];
   
@@ -64,6 +68,7 @@ interface AppState {
   
   // UI 方法
   setActiveTab: (tab: string) => void;
+  setLanguage: (lang: Language) => void;
   
   // 清理方法
   clearTaskHistory: () => void;
@@ -159,6 +164,7 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       // 初始状态
+      language: 'zh', // 默认中文
       images: [],
       config: defaultProcessConfig,
       currentTask: null,
@@ -309,6 +315,11 @@ export const useAppStore = create<AppState>()(
         set({ activeTab: tab });
       },
       
+      // 设置语言
+      setLanguage: (lang) => {
+        set({ language: lang });
+      },
+      
       // 清理任务历史
       clearTaskHistory: () => {
         set({ taskHistory: [] });
@@ -319,6 +330,7 @@ export const useAppStore = create<AppState>()(
       storage: createJSONStorage(() => createCustomStorage()),
       // 只持久化必要的配置和精简后的历史
       partialize: (state) => ({
+        language: state.language,
         config: state.config,
         // 历史记录已经通过 stripLargeData 精简
         taskHistory: state.taskHistory,
@@ -334,6 +346,7 @@ export const useAppStore = create<AppState>()(
 export const useImages = () => useAppStore((state) => state.images);
 export const useConfig = () => useAppStore((state) => state.config);
 export const useIsProcessing = () => useAppStore((state) => state.isProcessing);
+export const useLanguage = () => useAppStore((state) => state.language);
 export const useSelectedImages = () =>
   useAppStore((state) =>
     state.images.filter((img) => state.selectedImageIds.includes(img.id))

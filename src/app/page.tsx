@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,7 @@ import { SchemeManager } from '@/components/SchemeManager';
 import { StatsDashboard } from '@/components/StatsDashboard';
 import { useAppStore } from '@/store';
 import type { ProcessConfigKey } from '@/types';
+import { t, type Language } from '@/lib/i18n';
 import { 
   Image as ImageIcon, 
   Zap, 
@@ -37,7 +38,8 @@ import {
   X,
   ChevronRight,
   BookOpen,
-  Lightbulb
+  Lightbulb,
+  Globe
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -49,13 +51,16 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function Home() {
-  const { images, selectedImageIds, config, updateConfig } = useAppStore();
+  const { images, selectedImageIds, config, updateConfig, language, setLanguage } = useAppStore();
   const [activeTab, setActiveTab] = useState('upload');
   const [showRightPanel, setShowRightPanel] = useState(true);
   const [rightPanelTab, setRightPanelTab] = useState<'config' | 'preview' | 'schemes' | 'history' | 'stats'>('config');
   // 默认隐藏 Welcome Banner，客户端加载后根据 localStorage 决定是否显示
   const [showWelcome, setShowWelcome] = useState(false);
   const [selectedPreviewImage] = useState<string | null>(null);
+
+  // 获取翻译的便捷函数
+  const tr = useCallback((key: Parameters<typeof t>[1]) => t(language, key), [language]);
 
   // 客户端挂载后从 localStorage 读取欢迎弹窗状态
   // 注意：这里在 effect 中设置 state 是 Next.js 推荐的 hydration 修复模式
@@ -75,11 +80,11 @@ export default function Home() {
 
   // 快捷键提示
   const shortcuts = [
-    { key: 'Ctrl + V', action: '粘贴图片' },
-    { key: 'Ctrl + A', action: '全选/取消全选' },
-    { key: 'Delete', action: '删除选中' },
-    { key: 'Ctrl + Enter', action: '开始处理' },
-    { key: 'Esc', action: '关闭预览' },
+    { key: 'Ctrl + V', action: tr('paste') },
+    { key: 'Ctrl + A', action: tr('selectAllKey') },
+    { key: 'Delete', action: tr('delete') },
+    { key: 'Ctrl + Enter', action: tr('processAction') },
+    { key: 'Esc', action: tr('close') },
   ];
 
   // 获取选中的图片用于预览
@@ -99,14 +104,18 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-sm font-medium">欢迎使用 SnapForge</p>
-                  <p className="text-xs text-muted-foreground">专业图像处理平台，支持批量处理、格式转换、滤镜特效等</p>
+                  <p className="text-xs text-muted-foreground">{
+                    language === 'zh' 
+                      ? '专业图像处理平台，支持批量处理、格式转换、滤镜特效等' 
+                      : 'Professional image processing platform with batch processing, format conversion, filters and more'
+                  }</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>
                   <a href="https://github.com/riceshowerX/SnapForge" target="_blank" rel="noopener noreferrer">
                     <BookOpen className="w-3.5 h-3.5 mr-1" />
-                    查看文档
+                    {language === 'zh' ? '查看文档' : 'View Docs'}
                   </a>
                 </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={dismissWelcome}>
@@ -142,14 +151,14 @@ export default function Home() {
                     className="h-8 px-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none rounded-md text-sm"
                   >
                     <Upload className="w-4 h-4 mr-1.5" />
-                    上传
+                    {tr('upload')}
                   </TabsTrigger>
                   <TabsTrigger 
                     value="process" 
                     className="h-8 px-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none rounded-md text-sm"
                   >
                     <Wand2 className="w-4 h-4 mr-1.5" />
-                    处理
+                    {tr('process')}
                     {selectedCount > 0 && (
                       <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">
                         {selectedCount}
@@ -161,14 +170,14 @@ export default function Home() {
                     className="h-8 px-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none rounded-md text-sm"
                   >
                     <Copy className="w-4 h-4 mr-1.5" />
-                    去重
+                    {tr('duplicateDetection')}
                   </TabsTrigger>
                   <TabsTrigger 
                     value="stats" 
                     className="h-8 px-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none rounded-md text-sm"
                   >
                     <BarChart2 className="w-4 h-4 mr-1.5" />
-                    统计
+                    {tr('statistics')}
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -179,7 +188,7 @@ export default function Home() {
               {totalCount > 0 && (
                 <Badge variant="outline" className="hidden md:flex h-7 px-2.5 text-xs font-normal">
                   <FileImage className="w-3 h-3 mr-1" />
-                  {totalCount} 张图片
+                  {totalCount} {language === 'zh' ? '张图片' : 'images'}
                 </Badge>
               )}
               
@@ -198,7 +207,7 @@ export default function Home() {
                     )}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>{showRightPanel ? '隐藏面板' : '显示面板'}</TooltipContent>
+                <TooltipContent>{showRightPanel ? (language === 'zh' ? '隐藏面板' : 'Hide Panel') : (language === 'zh' ? '显示面板' : 'Show Panel')}</TooltipContent>
               </Tooltip>
 
               <DropdownMenu>
@@ -208,7 +217,7 @@ export default function Home() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">快捷键</div>
+                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">{tr('keyboardShortcuts')}</div>
                   {shortcuts.map((s, i) => (
                     <DropdownMenuItem key={i} className="flex justify-between text-xs">
                       <span className="text-muted-foreground">{s.action}</span>
@@ -219,6 +228,30 @@ export default function Home() {
               </DropdownMenu>
 
               <ThemeToggle />
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Globe className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem 
+                    onClick={() => setLanguage('zh')}
+                    className={language === 'zh' ? 'bg-accent' : ''}
+                  >
+                    <span className="mr-2">🇨🇳</span>
+                    中文
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setLanguage('en')}
+                    className={language === 'en' ? 'bg-accent' : ''}
+                  >
+                    <span className="mr-2">🇺🇸</span>
+                    English
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -248,14 +281,14 @@ export default function Home() {
               <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <Layers className="w-4 h-4" />
-                  <span>已上传 {totalCount} 张</span>
+                  <span>{language === 'zh' ? '已上传' : 'Uploaded'} {totalCount} {language === 'zh' ? '张' : ''}</span>
                 </div>
                 {selectedCount > 0 && (
                   <>
                     <span className="text-border">•</span>
                     <div className="flex items-center gap-1.5 text-primary">
                       <FileImage className="w-4 h-4" />
-                      <span>已选择 {selectedCount} 张</span>
+                      <span>{tr('selected')} {selectedCount} {language === 'zh' ? '张' : ''}</span>
                     </div>
                   </>
                 )}
@@ -268,7 +301,7 @@ export default function Home() {
                       className="h-auto p-0 text-xs"
                       onClick={() => setShowRightPanel(true)}
                     >
-                      显示配置面板
+                      {language === 'zh' ? '显示配置面板' : 'Show Config Panel'}
                       <ChevronRight className="w-3 h-3 ml-0.5" />
                     </Button>
                   </>
@@ -295,7 +328,7 @@ export default function Home() {
                   onClick={() => setRightPanelTab('config')}
                 >
                   <Settings2 className="w-4 h-4 mr-1" />
-                  配置
+                  {language === 'zh' ? '配置' : 'Config'}
                 </Button>
                 <Button
                   variant="ghost"
@@ -304,7 +337,7 @@ export default function Home() {
                   onClick={() => setRightPanelTab('preview')}
                 >
                   <ImageIcon className="w-4 h-4 mr-1" />
-                  预览
+                  {language === 'zh' ? '预览' : 'Preview'}
                 </Button>
                 <Button
                   variant="ghost"
@@ -313,7 +346,7 @@ export default function Home() {
                   onClick={() => setRightPanelTab('schemes')}
                 >
                   <Zap className="w-4 h-4 mr-1" />
-                  方案
+                  {language === 'zh' ? '方案' : 'Schemes'}
                 </Button>
                 <Button
                   variant="ghost"
@@ -322,6 +355,7 @@ export default function Home() {
                   onClick={() => setRightPanelTab('history')}
                 >
                   <History className="w-4 h-4 mr-1" />
+                  {language === 'zh' ? '历史' : 'History'}
                 </Button>
               </div>
 
@@ -371,24 +405,24 @@ export default function Home() {
               <div className="p-3">
                 <h4 className="font-medium mb-2 flex items-center gap-2">
                   <Info className="w-4 h-4" />
-                  使用技巧
+                  {language === 'zh' ? '使用技巧' : 'Tips'}
                 </h4>
                 <ul className="space-y-1.5 text-xs text-muted-foreground">
-                  <li>• 拖拽或粘贴图片快速上传</li>
-                  <li>• 使用方案快速应用预设配置</li>
-                  <li>• 批量处理时自动保存历史</li>
-                  <li>• 支持导出为 ZIP 批量下载</li>
+                  <li>• {language === 'zh' ? '拖拽或粘贴图片快速上传' : 'Drag & drop or paste images to upload'}</li>
+                  <li>• {language === 'zh' ? '使用方案快速应用预设配置' : 'Use schemes to apply presets quickly'}</li>
+                  <li>• {language === 'zh' ? '批量处理时自动保存历史' : 'Batch processing auto-saves history'}</li>
+                  <li>• {language === 'zh' ? '支持导出为 ZIP 批量下载' : 'Export results as ZIP for batch download'}</li>
                 </ul>
                 <DropdownMenuSeparator className="my-2" />
                 <div className="text-xs text-muted-foreground">
-                  <p>遇到问题？</p>
+                  <p>{language === 'zh' ? '遇到问题？' : 'Have issues?'}</p>
                   <a 
                     href="https://github.com/riceshowerX/SnapForge/issues" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"
                   >
-                    提交反馈 →
+                    {language === 'zh' ? '提交反馈 →' : 'Submit Feedback →'}
                   </a>
                 </div>
               </div>
