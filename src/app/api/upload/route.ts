@@ -16,7 +16,6 @@ const FILE_SIGNATURES: Record<string, { signature: number[]; offset: number }> =
 
 const ALLOWED_TYPES = Object.keys(FILE_SIGNATURES);
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-const MAX_FILES_PER_REQUEST = 50;
 
 // 验证文件 Magic Number
 function validateFileType(buffer: Buffer, claimedType: string): boolean {

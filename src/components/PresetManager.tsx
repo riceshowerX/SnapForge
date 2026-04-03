@@ -10,9 +10,7 @@ import {
   Trash2, 
   Download, 
   Check, 
-  FolderOpen,
-  Plus,
-  X
+  FolderOpen
 } from 'lucide-react';
 import { ProcessConfig, defaultProcessConfig } from '@/types';
 import {

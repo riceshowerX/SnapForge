@@ -3,7 +3,6 @@
 import { useAppStore } from '@/store';
 import { ImageOff, FileImage, Maximize, HardDrive, Info } from 'lucide-react';
 import Image from 'next/image';
-import { format } from 'date-fns';
 
 export function ImagePreview() {
   const { images, selectedImageIds } = useAppStore();

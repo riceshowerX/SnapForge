@@ -35,17 +35,14 @@ import {
   Download,
   Upload,
   Trash2,
-  Copy,
   FolderOpen,
-  Plus,
   Check,
   Webhook,
   Image as ImageIcon,
-  Crop,
-  Zap,
   Palette,
   FileText,
-  Heart
+  Heart,
+  Plus
 } from 'lucide-react';
 import { ProcessingScheme, ProcessConfig, presetSchemes } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -80,7 +77,6 @@ export function SchemeManager({ currentConfig, onApplyScheme }: SchemeManagerPro
     return presetSchemes;
   });
 
-  const [selectedScheme, setSelectedScheme] = useState<ProcessingScheme | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newSchemeName, setNewSchemeName] = useState('');
   const [newSchemeDesc, setNewSchemeDesc] = useState('');

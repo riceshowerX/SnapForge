@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from 'react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -10,18 +10,16 @@ import { ProcessConfigPanel } from '@/components/ProcessConfigPanel';
 import { ProcessingPanel } from '@/components/ProcessingPanel';
 import { DuplicateDetector } from '@/components/DuplicateDetector';
 import { ImagePreview } from '@/components/ImagePreview';
-import { PresetManager } from '@/components/PresetManager';
 import { ProcessingHistory } from '@/components/ProcessingHistory';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { ImageCompare } from '@/components/ImageCompare';
 import { ExifPanel } from '@/components/ExifPanel';
 import { SchemeManager } from '@/components/SchemeManager';
 import { StatsDashboard } from '@/components/StatsDashboard';
 import { useAppStore } from '@/store';
+import type { ProcessConfigKey } from '@/types';
 import { 
   Image as ImageIcon, 
   Zap, 
-  Copy, 
   Github,
   Sparkles,
   Upload,
@@ -31,16 +29,15 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Keyboard,
+  Copy,
   FileImage,
   Layers,
-  Download,
   BarChart2,
   Info,
   X,
   ChevronRight,
   BookOpen,
-  Lightbulb,
-  XCircle
+  Lightbulb
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -49,36 +46,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent } from '@/components/ui/card';
 
 export default function Home() {
-  const { images, selectedImageIds, isProcessing, config, updateConfig } = useAppStore();
+  const { images, selectedImageIds, config, updateConfig } = useAppStore();
   const [activeTab, setActiveTab] = useState('upload');
   const [showRightPanel, setShowRightPanel] = useState(true);
   const [rightPanelTab, setRightPanelTab] = useState<'config' | 'preview' | 'schemes' | 'history' | 'stats'>('config');
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [selectedPreviewImage, setSelectedPreviewImage] = useState<string | null>(null);
+  const [showWelcome, setShowWelcome] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !localStorage.getItem('snapforge-welcome-seen');
+    }
+    return false;
+  });
+  const [selectedPreviewImage] = useState<string | null>(null);
 
   const selectedCount = selectedImageIds.length;
   const totalCount = images.length;
 
-  // 欢迎引导
-  useEffect(() => {
-    const hasSeenWelcome = localStorage.getItem('snapforge-welcome-seen');
-    if (!hasSeenWelcome) {
-      setShowWelcome(true);
-    }
-  }, []);
-
   const dismissWelcome = () => {
     setShowWelcome(false);
-    localStorage.setItem('snapforge-welcome-seen', 'true');
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('snapforge-welcome-seen', 'true');
+    }
   };
 
   // 快捷键提示
@@ -350,8 +340,8 @@ export default function Home() {
                       currentConfig={config}
                       onApplyScheme={(newConfig) => {
                         // 逐个更新配置
-                        Object.keys(newConfig).forEach(key => {
-                          updateConfig(key as any, newConfig[key as keyof typeof newConfig]);
+                        Object.keys(newConfig).forEach((key) => {
+                          updateConfig(key as ProcessConfigKey, newConfig[key as ProcessConfigKey]);
                         });
                       }}
                     />

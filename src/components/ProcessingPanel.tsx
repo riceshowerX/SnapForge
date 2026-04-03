@@ -5,7 +5,6 @@ import { Loader2, CheckCircle, XCircle, Download, Play, RotateCcw, FileImage, Sp
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAppStore } from '@/store';
@@ -34,34 +33,15 @@ export function ProcessingPanel() {
 
   // 清理 object URLs
   useEffect(() => {
+    const currentUrls = objectUrlsRef.current;
     return () => {
-      objectUrlsRef.current.forEach(url => {
+      const urls = Array.from(currentUrls);
+      urls.forEach(url => {
         URL.revokeObjectURL(url);
       });
-      objectUrlsRef.current.clear();
+      currentUrls.clear();
     };
   }, []);
-
-  // 快捷键：Ctrl+Enter 开始处理
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // 如果焦点在输入框中，不处理快捷键
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        const selectedImages = images.filter(img => selectedImageIds.includes(img.id));
-        if (selectedImages.length > 0 && !isProcessing) {
-          processImages();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [images, selectedImageIds, isProcessing]);
 
   const processImages = useCallback(async () => {
     const selectedImages = images.filter(img => selectedImageIds.includes(img.id));
@@ -137,12 +117,33 @@ export function ProcessingPanel() {
     completeProcessing();
   }, [images, config, selectedImageIds, startProcessing, updateProcessResult, completeProcessing]);
 
+  // 快捷键：Ctrl+Enter 开始处理
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 如果焦点在输入框中，不处理快捷键
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        const selectedImages = images.filter(img => selectedImageIds.includes(img.id));
+        if (selectedImages.length > 0 && !isProcessing) {
+          processImages();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [images, selectedImageIds, isProcessing, processImages]);
+
   const downloadAll = useCallback(async () => {
     if (results.size === 0) return;
     
     const zip = new JSZip();
     
-    results.forEach((value, key) => {
+    results.forEach((value) => {
       if (value.blob && value.filename) {
         zip.file(value.filename, value.blob);
       }
@@ -189,7 +190,7 @@ export function ProcessingPanel() {
   const canProcess = selectedImages.length > 0 && !isProcessing;
 
   const successCount = results.size;
-  const activeConfigCount = Object.entries(config).filter(([key, value]) => 
+  const activeConfigCount = Object.entries(config).filter(([, value]) => 
     typeof value === 'object' && value !== null && 'enabled' in value && (value as { enabled: boolean }).enabled
   ).length;
 

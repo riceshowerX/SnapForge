@@ -2,9 +2,8 @@
 
 import { useAppStore } from '@/store';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { History, Trash2, Download, Clock, CheckCircle, XCircle, Image as ImageIcon } from 'lucide-react';
+import { History, Clock, CheckCircle, XCircle, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 
 export function ProcessingHistory() {

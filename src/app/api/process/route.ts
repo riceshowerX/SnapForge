@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { processImage, getImageInfo, calculateImageHash, calculateHashSimilarity } from '@/lib/image-processor';
+import { processImage } from '@/lib/image-processor';
 import { ProcessConfig, defaultProcessConfig } from '@/types';
 
 // =============================================

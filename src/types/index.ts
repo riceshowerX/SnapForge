@@ -163,6 +163,9 @@ export interface ProcessConfig {
   preserveMetadata: boolean;
 }
 
+// ProcessConfig 键类型
+export type ProcessConfigKey = keyof ProcessConfig;
+
 // =============================================
 // 图像文件接口
 // =============================================

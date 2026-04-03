@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getImageInfo, calculateImageHash, calculateHashSimilarity } from '@/lib/image-processor';
+import { calculateImageHash, calculateHashSimilarity } from '@/lib/image-processor';
 import { DuplicateGroup, ImageFile } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 

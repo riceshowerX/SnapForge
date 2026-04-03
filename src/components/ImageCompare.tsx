@@ -6,14 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Move, 
   ZoomIn, 
   ZoomOut, 
   RotateCcw, 
-  ChevronLeft, 
-  ChevronRight,
   GripVertical,
   Maximize2,
   Minimize2
@@ -35,12 +32,10 @@ interface ImageCompareProps {
 
 export function ImageCompare({
   originalUrl,
-  originalName,
   originalSize,
   originalWidth,
   originalHeight,
   processedUrl,
-  processedName,
   processedSize,
   processedWidth,
   processedHeight,
@@ -58,10 +53,6 @@ export function ImageCompare({
 
   const handleMouseDown = useCallback(() => {
     setIsDragging(true);
-  }, []);
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
   }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {

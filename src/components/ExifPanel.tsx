@@ -21,11 +21,6 @@ import {
   Check
 } from 'lucide-react';
 import { ImageFile, ExifData, formatFileSize } from '@/types';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 
 interface ExifPanelProps {
   image: ImageFile | null;
@@ -138,9 +133,9 @@ function ExifRow({ item }: { item: ExifItem }) {
 }
 
 export function ExifPanel({ image }: ExifPanelProps) {
-  const [isLoading, setIsLoading] = useState(false);
   const [exifData, setExifData] = useState<ExifData | null>(null);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!image) {
       setExifData(null);
@@ -148,7 +143,6 @@ export function ExifPanel({ image }: ExifPanelProps) {
     }
 
     const fetchExif = async () => {
-      setIsLoading(true);
       try {
         // 实际项目中应从后端获取 EXIF 数据
         // 这里使用模拟数据
@@ -156,13 +150,12 @@ export function ExifPanel({ image }: ExifPanelProps) {
       } catch (error) {
         console.error('Failed to fetch EXIF:', error);
         setExifData(null);
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchExif();
   }, [image]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!image) {
     return (

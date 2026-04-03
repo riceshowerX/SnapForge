@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   BarChart,
@@ -17,8 +16,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
   Area,
   AreaChart,
 } from 'recharts';
@@ -26,23 +23,22 @@ import {
   TrendingUp,
   TrendingDown,
   Image as ImageIcon,
-  Zap,
   Clock,
   HardDrive,
   Activity,
   BarChart2,
   PieChart as PieChartIcon,
-  Download,
   RotateCcw
 } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { formatFileSize, formatDuration, ProcessingStats } from '@/types';
+import type { BatchTask, ProcessResult, ImageFile } from '@/types';
 
 // 图表颜色
 const COLORS = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
 
 export function StatsDashboard() {
-  const { taskHistory, images, config } = useAppStore();
+  const { taskHistory, images } = useAppStore();
   const [activeChart, setActiveChart] = useState<'bar' | 'pie' | 'area'>('bar');
 
   // 计算统计数据
@@ -53,9 +49,6 @@ export function StatsDashboard() {
 
   // 功能使用分布
   const featureUsage = calculateFeatureUsage(taskHistory);
-
-  // 成功率数据
-  const successRateData = calculateSuccessRate(taskHistory);
 
   return (
     <div className="space-y-4">
@@ -364,15 +357,15 @@ function MetricCard({
 }
 
 // 计算统计数据
-function calculateStats(taskHistory: any[], images: any[]): ProcessingStats {
+function calculateStats(taskHistory: BatchTask[], images: ImageFile[]): ProcessingStats {
   let totalProcessed = 0;
-  let totalSizeSaved = 0;
+  const totalSizeSaved = 0;
   let totalProcessingTime = 0;
   let successCount = 0;
   let totalAttempts = 0;
 
   taskHistory.forEach(task => {
-    task.results.forEach((result: any) => {
+    task.results.forEach((result: ProcessResult) => {
       totalAttempts++;
       if (result.status === 'success') {
         successCount++;
@@ -396,7 +389,7 @@ function calculateStats(taskHistory: any[], images: any[]): ProcessingStats {
 }
 
 // 生成趋势数据
-function generateTrendData(taskHistory: any[]) {
+function generateTrendData(taskHistory: BatchTask[]) {
   const days: { [key: string]: number } = {};
   
   // 初始化最近7天
@@ -422,7 +415,7 @@ function generateTrendData(taskHistory: any[]) {
 }
 
 // 计算功能使用
-function calculateFeatureUsage(taskHistory: any[]) {
+function calculateFeatureUsage(taskHistory: BatchTask[]) {
   const features: { [key: string]: number } = {
     '格式转换': 0,
     '尺寸调整': 0,
@@ -446,25 +439,7 @@ function calculateFeatureUsage(taskHistory: any[]) {
   });
 
   return Object.entries(features)
-    .filter(([_, value]) => value > 0)
+    .filter(([, value]) => value > 0)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
-}
-
-// 计算成功率
-function calculateSuccessRate(taskHistory: any[]) {
-  let success = 0;
-  let failed = 0;
-
-  taskHistory.forEach(task => {
-    task.results.forEach((result: any) => {
-      if (result.status === 'success') success++;
-      else if (result.status === 'error') failed++;
-    });
-  });
-
-  return [
-    { name: '成功', value: success },
-    { name: '失败', value: failed },
-  ];
 }

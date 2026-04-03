@@ -257,19 +257,6 @@ async function applyWatermark(
     return image;
   }
   
-  // 合成水印
-  const watermarkImage = sharp(watermarkBuffer);
-  const wmMetadata = await watermarkImage.metadata();
-  
-  const { x, y } = calculateWatermarkPosition(
-    watermark.position,
-    width,
-    height,
-    wmMetadata.width || 100,
-    wmMetadata.height || 50,
-    watermark.margin
-  );
-  
   return image.composite([
     {
       input: watermarkBuffer,
@@ -380,38 +367,6 @@ function escapeXml(text: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
-}
-
-function calculateWatermarkPosition(
-  position: WatermarkPosition,
-  imageWidth: number,
-  imageHeight: number,
-  wmWidth: number,
-  wmHeight: number,
-  margin: number
-): { x: number; y: number } {
-  switch (position) {
-    case 'top-left':
-      return { x: margin, y: margin };
-    case 'top-center':
-      return { x: (imageWidth - wmWidth) / 2, y: margin };
-    case 'top-right':
-      return { x: imageWidth - wmWidth - margin, y: margin };
-    case 'center-left':
-      return { x: margin, y: (imageHeight - wmHeight) / 2 };
-    case 'center':
-      return { x: (imageWidth - wmWidth) / 2, y: (imageHeight - wmHeight) / 2 };
-    case 'center-right':
-      return { x: imageWidth - wmWidth - margin, y: (imageHeight - wmHeight) / 2 };
-    case 'bottom-left':
-      return { x: margin, y: imageHeight - wmHeight - margin };
-    case 'bottom-center':
-      return { x: (imageWidth - wmWidth) / 2, y: imageHeight - wmHeight - margin };
-    case 'bottom-right':
-      return { x: imageWidth - wmWidth - margin, y: imageHeight - wmHeight - margin };
-    default:
-      return { x: margin, y: imageHeight - wmHeight - margin };
-  }
 }
 
 function mapPositionToGravity(position: WatermarkPosition): sharp.Gravity {

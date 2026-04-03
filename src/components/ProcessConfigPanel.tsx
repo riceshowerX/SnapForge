@@ -24,7 +24,6 @@ import {
   Zap,
   FileText
 } from 'lucide-react';
-import { defaultProcessConfig } from '@/types';
 import type { ImageFormat, ResizeMode, FilterType, WatermarkPosition } from '@/types';
 import { useState, useCallback } from 'react';
 
