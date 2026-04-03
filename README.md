@@ -73,6 +73,13 @@
 
 ## Screenshots
 
+> 📸 Screenshots are available at [screenshots](./screenshots/) directory.
+> 
+> To add your own screenshots:
+> 1. Visit the live demo at https://snapforge.dev.coze.site
+> 2. Take screenshots of the main interface, configuration panel, etc.
+> 3. Save them to the `screenshots/` directory as `main.png`, `config.png`, `compare.png`, `stats.png`
+
 ### Main Interface
 ![Main Interface](./screenshots/main.png)
 
