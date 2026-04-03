@@ -73,13 +73,23 @@ export function ProcessingPanel() {
     currentConfig: typeof config
   ): Promise<{ success: boolean; result?: { blob: Blob; filename: string; preview: string }; error?: string }> => {
     try {
-      // 从 base64 获取 blob
-      const response = await fetch(image.url);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
+      // 从 base64 preview 获取 blob（image.url 和 preview 都是 data URL）
+      let blob: Blob;
+      if (image.preview && image.preview.startsWith('data:')) {
+        const base64Data = image.preview.split(',')[1];
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let k = 0; k < binaryString.length; k++) {
+          bytes[k] = binaryString.charCodeAt(k);
+        }
+        blob = new Blob([bytes], { type: image.type });
+      } else {
+        const response = await fetch(image.url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.statusText}`);
+        }
+        blob = await response.blob();
       }
-      
-      const blob = await response.blob();
       
       const formData = new FormData();
       formData.append('file', blob, image.name);
