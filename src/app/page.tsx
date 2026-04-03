@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,22 +53,24 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('upload');
   const [showRightPanel, setShowRightPanel] = useState(true);
   const [rightPanelTab, setRightPanelTab] = useState<'config' | 'preview' | 'schemes' | 'history' | 'stats'>('config');
-  const [showWelcome, setShowWelcome] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return !localStorage.getItem('snapforge-welcome-seen');
-    }
-    return false;
-  });
+  // 默认隐藏 Welcome Banner，客户端加载后根据 localStorage 决定是否显示
+  const [showWelcome, setShowWelcome] = useState(false);
   const [selectedPreviewImage] = useState<string | null>(null);
+
+  // 客户端挂载后从 localStorage 读取欢迎弹窗状态
+  // 注意：这里在 effect 中设置 state 是 Next.js 推荐的 hydration 修复模式
+  useEffect(() => {
+    const hasSeenWelcome = localStorage.getItem('snapforge-welcome-seen');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShowWelcome(!hasSeenWelcome);
+  }, []);
 
   const selectedCount = selectedImageIds.length;
   const totalCount = images.length;
 
   const dismissWelcome = () => {
     setShowWelcome(false);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('snapforge-welcome-seen', 'true');
-    }
+    localStorage.setItem('snapforge-welcome-seen', 'true');
   };
 
   // 快捷键提示
