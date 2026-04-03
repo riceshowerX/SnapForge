@@ -1,0 +1,12 @@
+# SnapForge pnpm 配置
+# 锁文件格式
+lockfile-format=6
+
+# 自动安装对等依赖
+auto-install-peers=true
+
+# 严格检查依赖版本
+strict-peer-dependencies=false
+
+# 在根目录创建 pnpm workspace
+virtual-store-dir=node_modules/.pnpm
