@@ -6,6 +6,9 @@ COZE_WORKSPACE_PATH="${COZE_WORKSPACE_PATH:-$(pwd)}"
 NODE_ENV=development
 DEPLOY_RUN_PORT=5000
 
+# 忽略 Node.js 弃用警告 (DEP0169 - url.parse)
+export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--no-deprecation"
+
 cd "${COZE_WORKSPACE_PATH}"
 
 kill_port_if_listening() {
