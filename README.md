@@ -1,8 +1,8 @@
 <div align="center">
 
-# <img src="public/favicon.ico" width="40" height="40" alt="SnapForge Logo"> SnapForge
+# <img src="public/logo.png" width="60" height="60" alt="SnapForge Logo"> SnapForge
 
-**Professional Image Processing Platform**
+**专业图像处理平台**
 
 一个现代化的专业图像处理平台，支持批量处理、格式转换、滤镜特效、水印添加等功能
 
@@ -12,7 +12,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-[在线演示](#) · [功能特性](#-功能特性) · [快速开始](#-快速开始) · [技术架构](#-技术架构)
+[在线演示](#) · [English](README_EN.md) · [功能特性](#-功能特性) · [快速开始](#-快速开始) · [技术架构](#-技术架构)
 
 </div>
 
@@ -296,7 +296,5 @@ graph LR
 <div align="center">
 
 **Made with ❤️ by [riceshowerX](https://github.com/riceshowerX)**
-
-如果这个项目对你有帮助，请给一个 ⭐️ Star 支持一下！
 
 </div>
