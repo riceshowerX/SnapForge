@@ -49,50 +49,10 @@ export function DuplicateDetector() {
     try {
       const formData = new FormData();
       
-      // 获取图片 blob 的辅助函数
-      const getImageBlob = async (image: typeof images[0]): Promise<Blob> => {
-        // 如果有 preview（data URL），优先使用
-        if (image.preview) {
-          const response = await fetch(image.preview);
-          if (response.ok) {
-            return response.blob();
-          }
-        }
-        
-        // 如果是 blob URL 或其他 URL
-        const response = await fetch(image.url);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch image: ${image.name}`);
-        }
-        return response.blob();
-      };
+      // 过滤出有效的图片（有 preview data URL）
+      const validImages = images.filter(img => img.preview);
       
-      // 并行获取所有图片的 blob（提高效率）
-      const fetchPromises = images.map(async (image, index) => {
-        try {
-          const blob = await getImageBlob(image);
-          return { blob, imageId: image.id, index, error: null };
-        } catch (error) {
-          console.error(`Failed to process image ${image.name}:`, error);
-          return { blob: null, imageId: image.id, index, error };
-        }
-      });
-
-      // 使用 Promise.all 并行获取，最多 10 个并发
-      const BATCH_SIZE = 10;
-      const results: { blob: Blob | null; imageId: string; index: number; error: unknown }[] = [];
-      
-      for (let i = 0; i < fetchPromises.length; i += BATCH_SIZE) {
-        const batch = fetchPromises.slice(i, i + BATCH_SIZE);
-        const batchResults = await Promise.all(batch);
-        results.push(...batchResults);
-        setProgress(((i + BATCH_SIZE) / images.length) * 40);
-      }
-
-      // 过滤掉失败的图片，只保留成功获取的图片
-      const successfulResults = results.filter(r => r.blob !== null);
-      
-      if (successfulResults.length < 2) {
+      if (validImages.length < 2) {
         setIsDetecting(false);
         setResults({
           groups: [],
@@ -101,13 +61,30 @@ export function DuplicateDetector() {
         });
         return;
       }
-
-      // 按原始顺序添加文件，并嵌入 imageId 作为文件名标识
-      successfulResults.sort((a, b) => a.index - b.index).forEach(({ blob, imageId }) => {
-        if (blob) {
-          formData.append('files', blob, imageId); // 使用 imageId 作为文件名
+      
+      // 转换 data URL 为 Blob 并添加到 formData
+      const imageIdMap = new Map<string, typeof images[0]>();
+      
+      for (let i = 0; i < validImages.length; i++) {
+        const image = validImages[i];
+        imageIdMap.set(image.id, image);
+        
+        try {
+          // preview 是 data URL (base64)，直接转换
+          const base64Data = image.preview!.split(',')[1];
+          const binaryString = atob(base64Data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let j = 0; j < binaryString.length; j++) {
+            bytes[j] = binaryString.charCodeAt(j);
+          }
+          const blob = new Blob([bytes], { type: image.type });
+          formData.append('files', blob, image.id);
+        } catch (err) {
+          console.error(`Failed to process image ${image.name}:`, err);
         }
-      });
+        
+        setProgress(((i + 1) / validImages.length) * 40);
+      }
       
       formData.append('threshold', '0.9');
 
@@ -120,9 +97,6 @@ export function DuplicateDetector() {
       if (!response.ok) throw new Error('Detection failed');
 
       const data = await response.json();
-      
-      // 建立 imageId 到图片信息的映射
-      const imageIdMap = new Map(images.map(img => [img.id, img]));
       
       // 解析返回的数据，恢复 imageId 映射
       if (data.groups) {
